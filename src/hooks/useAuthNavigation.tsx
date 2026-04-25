@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
+import env from '@src/env'
 import { generateSignInUrl } from '@src/routes/utils'
 import {
   ALLOW_MOBILE_QUERY_PARAM,
@@ -20,6 +21,7 @@ export function useAuthNavigation() {
   const navigate = useNavigate()
   const location = useLocation()
   const authState = auth.useAuthState()
+  const isAuthBypassed = env().VITE_ZOO_API_TOKEN === 'localhost'
   const [searchParams] = useSearchParams()
   const requestingImmediateSignInIfNecessary = searchParams.has(
     IMMEDIATE_SIGN_IN_IF_NECESSARY_QUERY_PARAM
@@ -28,6 +30,13 @@ export function useAuthNavigation() {
 
   // Subscribe to the auth state of the app and navigate accordingly.
   useEffect(() => {
+    if (isAuthBypassed) {
+      if (location.pathname.includes(PATHS.SIGN_IN)) {
+        void navigate(PATHS.INDEX)
+      }
+      return
+    }
+
     const onMobile = isMobile()
 
     if (
@@ -54,5 +63,5 @@ export function useAuthNavigation() {
       window.location.href = generateSignInUrl()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-  }, [authState, location.pathname])
+  }, [authState, location.pathname, isAuthBypassed])
 }

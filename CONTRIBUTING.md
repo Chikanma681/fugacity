@@ -71,9 +71,18 @@ This will use electron-builder to generate runnable artifacts in the `out` direc
 
 This section and the following ones should only be relevant to Zoo employees, as the non-production dev.zoo.dev infrastructure which allows CORS is not publicly accessible.
 
+By default, local development is configured to talk to the public production environment (`zoo.dev`) so open-source contributors can run the app.
+Zoo employees can switch to the internal dev environment by creating an ignored `.env.development.local` with:
+
+```
+VITE_ZOO_BASE_DOMAIN=dev.zoo.dev
+```
+
 ### Development environment variables
 
 The Copilot LSP plugin in the editor requires a Zoo API token to run. In production, we authenticate this with a token via cookie in the browser and device auth token in the desktop environment, but this token is inaccessible in the dev browser version because the cookie is considered "cross-site" (from `localhost` to `zoo.dev`). There is an optional environment variable called `VITE_ZOO_API_TOKEN` that you can populate with a dev token in a `.env.development.local` file to not check it into Git, which will use that token instead of other methods for the LSP service.
+
+To temporarily disable auth locally (dev-only), set `VITE_ZOO_API_TOKEN=localhost`.
 
 ### Developing live with the browser
 
@@ -91,7 +100,8 @@ npm run tron:start
 
 This will start the application and hot-reload on changes.
 
-Note that it leverages a web server and by default points to our non-production dev.zoo.dev infrastructure, which isn't accessible to everyone. Refer to _Building the app_ if `tron:start` doesn't work for you.
+Note that it leverages a web server. For open-source contributors it defaults to `zoo.dev`. Zoo employees can override to `dev.zoo.dev` (above).
+Refer to _Building the app_ if `tron:start` doesn't work for you.
 
 Devtools can be opened with the usual Command-Option-I (macOS) or Ctrl-Shift-I (Linux and Windows).
 
