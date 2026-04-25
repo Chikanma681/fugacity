@@ -10,7 +10,7 @@ jobs:
     runs-on: namespace-profile-ubuntu-8-cores
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6.3.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -25,7 +25,7 @@ jobs:
         with:
           cache: false # Configured below.
           rustflags: '' # Use .cargo/config.toml
-      - uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
+      - uses: taiki-e/install-action@58e862542551f667fa44c8a2a4a1d64ad477c96a
         with:
           tool: wasm-pack
       - name: Rust Cache
