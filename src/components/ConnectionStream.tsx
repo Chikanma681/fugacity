@@ -1,6 +1,6 @@
 import type { MouseEventHandler } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { ClientSideScene } from '@src/clientSideScene/ClientSideSceneComp'
+import { Flowsheet2DScene } from '@src/flowsheet/Flowsheet2DScene'
 import { useApp, useSingletons } from '@src/lib/boot'
 import { ViewControlContextMenu } from '@src/components/ViewControlMenu'
 import { btnName } from '@src/lib/cameraControls'
@@ -31,6 +31,7 @@ const TIME_TO_CONNECT = 30_000
 export const ConnectionStream = (props: {
   authToken: string | undefined
 }) => {
+  const flowsheetOnly = true
   const { settings, project } = useApp()
   const { kclManager } = useSingletons()
   const engineCommandManager = kclManager.engineCommandManager
@@ -142,6 +143,10 @@ export const ConnectionStream = (props: {
   const onPageMountedParams = useMemo(
     () => ({
       callback: () => {
+        if (flowsheetOnly) {
+          setIsSceneReady(true)
+          return
+        }
         setShowManualConnect(false)
         tryConnecting({
           authToken: props.authToken || '',
@@ -212,6 +217,7 @@ export const ConnectionStream = (props: {
     if (!videoWrapperRef.current) return
     if (!props.authToken) return
     if (engineCommandManager.started) return
+    if (flowsheetOnly) return
 
     // Do not try to restart the engine on any mouse move.
     // It needs to have been in an idle state first!
@@ -251,6 +257,7 @@ export const ConnectionStream = (props: {
   const onWebSocketCloseParams = useMemo(
     () => ({
       callback: () => {
+        if (flowsheetOnly) return
         setShowManualConnect(false)
         tryConnecting({
           authToken: props.authToken || '',
@@ -283,6 +290,7 @@ export const ConnectionStream = (props: {
     () => ({
       engineCommandManager,
       callback: () => {
+        if (flowsheetOnly) return
         setShowManualConnect(false)
         tryConnecting({
           authToken: props.authToken || '',
@@ -310,6 +318,7 @@ export const ConnectionStream = (props: {
   const onPeerConnectionCloseParams = useMemo(
     () => ({
       callback: () => {
+        if (flowsheetOnly) return
         setShowManualConnect(false)
         tryConnecting({
           authToken: props.authToken || '',
@@ -346,6 +355,7 @@ export const ConnectionStream = (props: {
         engineCommandManager.tearDown()
       },
       connect: () => {
+        if (flowsheetOnly) return
         setShowManualConnect(false)
         tryConnecting({
           authToken: props.authToken || '',
@@ -430,18 +440,13 @@ export const ConnectionStream = (props: {
       >
         No canvas support
       </canvas>
-      <ClientSideScene
-        cameraControls={settingsValues.modeling.mouseControls.current}
-        enableTouchControls={
-          settingsValues.modeling.enableTouchControls.current
-        }
-      />
+      <Flowsheet2DScene />
       <ViewControlContextMenu
         event="mouseup"
         guard={viewControlContextMenuGuard}
         menuTargetElement={videoWrapperRef}
       />
-      {(!isSceneReady || showManualConnect) && (
+      {(!flowsheetOnly && (!isSceneReady || showManualConnect)) && (
         <Loading
           isRetrying={false}
           retryAttemptCountdown={0}
