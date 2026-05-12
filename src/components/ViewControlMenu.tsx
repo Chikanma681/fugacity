@@ -39,7 +39,6 @@ export function useViewControlMenuItems() {
 
   const sketching = modelingState.matches('Sketch')
   const snapToGrid = settingsValues.modeling.snapToGrid.current
-  const gizmoType = settingsValues.modeling.gizmoType.current
 
   // Check if there's a valid selection with source range for "View KCL source code"
   const firstValidSelection = useMemo(() => {
@@ -125,21 +124,6 @@ export function useViewControlMenuItems() {
       >
         View KCL source code
       </ContextMenuItem>,
-      <ContextMenuDivider />,
-      <ContextMenuItem
-        onClick={() => {
-          settings.send({
-            type: 'set.modeling.gizmoType',
-            data: {
-              level: 'user',
-              value: gizmoType === 'axis' ? 'cube' : 'axis',
-            },
-          })
-        }}
-      >
-        {gizmoType === 'axis' ? 'Use cube gizmo' : 'Use axis gizmo'}
-      </ContextMenuItem>,
-      <ContextMenuDivider />,
       <ContextMenuItem
         onClick={() => {
           if (planeOrFaceId) {
@@ -161,23 +145,23 @@ export function useViewControlMenuItems() {
       </ContextMenuItem>,
       ...(sketching
         ? [
-            <ContextMenuDivider />,
-            <ContextMenuItem
-              icon={snapToGrid ? 'checkmark' : undefined}
-              hotkey={SNAP_TO_GRID_HOTKEY}
-              onClick={() => {
-                settings.send({
-                  type: 'set.modeling.snapToGrid',
-                  data: {
-                    level: 'project',
-                    value: !snapToGrid,
-                  },
-                })
-              }}
-            >
-              Snap to Grid
-            </ContextMenuItem>,
-          ]
+          <ContextMenuDivider />,
+          <ContextMenuItem
+            icon={snapToGrid ? 'checkmark' : undefined}
+            hotkey={SNAP_TO_GRID_HOTKEY}
+            onClick={() => {
+              settings.send({
+                type: 'set.modeling.snapToGrid',
+                data: {
+                  level: 'project',
+                  value: !snapToGrid,
+                },
+              })
+            }}
+          >
+            Snap to Grid
+          </ContextMenuItem>,
+        ]
         : []),
     ],
     [
@@ -188,7 +172,6 @@ export function useViewControlMenuItems() {
       modelingState.context.store.useSketchSolveMode,
       sketching,
       snapToGrid,
-      gizmoType,
       layout.signal.value,
       kclManager,
       settings,

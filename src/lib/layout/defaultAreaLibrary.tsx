@@ -1,6 +1,5 @@
 import { useApp, useSingletons } from '@src/lib/boot'
 import { ConnectionStream } from '@src/components/ConnectionStream'
-import Gizmo from '@src/components/gizmo/Gizmo'
 import { Toolbar } from '@src/Toolbar'
 import type { AreaType, AreaTypeDefinition } from '@src/lib/layout/types'
 import { kclErrorsByFilename } from '@src/lang/errors'
@@ -25,9 +24,6 @@ function ModelingArea() {
     <div className="relative z-0 min-w-64 flex flex-col flex-1 items-center overflow-hidden">
       <Toolbar />
       <ConnectionStream authToken={authToken} />
-      <div className="absolute bottom-2 right-2 flex flex-col items-end gap-3 pointer-events-none">
-        <Gizmo />
-      </div>
     </div>
   )
 }

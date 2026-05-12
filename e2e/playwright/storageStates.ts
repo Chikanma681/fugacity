@@ -22,7 +22,6 @@ export const TEST_SETTINGS: DeepPartial<Settings> = {
     // It's true by default because it's a good user experience, but
     // these tests require it to be false.
     fixed_size_grid: false,
-    gizmo_type: 'axis', // view-controls.spec.ts tests use axis gizmo
   },
   project: {
     default_project_name: 'untitled',
@@ -63,24 +62,6 @@ export const TEST_SETTINGS_CORRUPTED = {
   },
 } satisfies Partial<SaveSettingsPayload>
 
-export const TEST_CODE_GIZMO = `@settings(defaultLengthUnit = in)
-part001 = startSketchOn(XZ)
-|> startProfile(at = [20, 0])
-|> line(end = [7.13, 4 + 0])
-|> angledLine(angle = 3 + 0, length = 3.14 + 0 )
-|> line(endAbsolute = [20.14 + 0, -0.14 + 0])
-|> xLine(endAbsolute = 29 + 0)
-|> yLine(length = -3.14 + 0, tag = $a)
-|> xLine(length = 1.63)
-|> angledLine(angle = 3 + 0, lengthX = 3.14 )
-|> angledLine(angle = 30, lengthY = 3 + 0 )
-|> angledLine(angle = 22.14 + 0, endAbsoluteX = 12)
-|> angledLine(angle = 30, endAbsoluteY = 11.14)
-|> angledLineThatIntersects(angle = 3.14, intersectTag = a, offset = 0)
-|> tangentialArc(endAbsolute = [13.14 + 0, 13.14])
-|> close()
-|> extrude(length = 5 + 7)
-`
 
 export const TEST_CODE_LONG_WITH_ERROR_OUT_OF_VIEW = `width = 50.8
 height = 30

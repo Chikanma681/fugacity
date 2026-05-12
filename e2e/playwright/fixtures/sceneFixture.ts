@@ -452,20 +452,6 @@ export class SceneFixture {
     await expectPixelColorNotToBe(this.page, colour, transformedCoords, diff)
   }
 
-  get gizmo() {
-    return this.page.locator('[aria-label*=gizmo]')
-  }
-
-  async clickGizmoMenuItem(name: string) {
-    await this.gizmo.hover()
-    await this.gizmo.click({ button: 'right' })
-    const buttonToTest = this.page.getByRole('button', {
-      name: name,
-    })
-    await expect(buttonToTest).toBeVisible()
-    await buttonToTest.click()
-  }
-
   /**
    * Get the bounding box of an element by its locator string.
    * Returns a bounding box with x, y, width, and height, defaulting x and y to 0 if not found.

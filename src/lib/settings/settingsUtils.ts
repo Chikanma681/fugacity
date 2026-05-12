@@ -66,7 +66,6 @@ export function configurationToSettingsPayload(
       mouseControls: mouseControlsToCameraSystem(
         configuration?.settings?.modeling?.mouse_controls
       ),
-      gizmoType: configuration?.settings?.modeling?.gizmo_type,
       enableTouchControls:
         configuration?.settings?.modeling?.enable_touch_controls,
       useSketchSolveMode:
@@ -118,7 +117,6 @@ export function settingsPayloadToConfiguration(
         mouse_controls: configuration?.modeling?.mouseControls
           ? cameraSystemToMouseControl(configuration?.modeling?.mouseControls)
           : undefined,
-        gizmo_type: configuration?.modeling?.gizmoType,
         enable_touch_controls: configuration?.modeling?.enableTouchControls,
         use_sketch_solve_mode: configuration?.modeling?.useSketchSolveMode,
         highlight_edges: configuration?.modeling?.highlightEdges,

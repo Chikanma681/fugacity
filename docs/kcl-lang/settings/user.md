@@ -161,13 +161,6 @@ When enabled, the grid will use a fixed size based on your selected units rather
 
 **Default:** None
 
-##### gizmo_type
-
-Which type of orientation gizmo to use.
-
-
-**Default:** None
-
 ##### highlight_edges
 
 Highlight edges of 3D objects?

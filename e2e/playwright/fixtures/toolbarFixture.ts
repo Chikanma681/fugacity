@@ -54,8 +54,6 @@ export class ToolbarFixture {
   featureTreeId = DefaultLayoutPaneID.FeatureTree
   /** The pane element for the Feature Tree */
   featureTreePane!: Locator
-  gizmo!: Locator
-  gizmoDisabled!: Locator
   experimentalFeaturesMenu!: Locator
   loadButton!: Locator
   /** User button for the user sidebar menu */
@@ -110,8 +108,6 @@ export class ToolbarFixture {
     // which changes another el property because it means our test "signal" is
     // completely decoupled from the elements themselves. It means the same
     // element or two different elements can represent these states.
-    this.gizmo = page.getByTestId('gizmo')
-    this.gizmoDisabled = page.getByTestId('gizmo-disabled')
 
     this.experimentalFeaturesMenu = page.getByTestId(
       'experimental-features-menu'
@@ -153,7 +149,7 @@ export class ToolbarFixture {
   }
 
   waitUntilSketchingReady = async () => {
-    await expect(this.gizmoDisabled).toBeVisible()
+    await expect(this.exitSketchBtn).toBeVisible()
   }
 
   startSketchThenCallbackThenWaitUntilReady = async (

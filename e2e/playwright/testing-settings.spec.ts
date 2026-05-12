@@ -578,32 +578,6 @@ test.describe(
           await changeUnitOfMeasureInCommandBar('m')
         })
 
-        await test.step('Change modeling default unit within gizmo', async () => {
-          const changeUnitOfMeasureInGizmo = async (
-            unitOfMeasure: string,
-            copy: string
-          ) => {
-            const gizmo = page.getByTestId('units-menu')
-            await gizmo.click()
-            const button = page.locator('ul').getByRole('button', {
-              name: copy,
-              exact: true,
-            })
-            await button.click()
-            const toastMessage = page.getByText(
-              `Updated per-file units to ${unitOfMeasure}`
-            )
-            await expect(toastMessage).toBeVisible()
-          }
-
-          await changeUnitOfMeasureInGizmo('ft', 'Feet')
-          await changeUnitOfMeasureInGizmo('in', 'Inches')
-          await changeUnitOfMeasureInGizmo('yd', 'Yards')
-          await changeUnitOfMeasureInGizmo('cm', 'Centimeters')
-          await changeUnitOfMeasureInGizmo('m', 'Meters')
-          // Must come after 'm' because 'm' will partially match on 'mm'
-          await changeUnitOfMeasureInGizmo('mm', 'Millimeters')
-        })
       }
     )
 
