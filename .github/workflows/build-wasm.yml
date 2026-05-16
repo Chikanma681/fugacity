@@ -75,7 +75,7 @@ jobs:
           cache: false # configured below
           rustflags: '' # use .cargo/config.toml
 
-      - uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
+      - uses: taiki-e/install-action@e3134ec54b36203e18f2d1e80652058bd078dd91
         if: ${{ steps.wasm.outputs.should-build-wasm == 'true' }}
         with:
           tool: wasm-pack
