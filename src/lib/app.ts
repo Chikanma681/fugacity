@@ -48,7 +48,6 @@ import {
   getAllCurrentSettings,
   jsAppSettings,
 } from '@src/lib/settings/settingsUtils'
-import { MachineManager } from '@src/lib/MachineManager'
 import { reportRejection } from '@src/lib/trap'
 import type { Project } from '@src/lib/project'
 import type { UserResponse } from '@kittycad/lib/dist/types/src'
@@ -105,7 +104,6 @@ export type AppLayoutSystem = {
 export interface AppSubsystems {
   wasmPromise: Promise<ModuleType>
   auth: AppAuthSystem
-  machineManager: MachineManager
   rustContext: RustContext
   engineCommandManager: ConnectionManager
   commands: AppCommandSystem
@@ -133,8 +131,6 @@ export class App implements AppSubsystems {
   wasmPromise: Promise<ModuleType>
   /** Auth system. Use `send` method to act with auth. */
   auth: AppAuthSystem
-  /** Machines to send models to print or cut on the local network */
-  machineManager: MachineManager
   /** The command system for the app */
   commands: AppCommandSystem
   /** The settings system for the application */
@@ -161,7 +157,6 @@ export class App implements AppSubsystems {
     this.auth = subsystems.auth
     this.engineCommandManager = subsystems.engineCommandManager
     this.rustContext = subsystems.rustContext
-    this.machineManager = subsystems.machineManager
     this.billing = subsystems.billing
     this.commands = subsystems.commands
     this.settings = subsystems.settings
@@ -205,18 +200,10 @@ export class App implements AppSubsystems {
       useUser: () => useSelector(authActor, (state) => state.context.user),
     }
 
-    const machineManager = window.electron
-      ? new MachineManager({
-          getMachineApiIp: window.electron.getMachineApiIp,
-          listMachines: window.electron.listMachines,
-        })
-      : new MachineManager() // Instantiate with no-op functions
-
     const commandBarActor = createActor(commandBarMachine, {
       input: {
         commands: [],
         wasmInstancePromise: wasmPromise,
-        machineManager,
       },
     }).start()
 
@@ -285,7 +272,6 @@ export class App implements AppSubsystems {
       auth,
       engineCommandManager,
       rustContext,
-      machineManager,
       commands,
       settings,
       billing,

@@ -8,15 +8,12 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { AppHeader } from '@src/components/AppHeader'
 import { CommandBarOpenButton } from '@src/components/CommandBarOpenButton'
 import { useLspContext } from '@src/components/LspProvider'
-import { useNetworkHealthStatus } from '@src/components/NetworkHealthIndicator'
-import { useNetworkMachineStatus } from '@src/components/NetworkMachineIndicator'
 import { ShareButton } from '@src/components/ShareButton'
 import { StatusBar } from '@src/components/StatusBar/StatusBar'
 import {
   defaultGlobalStatusBarItems,
   defaultLocalStatusBarItems,
 } from '@src/components/StatusBar/defaultStatusBarItems'
-import type { StatusBarItemType } from '@src/components/StatusBar/statusBarTypes'
 import { UndoRedoButtons } from '@src/components/UndoRedoButtons'
 import { WasmErrToast } from '@src/components/WasmErrToast'
 import { useAbsoluteFilePath } from '@src/hooks/useAbsoluteFilePath'
@@ -30,7 +27,7 @@ import {
   WASM_INIT_FAILED_TOAST_ID,
 } from '@src/lib/constants'
 import useHotkeyWrapper from '@src/lib/hotkeyWrapper'
-import { isDesktop } from '@src/lib/isDesktop'
+import { useNetworkHealthStatus } from '@src/components/NetworkHealthIndicator'
 import { PATHS } from '@src/lib/paths'
 import { getSelectionTypeDisplayText } from '@src/lib/selections'
 import { useApp, useSingletons } from '@src/lib/boot'
@@ -64,6 +61,7 @@ import { ZookeeperCreditsMenu } from '@src/components/ZookeeperCreditsMenu'
 import { resetCameraPosition } from '@src/lib/resetCameraPosition'
 import { useSignals } from '@preact/signals-react/runtime'
 import { isMobile } from '@src/lib/isMobile'
+import { isDesktop } from '@src/lib/isDesktop'
 import { useFolders, useLastOperation } from '@src/machines/systemIO/hooks'
 
 if (window.electron) {
@@ -92,7 +90,6 @@ export function OpenedProject() {
   const projects = useFolders()
   const { onProjectOpen } = useLspContext()
   const networkHealthStatus = useNetworkHealthStatus()
-  const networkMachineStatus = useNetworkMachineStatus()
 
   // We need the ref for the outermost div so we can screenshot the app for
   // the coredump.
@@ -164,7 +161,6 @@ export function OpenedProject() {
   useHotKeyListener(kclManager)
 
   const settingsValues = settings.useSettings()
-  const machineApiEnabled = settingsValues.app.machineApi.current
   const authToken = auth.useToken()
 
   useHotkeys('backspace', (e) => {
@@ -390,7 +386,6 @@ export function OpenedProject() {
         <StatusBar
           globalItems={[
             networkHealthStatus,
-            ...(isDesktop() && machineApiEnabled ? [networkMachineStatus] : []),
             ...defaultGlobalStatusBarItems({ location, filePath }),
           ]}
           localItems={[

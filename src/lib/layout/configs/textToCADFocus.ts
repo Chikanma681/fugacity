@@ -80,12 +80,6 @@ export const textToCADFocusConfig: Layout = {
           icon: 'floppyDiskArrow',
           actionType: ActionType.Export,
         },
-        {
-          id: 'make',
-          label: 'Make part',
-          icon: 'printer3d',
-          actionType: ActionType.Make,
-        },
       ],
     },
     {

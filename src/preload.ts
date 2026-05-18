@@ -2,7 +2,6 @@ import path from 'path'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import packageJson from '@root/package.json'
-import type { MachinesListing } from '@src/lib/MachineManager'
 import chokidar from 'chokidar'
 import type { IpcRendererEvent } from 'electron'
 import { contextBridge, ipcRenderer } from 'electron'
@@ -54,10 +53,6 @@ const appRestart = () => ipcRenderer.invoke('app.restart')
 const appCheckForUpdates = () => ipcRenderer.invoke('app.checkForUpdates')
 const getAppTestProperty = (propertyName: string) =>
   ipcRenderer.invoke('app.testProperty', propertyName)
-const getMachineApiRunning = (): Promise<boolean> =>
-  ipcRenderer.invoke('machine-api.get-state')
-const setMachineApiState = (signal: 'on' | 'off'): Promise<boolean> =>
-  ipcRenderer.invoke('machine-api.set-state', signal)
 
 const isMac = os.platform() === 'darwin'
 const isWindows = os.platform() === 'win32'
@@ -213,16 +208,6 @@ const kittycad = (access: string, args: any) =>
 
 // We could probably do this from the renderer side, but I fear CORS will
 // bite our butts.
-const listMachines = async (
-  machineApiAddr: string
-): Promise<MachinesListing> => {
-  return fetch(`http://${machineApiAddr}/machines`).then((resp) => {
-    return resp.json()
-  })
-}
-
-const getMachineApiIp = async (): Promise<string | null> =>
-  ipcRenderer.invoke('find_machine_api')
 
 const getArgvParsed = () => {
   return ipcRenderer.invoke('argv.parser')
@@ -334,8 +319,6 @@ contextBridge.exposeInMainWorld('electron', {
     ),
   },
   kittycad,
-  listMachines,
-  getMachineApiIp,
   onUpdateChecking,
   onUpdateNotAvailable,
   onUpdateDownloadStart,
@@ -345,8 +328,6 @@ contextBridge.exposeInMainWorld('electron', {
   appCheckForUpdates,
   getArgvParsed,
   resizeWindow,
-  getMachineApiRunning,
-  setMachineApiState,
   createHomePageMenu,
   createModelingPageMenu,
   createFallbackMenu,

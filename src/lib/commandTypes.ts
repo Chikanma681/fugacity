@@ -18,7 +18,6 @@ import type {
   commandBarMachine,
 } from '@src/machines/commandBarMachine'
 import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
-import type { MachineManager } from '@src/lib/MachineManager'
 
 type Icon = CustomIconName
 const _TARGETS = ['both', 'web', 'desktop'] as const
@@ -160,12 +159,11 @@ export type CommandArgumentConfig<
 } & (
   | {
       inputType: 'options'
-      options:
+          options:
         | CommandArgumentOption<OutputType>[]
         | ((
             commandBarContext: {
               argumentsToSubmit: Record<string, unknown>
-              machineManager?: MachineManager
             }, // Should be the commandbarMachine's context, but it creates a circular dependency
             machineContext?: C
           ) => CommandArgumentOption<OutputType>[])

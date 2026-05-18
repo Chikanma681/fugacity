@@ -40,7 +40,6 @@ import {
   KCL_DEFAULT_SCALE,
   KCL_DEFAULT_LEADER_SCALE,
 } from '@src/lib/constants'
-import type { components } from '@src/lib/machine-api'
 import type { Selections } from '@src/machines/modelingSharedTypes'
 import { err } from '@src/lib/trap'
 import { baseUnitLabels, baseUnitsUnion } from '@src/lib/settings/settingsTypes'
@@ -170,9 +169,6 @@ export type ModelingCommandSchema = {
     storage?: StorageUnion
     up?: AxisDirectionPair['axis']
     scale?: UnitLength
-  }
-  Make: {
-    machine: components['schemas']['MachineInfoResponse']
   }
   Extrude: {
     // Enables editing workflow
@@ -617,61 +613,6 @@ export const modelingMachineCommandConfig: StateMachineCommandSetConfig<
             value: unit,
             isCurrent: unit === currentScale,
           }))
-        },
-      },
-    },
-  },
-  Make: {
-    hide: 'web',
-    displayName: 'Make',
-    description:
-      'Export the current part and send to a 3D printer on the network.',
-    icon: 'printer3d',
-    needsReview: true,
-    args: {
-      machine: {
-        inputType: 'options',
-        required: true,
-        valueSummary: (machine: components['schemas']['MachineInfoResponse']) =>
-          machine.make_model.model ||
-          machine.make_model.manufacturer ||
-          'Unknown Machine',
-        options: (commandBarContext) => {
-          return Object.values(
-            commandBarContext.machineManager?.machines || []
-          ).map((machine: components['schemas']['MachineInfoResponse']) => ({
-            name:
-              `${machine.id} (${
-                machine.make_model.model || machine.make_model.manufacturer
-              }) (${machine.state.state})` +
-              (machine.hardware_configuration &&
-              machine.hardware_configuration.type !== 'none' &&
-              machine.hardware_configuration.config.nozzle_diameter
-                ? ` - Nozzle Diameter: ${machine.hardware_configuration.config.nozzle_diameter}`
-                : '') +
-              (machine.hardware_configuration &&
-              machine.hardware_configuration.type !== 'none' &&
-              machine.hardware_configuration.config.filaments &&
-              machine.hardware_configuration.config.filaments[0]
-                ? ` - ${
-                    machine.hardware_configuration.config.filaments[0].name
-                  } #${
-                    machine.hardware_configuration.config &&
-                    machine.hardware_configuration.config.filaments[0].color?.slice(
-                      0,
-                      6
-                    )
-                  }`
-                : ''),
-            isCurrent: false,
-            disabled: machine.state.state !== 'idle',
-            value: machine,
-          }))
-        },
-        defaultValue: (commandBarContext) => {
-          return Object.values(
-            commandBarContext.machineManager.machines || []
-          )[0]
         },
       },
     },

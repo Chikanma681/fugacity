@@ -44,7 +44,6 @@ import {
 import type { OnMoveCallbackArgs } from '@src/clientSideScene/sceneInfra'
 import { DRAFT_POINT } from '@src/clientSideScene/sceneUtils'
 import { createProfileStartHandle } from '@src/clientSideScene/segments'
-import type { MachineManager } from '@src/lib/MachineManager'
 import {
   applyConstraintEqualAngle,
   equalAngleInfo,
@@ -169,9 +168,7 @@ import {
   EXECUTION_TYPE_MOCK,
   EXECUTION_TYPE_REAL,
   EXPORT_TOAST_MESSAGES,
-  MAKE_TOAST_MESSAGES,
 } from '@src/lib/constants'
-import { exportMake } from '@src/lib/exportMake'
 import { exportSave } from '@src/lib/exportSave'
 import type { Project } from '@src/lib/project'
 import {
@@ -287,7 +284,6 @@ export type ModelingMachineEvent =
       type: 'Pattern Linear 3D'
       data: ModelingCommandSchema['Pattern Linear 3D']
     }
-  | { type: 'Make'; data: ModelingCommandSchema['Make'] }
   | { type: 'Extrude'; data?: ModelingCommandSchema['Extrude'] }
   | { type: 'Sweep'; data?: ModelingCommandSchema['Sweep'] }
   | { type: 'Loft'; data?: ModelingCommandSchema['Loft'] }
@@ -4874,78 +4870,6 @@ export const modelingMachine = setup({
         await exportSave({ files, toastId, fileName })
       }
     ),
-    makeFromEngine: fromPromise(
-      async ({
-        input,
-      }: {
-        input?:
-          | ({
-              machineManager: MachineManager
-              rustContext: RustContext
-              fileName?: string
-            } & ModelingCommandSchema['Make'])
-          | undefined
-      }) => {
-        if (input === undefined) {
-          return new Error(NO_INPUT_PROVIDED_MESSAGE)
-        }
-
-        const name = input.fileName || ''
-
-        // Set the current machine.
-        // Due to our use of singeton pattern, we need to do this to reliably
-        // update this object across React and non-React boundary.
-        // We need to do this eagerly because of the exportToEngine call below.
-        if (input.machineManager === null) {
-          console.warn(
-            "machineManager is null. It shouldn't be at this point. Aborting operation."
-          )
-          return new Error('Machine manager is not set')
-        }
-
-        // Update the rest of the UI that needs to know the current machine
-        input.machineManager.currentMachine = input.machine
-
-        const format: OutputFormat3d = {
-          type: 'stl',
-          coords: {
-            forward: {
-              axis: 'y',
-              direction: 'negative',
-            },
-            up: {
-              axis: 'z',
-              direction: 'positive',
-            },
-          },
-          storage: 'ascii',
-          // Convert all units to mm since that is what the slicer expects.
-          units: 'mm',
-          selection: { type: 'default_scene' },
-        }
-
-        const toastId = toast.loading(MAKE_TOAST_MESSAGES.START)
-        const files = await input.rustContext.export(
-          format,
-          {
-            settings: { modeling: { base_unit: 'mm' } },
-          },
-          toastId
-        )
-
-        if (files === undefined) {
-          // We already sent the toast message in the export function.
-          return
-        }
-
-        await exportMake({
-          files,
-          toastId,
-          name,
-          machineManager: input.machineManager,
-        })
-      }
-    ),
     boolSubtractAstMod: fromPromise(
       async ({
         input,
@@ -5423,10 +5347,6 @@ export const modelingMachine = setup({
           guard: 'Has exportable geometry',
         },
 
-        Make: {
-          target: 'Making',
-          guard: 'Has exportable geometry',
-        },
 
         'Delete selection': {
           target: 'Applying Delete selection',
@@ -7432,22 +7352,6 @@ export const modelingMachine = setup({
       },
     },
 
-    Making: {
-      invoke: {
-        src: 'makeFromEngine',
-        id: 'makeFromEngine',
-        input: ({ event, context }) => {
-          if (event.type !== 'Make' || !context.machineManager) return undefined
-          return {
-            machineManager: context.machineManager,
-            rustContext: context.rustContext,
-            ...event.data,
-          }
-        },
-        onDone: ['idle'],
-        onError: ['idle'],
-      },
-    },
 
     'Boolean subtracting': {
       invoke: {

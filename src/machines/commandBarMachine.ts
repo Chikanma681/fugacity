@@ -7,7 +7,6 @@ import type {
 } from '@src/lib/commandTypes'
 import { getCommandArgumentKclValuesOnly } from '@src/lib/commandUtils'
 import { isDesktop } from '@src/lib/isDesktop'
-import type { MachineManager } from '@src/lib/MachineManager'
 import { err } from '@src/lib/trap'
 import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
 import toast from 'react-hot-toast'
@@ -19,14 +18,12 @@ export type CommandBarActorType = ActorRefFrom<typeof commandBarMachine>
 export type CommandBarInput = {
   commands: Command[]
   wasmInstancePromise: Promise<ModuleType>
-  machineManager: MachineManager
 }
 export type CommandBarContext = CommandBarInput & {
   selectedCommand?: Command
   currentArgument?: CommandArgument<unknown> & { name: string }
   argumentsToSubmit: { [x: string]: unknown }
   reviewValidationError?: string
-  machineManager: MachineManager
   kclManager?: KclManager
 }
 

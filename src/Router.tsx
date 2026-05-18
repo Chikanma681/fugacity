@@ -31,7 +31,6 @@ import { Telemetry } from '@src/routes/Telemetry'
 import { TestLayout } from '@src/lib/layout/TestLayout'
 import { IS_STAGING_OR_DEBUG } from '@src/routes/utils'
 import Loading from '@src/components/Loading'
-import { MachineApiController } from '@src/components/MachineApiController'
 
 const createRouter = isDesktop() ? createHashRouter : createBrowserRouter
 
@@ -158,7 +157,6 @@ export const Router = () => {
 
   return (
     <NetworkContext.Provider value={networkStatus}>
-      <MachineApiController />
       <RouterProvider router={router} />
     </NetworkContext.Provider>
   )

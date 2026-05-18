@@ -1,5 +1,4 @@
 import type { EntityType, Point2d } from '@kittycad/lib'
-import type { MachineManager } from '@src/lib/MachineManager'
 import type { PathToNode } from '@src/lang/wasm'
 import type { Artifact, ArtifactId, CodeRef } from '@src/lang/std/artifactGraph'
 import type { DefaultPlaneStr } from '@src/lib/planes'
@@ -231,7 +230,6 @@ export type ModelingMachineInput = {
   kclManager: KclManager
   engineCommandManager: ConnectionManager
   rustContext: RustContext
-  machineManager: MachineManager
   wasmInstance: ModuleType
   commandBarActor: CommandBarActorType
   fileName?: string

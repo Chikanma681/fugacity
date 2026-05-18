@@ -12,7 +12,6 @@ import { isMobile } from '@src/lib/isMobile'
 export const useDefaultActionLibrary = () => {
   const { commands, settings } = useApp()
   const { kclManager } = useSingletons()
-  const machineApiEnabled = settings.useSettings().app.machineApi.current
 
   return Object.freeze({
     export: {
@@ -59,19 +58,6 @@ export const useDefaultActionLibrary = () => {
       useDisabled: () => undefined,
       shortcut: 'Mod + K',
       execute: () => commands.actor.send({ type: 'Open' }),
-    },
-    make: {
-      useDisabled: () => {
-        const { machineManager } = useApp()
-        return machineManager.noMachinesReason()
-      },
-      shortcut: 'Ctrl + Shift + M',
-      execute: () =>
-        commands.send({
-          type: 'Find and select command',
-          data: { name: 'Make', groupId: 'modeling' },
-        }),
-      useHidden: () => !isDesktop() || !machineApiEnabled,
     },
   } satisfies Record<ActionType, ActionTypeDefinition>)
 }

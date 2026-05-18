@@ -13,7 +13,6 @@ import { ActionButton } from '@src/components/ActionButton'
 import { AppHeader } from '@src/components/AppHeader'
 import { BillingDialog } from '@kittycad/react-shared'
 import Loading from '@src/components/Loading'
-import { useNetworkMachineStatus } from '@src/components/NetworkMachineIndicator'
 import ProjectCard from '@src/components/ProjectCard/ProjectCard'
 import {
   ProjectSearchBar,
@@ -79,7 +78,6 @@ const Home = () => {
   const readWriteProjectDir = useCanReadWriteProjectDirectory()
   const [nativeFileMenuCreated, setNativeFileMenuCreated] = useState(false)
   const apiToken = auth.useToken()
-  const networkMachineStatus = useNetworkMachineStatus()
   const billingContext = billing.useContext()
   const hasUnlimitedCredits = billingContext.balance === Infinity
 
@@ -106,7 +104,6 @@ const Home = () => {
 
   const location = useLocation()
   const settingsValues = settings.useSettings()
-  const machineApiEnabled = settingsValues.app.machineApi.current
   const onboardingStatus = settingsValues.app.onboardingStatus.current
 
   useEffect(() => {
@@ -400,10 +397,10 @@ const Home = () => {
         />
       </div>
       <StatusBar
-        globalItems={[
-          ...(isDesktop() && machineApiEnabled ? [networkMachineStatus] : []),
-          ...defaultGlobalStatusBarItems({ location, filePath: undefined }),
-        ]}
+        globalItems={defaultGlobalStatusBarItems({
+          location,
+          filePath: undefined,
+        })}
         localItems={defaultLocalStatusBarItems}
       />
     </div>

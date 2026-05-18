@@ -1,8 +1,6 @@
 import { Popover, Transition } from '@headlessui/react'
-import { useSelector } from '@xstate/react'
 import { Fragment, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import type { SnapshotFrom } from 'xstate'
 
 import type { ActionButtonProps } from '@src/components/ActionButton'
 import { ActionButton } from '@src/components/ActionButton'
@@ -108,24 +106,22 @@ function ProjectMenuPopover({
   project?: IndexLoaderData['project']
   file?: IndexLoaderData['file']
 }) {
-  const { machineManager, commands, settings } = useApp()
+  const { commands } = useApp()
+  const commandBarState = commands.useState()
+  const commandList = commandBarState.context.commands
   const { kclManager } = useSingletons()
-  const machineApiEnabled = settings.useSettings().app.machineApi.current
   const platform = usePlatform()
   const navigate = useNavigate()
   const filePath = useAbsoluteFilePath()
-  const commandsSelector = (state: SnapshotFrom<typeof commands.actor>) =>
-    state.context.commands
-  const commandList = useSelector(commands.actor, commandsSelector)
 
   const { onProjectClose } = useLspContext()
   const exportCommandInfo = { name: 'Export', groupId: 'modeling' }
-  const makeCommandInfo = { name: 'Make', groupId: 'modeling' }
-  const findCommand = (obj: { name: string; groupId: string }) =>
-    Boolean(
-      commandList.find((c) => c.name === obj.name && c.groupId === obj.groupId)
+  const hasCommand = (commandInfo: { name: string; groupId: string }) =>
+    commandList.some(
+      (command) =>
+        command.name === commandInfo.name &&
+        command.groupId === commandInfo.groupId
     )
-  const machineCount = machineManager.machines.length
 
   // We filter this memoized list so that no orphan "break" elements are rendered.
   const projectMenuItems = useMemo<(ActionButtonProps | 'break')[]>(
@@ -179,7 +175,7 @@ function ProjectMenuPopover({
               <kbd className="hotkey">
                 {hotkeyDisplay('ctrl+shift+e', platform)}
               </kbd>
-              {!findCommand(exportCommandInfo) && (
+              {!hasCommand(exportCommandInfo) && (
                 <Tooltip
                   position="right"
                   wrapperClassName="!max-w-none min-w-fit"
@@ -189,37 +185,12 @@ function ProjectMenuPopover({
               )}
             </>
           ),
-          disabled: !findCommand(exportCommandInfo),
+          disabled: !hasCommand(exportCommandInfo),
           onClick: () =>
             commands.send({
               type: 'Find and select command',
               data: exportCommandInfo,
             }),
-        },
-        {
-          id: 'make',
-          Element: 'button',
-          className: !isDesktop() || !machineApiEnabled ? 'hidden' : '',
-          children: (
-            <>
-              <span>Make current part</span>
-              {!findCommand(makeCommandInfo) && (
-                <Tooltip
-                  position="right"
-                  wrapperClassName="!max-w-none min-w-fit"
-                >
-                  Awaiting engine connection
-                </Tooltip>
-              )}
-            </>
-          ),
-          disabled: !findCommand(makeCommandInfo) || machineCount === 0,
-          onClick: () => {
-            commands.send({
-              type: 'Find and select command',
-              data: makeCommandInfo,
-            })
-          },
         },
         'break',
         {
@@ -240,8 +211,7 @@ function ProjectMenuPopover({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
     [
       platform,
-      findCommand,
-      machineApiEnabled,
+      commandList,
       // eslint-disable-next-line @typescript-eslint/unbound-method
       commands.send,
       kclManager.engineCommandManager,

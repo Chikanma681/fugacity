@@ -53,7 +53,7 @@ export const ModelingMachineProvider = ({
   children: React.ReactNode
 }) => {
   useSignals()
-  const { machineManager, commands, settings, layout, project } = useApp()
+  const { commands, settings, layout, project } = useApp()
   const { kclManager } = useSingletons()
   const settingsActor = settings.actor
   const wasmInstance = use(kclManager.wasmInstancePromise)
@@ -68,15 +68,7 @@ export const ModelingMachineProvider = ({
       snapToGrid,
     },
   } = settingsValues
-  const machineApiEnabled = settingsValues.app.machineApi.current
-  const commandBarConfig = useMemo(() => {
-    if (machineApiEnabled) {
-      return modelingMachineCommandConfig
-    }
-
-    const { Make: _make, ...configWithoutMake } = modelingMachineCommandConfig
-    return configWithoutMake
-  }, [machineApiEnabled])
+  const commandBarConfig = modelingMachineCommandConfig
   const previousCameraOrbit = useRef<CameraOrbitType | null>(null)
   const projects = useFolders()
   const theProject = useRef<Project | undefined>(
@@ -121,7 +113,6 @@ export const ModelingMachineProvider = ({
     modelingMachine,
     {
       input: {
-        machineManager,
         engineCommandManager: kclManager.engineCommandManager,
         kclManager,
         rustContext: kclManager.rustContext,

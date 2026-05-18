@@ -52,14 +52,14 @@ const primaryPane: Layout = {
   children: [
     ...(isMobile()
       ? [
-          {
-            id: DefaultLayoutPaneID.TTC,
-            label: 'Zookeeper',
-            type: LayoutType.Simple,
-            areaType: AreaType.TTC,
-            icon: 'sparkles',
-          } satisfies PaneChild,
-        ]
+        {
+          id: DefaultLayoutPaneID.TTC,
+          label: 'Zookeeper',
+          type: LayoutType.Simple,
+          areaType: AreaType.TTC,
+          icon: 'sparkles',
+        } satisfies PaneChild,
+      ]
       : []),
     {
       id: DefaultLayoutPaneID.FeatureTree,
@@ -107,19 +107,19 @@ const primaryPane: Layout = {
   actions: [
     ...(isMobile()
       ? ([
-          {
-            id: 'open-cmd',
-            label: 'Open command bar',
-            icon: 'command',
-            actionType: ActionType.CommandBar,
-          },
-          {
-            id: 'share',
-            label: 'Create share link',
-            icon: 'link',
-            actionType: ActionType.Share,
-          },
-        ] satisfies Action[])
+        {
+          id: 'open-cmd',
+          label: 'Open command bar',
+          icon: 'command',
+          actionType: ActionType.CommandBar,
+        },
+        {
+          id: 'share',
+          label: 'Create share link',
+          icon: 'link',
+          actionType: ActionType.Share,
+        },
+      ] satisfies Action[])
       : []),
     {
       id: 'add-file-to-project',
@@ -132,12 +132,6 @@ const primaryPane: Layout = {
       label: 'Export part',
       icon: 'floppyDiskArrow',
       actionType: ActionType.Export,
-    },
-    {
-      id: 'make',
-      label: 'Make part',
-      icon: 'printer3d',
-      actionType: ActionType.Make,
     },
   ],
 }

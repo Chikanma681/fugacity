@@ -57,13 +57,6 @@ The settings for the appearance of the app.
 **Default:** None
 
 This setting has further nested options. See the schema for full details.
-##### machine_api
-
-Whether to enable Machine API discovery and printing controls on desktop.
-
-
-**Default:** None
-
 ##### onboarding_status
 
 The onboarding status of the app.

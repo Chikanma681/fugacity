@@ -19,7 +19,6 @@ import { createActor } from 'xstate'
 import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
 import { createSettings } from '@src/lib/settings/initialSettings'
 import { settingsMachine } from '@src/machines/settingsMachine'
-import { MachineManager } from '@src/lib/MachineManager'
 import { signal } from '@preact/signals-core'
 import { ConnectionManager } from '@src/network/connectionManager'
 import RustContext from '@src/lib/rustContext'
@@ -61,12 +60,10 @@ export function findAngleLengthPair(call: CallExpressionKw): Expr | undefined {
 export async function buildTheWorldAndConnectToEngine() {
   const WASM_PATH = join(process.cwd(), 'public/kcl_wasm_lib_bg.wasm')
   const instancePromise = loadAndInitialiseWasmInstance(WASM_PATH)
-  const machineManager = new MachineManager()
   const commandBarActor = createActor(commandBarMachine, {
     input: {
       commands: [],
       wasmInstancePromise: instancePromise,
-      machineManager,
     },
   }).start()
   const settingsActor = createActor(settingsMachine, {
@@ -125,7 +122,6 @@ export async function buildTheWorldAndConnectToEngine() {
     kclManager,
     commandBarActor,
     settingsActor,
-    machineManager,
   }
 }
 
@@ -156,12 +152,10 @@ export async function buildTheWorldAndNoEngineConnection(mockWasm = false) {
   const instancePromise = mockWasm
     ? Promise.resolve({} as ModuleType)
     : loadWasm()
-  const machineManager = new MachineManager()
   const commandBarActor = createActor(commandBarMachine, {
     input: {
       commands: [],
       wasmInstancePromise: instancePromise,
-      machineManager,
     },
   }).start()
   const settingsActor = createActor(settingsMachine, {
@@ -199,6 +193,5 @@ export async function buildTheWorldAndNoEngineConnection(mockWasm = false) {
     sceneEntitiesManager: kclManager.sceneEntitiesManager,
     commandBarActor,
     settingsActor,
-    machineManager,
   }
 }

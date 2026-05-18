@@ -4,7 +4,6 @@ import path from 'path'
 // template that ElectronJS provides.
 // @ts-ignore: TS1343
 import * as packageJSON from '@root/package.json'
-import { Bonjour } from 'bonjour-service'
 import dotenv from 'dotenv'
 import {
   BrowserWindow,
@@ -35,7 +34,6 @@ import {
 } from '@src/lib/constants'
 import { registerFileProtocolCsp } from '@src/lib/csp'
 import getCurrentProjectFile from '@src/lib/getCurrentProjectFile'
-import { discoverMachineApi } from '@src/lib/discoverMachineApi'
 import { reportRejection } from '@src/lib/trap'
 let mainWindow: BrowserWindow | null = null
 let isInstallingUpdate = false
@@ -51,7 +49,6 @@ const scheduleMenuGC = () => {
   }, 10000)
 }
 
-type MachineApiSignal = 'on' | 'off'
 
 // Check the command line arguments for a project path
 const args = parseCLIArgs(process.argv)
@@ -336,31 +333,12 @@ app.resizeWindow = async (width: number, height: number) => {
 
 // @ts-ignore can't declaration merge with App
 app.testProperty = {}
-// @ts-ignore can't declaration merge with App
-app.machineApiState = 'off' as MachineApiSignal
-
-const getMachineApiState = (): MachineApiSignal =>
-  // @ts-ignore can't declaration merge with App
-  app.machineApiState
-
-const setMachineApiState = (signal: MachineApiSignal) => {
-  // @ts-ignore can't declaration merge with App
-  app.machineApiState = signal
-}
 
 ipcMain.handle('app.testProperty', (event, propertyName) => {
   // @ts-ignore can't declaration merge with App
   return app.testProperty[propertyName]
 })
 
-ipcMain.handle('machine-api.get-state', () => {
-  return getMachineApiState() === 'on'
-})
-
-ipcMain.handle('machine-api.set-state', (_event, signal: MachineApiSignal) => {
-  setMachineApiState(signal)
-  return getMachineApiState() === 'on'
-})
 
 ipcMain.handle('app.resizeWindow', (event, data) => {
   return mainWindow?.setSize(data[0], data[1])
@@ -478,20 +456,6 @@ ipcMain.handle('startDeviceFlow', async (_, host: string) => {
   return handle.user_code
 })
 
-// Used to find other devices on the local network, e.g. 3D printers, CNC machines, etc.
-ipcMain.handle('find_machine_api', () => {
-  if (getMachineApiState() !== 'on') {
-    return null
-  }
-
-  return discoverMachineApi({
-    createBonjour: (onError) => new Bonjour({}, onError),
-    onError: (error) => {
-      console.log('An issue with Bonjour services was encountered!')
-      console.error(error)
-    },
-  })
-})
 
 // Given the route create the new context menu
 // internal menu state will be reset since it creates a new one from
