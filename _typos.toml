@@ -17,7 +17,6 @@ extend-exclude = [
   "public/sketch-solve-samples",
   "rust/kcl-lib/tests/kcl_samples",
   "tsconfig.tsbuildinfo",
-  "src/lib/machine-api.d.ts",
   "kcl-book/book",
 ]
 
