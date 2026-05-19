@@ -63,7 +63,7 @@ const primaryPane: Layout = {
       : []),
     {
       id: DefaultLayoutPaneID.FeatureTree,
-      label: 'Feature Tree',
+      label: 'Streams',
       type: LayoutType.Simple,
       icon: 'model',
       areaType: AreaType.FeatureTree,

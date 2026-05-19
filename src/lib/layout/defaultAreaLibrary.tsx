@@ -56,7 +56,7 @@ export const useDefaultAreaLibrary = () => {
   return useMemo(
     () =>
       Object.freeze({
-        featureTree: {
+        streams: {
           hide: () => false,
           shortcut: 'Shift + T',
           Component: FeatureTreePane,
@@ -148,7 +148,7 @@ function testArea(name: string): AreaTypeDefinition {
 }
 
 export const testAreaLibrary = Object.freeze({
-  featureTree: testArea('Feature Tree'),
+  streams: testArea('Streams'),
   bodies: testArea('bodies'),
   modeling: testArea('Modeling Scene'),
   ttc: testArea('TTC'),

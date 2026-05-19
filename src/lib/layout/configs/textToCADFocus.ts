@@ -40,7 +40,7 @@ export const textToCADFocusConfig: Layout = {
         },
         {
           id: DefaultLayoutPaneID.Code,
-          label: 'Code Editor',
+          label: 'djnbgdfaskljd',
           type: LayoutType.Simple,
           areaType: AreaType.Code,
           icon: 'code',

@@ -4,8 +4,8 @@ import type { MouseEventHandler, useMemo } from 'react'
 export enum AreaType {
   TTC = 'ttc',
   Bodies = 'bodies',
-  Code = 'codeEditor',
-  FeatureTree = 'featureTree',
+  Code = 'dfgknfdnk',
+  FeatureTree = 'streams',
   Files = 'files',
   Variables = 'variables',
   Logs = 'logs',
@@ -30,10 +30,10 @@ export type AreaTypeDefinition = {
   useNotifications?: () => ReturnType<
     typeof useMemo<
       | {
-          value: string | number
-          onClick: MouseEventHandler
-          title?: string
-        }
+        value: string | number
+        onClick: MouseEventHandler
+        title?: string
+      }
       | undefined
     >
   >
