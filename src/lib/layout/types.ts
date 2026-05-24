@@ -4,7 +4,7 @@ import type { MouseEventHandler, useMemo } from 'react'
 export enum AreaType {
   TTC = 'ttc',
   Bodies = 'bodies',
-  Code = 'dfgknfdnk',
+  Code = 'equipments',
   FeatureTree = 'streams',
   Files = 'files',
   Variables = 'variables',

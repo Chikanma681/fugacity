@@ -78,7 +78,7 @@ export const useDefaultAreaLibrary = () => {
           },
           Component: MlEphantConversationPaneWrapper,
         },
-        codeEditor: {
+        equipments: {
           hide: () => false,
           shortcut: 'Shift + C',
           Component: KclEditorPane,
@@ -152,7 +152,7 @@ export const testAreaLibrary = Object.freeze({
   bodies: testArea('bodies'),
   modeling: testArea('Modeling Scene'),
   ttc: testArea('TTC'),
-  codeEditor: testArea('Code Editor'),
+  equipments: testArea('Equipments'),
   files: testArea('File Explorer'),
   logs: testArea('Logs'),
   variables: testArea('Variables'),
