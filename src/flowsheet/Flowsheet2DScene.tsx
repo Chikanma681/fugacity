@@ -1,6 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { FlowEdge, FlowNode, Viewport } from '@src/flowsheet/types'
+import { createFlowObject, createSeedFlowObject } from '@src/flowsheet/factory'
+import { FlowNodeGraphic } from '@src/flowsheet/renderers'
+import {
+  FLOWSHEET_ADD_STREAM_EVENT,
+  STREAM_DRAG_TYPE,
+  type StreamKind,
+  streamPalette,
+} from '@src/flowsheet/streamPalette'
+import type {
+  FlowConnectorId,
+  FlowEdge,
+  FlowNode,
+  Viewport,
+} from '@src/flowsheet/types'
 
 type DragState =
   | { type: 'none' }
@@ -17,50 +30,86 @@ type DragState =
 const initialViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
 const seedNodes: FlowNode[] = [
-  {
+  createSeedFlowObject({
     id: 'feed',
-    label: 'Feed',
+    unitType: 'MaterialStream',
+    tag: '1',
     x: 120,
-    y: 140,
-    width: 140,
-    height: 70,
-  },
-  {
+    y: 152,
+  }),
+  createSeedFlowObject({
     id: 'pump',
-    label: 'Pump',
-    x: 380,
-    y: 140,
-    width: 160,
-    height: 80,
-  },
-  {
-    id: 'reactor',
-    label: 'Reactor',
-    x: 660,
-    y: 130,
-    width: 190,
-    height: 90,
-  },
-  {
+    unitType: 'Pump',
+    tag: 'PUMP-1',
+    x: 340,
+    y: 136,
+  }),
+  createSeedFlowObject({
+    id: 'exchanger',
+    unitType: 'HeatExchanger',
+    tag: 'HX-1',
+    x: 610,
+    y: 128,
+  }),
+  createSeedFlowObject({
     id: 'product',
-    label: 'Product',
-    x: 960,
-    y: 140,
-    width: 160,
-    height: 70,
-  },
+    unitType: 'MaterialStream',
+    tag: '2',
+    x: 900,
+    y: 152,
+  }),
 ]
 
 const seedEdges: FlowEdge[] = [
-  { id: 'e1', from: 'feed', to: 'pump' },
-  { id: 'e2', from: 'pump', to: 'reactor' },
-  { id: 'e3', from: 'reactor', to: 'product' },
+  {
+    id: 'e1',
+    from: 'feed',
+    to: 'pump',
+    fromConnector: 'outlet',
+    toConnector: 'inlet',
+  },
+  {
+    id: 'e2',
+    from: 'pump',
+    to: 'exchanger',
+    fromConnector: 'outlet',
+    toConnector: 'inlet1',
+  },
+  {
+    id: 'e3',
+    from: 'exchanger',
+    to: 'product',
+    fromConnector: 'outlet1',
+    toConnector: 'inlet',
+  },
 ]
+
+function getPortPosition(
+  node: FlowNode,
+  connectorId: FlowConnectorId | undefined,
+  side: 'from' | 'to'
+) {
+  if (connectorId) {
+    const connector = node.connectors.find((item) => item.id === connectorId)
+    if (connector) {
+      return {
+        x: node.x + connector.x * node.width,
+        y: node.y + connector.y * node.height,
+      }
+    }
+  }
+
+  return {
+    x: node.x + (side === 'from' ? node.width : 0),
+    y: node.y + node.height / 2,
+  }
+}
 
 export function Flowsheet2DScene() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [viewport, setViewport] = useState<Viewport>(initialViewport)
+  const viewportRef = useRef<Viewport>(initialViewport)
   const [nodes, setNodes] = useState<FlowNode[]>(seedNodes)
   const [edges] = useState<FlowEdge[]>(seedEdges)
   const [drag, setDrag] = useState<DragState>({ type: 'none' })
@@ -75,7 +124,9 @@ export function Flowsheet2DScene() {
 
   useEffect(() => {
     const container = containerRef.current
-    if (!container) return
+    if (!container) {
+      return
+    }
     const observer = new ResizeObserver(() => {
       if (svgRef.current) {
         svgRef.current.setAttribute('width', String(container.clientWidth))
@@ -85,6 +136,66 @@ export function Flowsheet2DScene() {
     observer.observe(container)
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    viewportRef.current = viewport
+  }, [viewport])
+
+  const createNode = useCallback((kind: StreamKind, x: number, y: number) => {
+    setNodes((prev) => [
+      ...prev,
+      createFlowObject({ unitType: kind, x, y, nodes: prev }),
+    ])
+  }, [])
+
+  const screenToWorld = useCallback((clientX: number, clientY: number) => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) {
+      return { x: 0, y: 0 }
+    }
+    const localX = clientX - rect.left
+    const localY = clientY - rect.top
+    const currentViewport = viewportRef.current
+    return {
+      x: (localX - currentViewport.x) / currentViewport.scale,
+      y: (localY - currentViewport.y) / currentViewport.scale,
+    }
+  }, [])
+
+  const placeNodeCentered = useCallback(
+    (kind: StreamKind) => {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) {
+        return
+      }
+      const center = screenToWorld(
+        rect.left + rect.width / 2,
+        rect.top + rect.height / 2
+      )
+      const paletteItem = streamPalette.find((item) => item.kind === kind)
+      if (!paletteItem) {
+        return
+      }
+      createNode(
+        kind,
+        center.x - paletteItem.width / 2,
+        center.y - paletteItem.height / 2
+      )
+    },
+    [createNode, screenToWorld]
+  )
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ kind: StreamKind }>).detail
+      if (!detail) {
+        return
+      }
+      placeNodeCentered(detail.kind)
+    }
+    window.addEventListener(FLOWSHEET_ADD_STREAM_EVENT, handler)
+    return () => window.removeEventListener(FLOWSHEET_ADD_STREAM_EVENT, handler)
+  }, [placeNodeCentered])
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -131,8 +242,12 @@ export function Flowsheet2DScene() {
   }
 
   const startPan = (event: React.PointerEvent) => {
-    if (event.button !== 0) return
-    if ((event.target as Element).closest('[data-node-id]')) return
+    if (event.button !== 0) {
+      return
+    }
+    if ((event.target as Element).closest('[data-node-id]')) {
+      return
+    }
     setDrag({
       type: 'pan',
       originX: event.clientX,
@@ -167,8 +282,45 @@ export function Flowsheet2DScene() {
       style={backgroundStyle}
       onPointerDown={startPan}
       onWheel={handleWheel}
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
+          event.preventDefault()
+          event.dataTransfer.dropEffect = 'copy'
+        }
+      }}
+      onDrop={(event) => {
+        if (!event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
+          return
+        }
+        event.preventDefault()
+        const payload = event.dataTransfer.getData(STREAM_DRAG_TYPE)
+        if (!payload) {
+          return
+        }
+        const parsed = JSON.parse(payload) as { kind?: StreamKind }
+        if (!parsed.kind) {
+          return
+        }
+        const paletteItem = streamPalette.find(
+          (item) => item.kind === parsed.kind
+        )
+        if (!paletteItem) {
+          return
+        }
+        const worldPoint = screenToWorld(event.clientX, event.clientY)
+        createNode(
+          parsed.kind,
+          worldPoint.x - paletteItem.width / 2,
+          worldPoint.y - paletteItem.height / 2
+        )
+      }}
     >
-      <svg ref={svgRef} className="absolute inset-0 h-full w-full">
+      <svg
+        ref={svgRef}
+        className="absolute inset-0 h-full w-full"
+        role="img"
+        aria-label="2D flowsheet canvas"
+      >
         <defs>
           <linearGradient id="pipeGlow" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#61B8FF" stopOpacity="0.35" />
@@ -188,11 +340,15 @@ export function Flowsheet2DScene() {
           {edges.map((edge) => {
             const from = nodeMap.get(edge.from)
             const to = nodeMap.get(edge.to)
-            if (!from || !to) return null
-            const startX = from.x + from.width
-            const startY = from.y + from.height / 2
-            const endX = to.x
-            const endY = to.y + to.height / 2
+            if (!from || !to) {
+              return null
+            }
+            const start = getPortPosition(from, edge.fromConnector, 'from')
+            const end = getPortPosition(to, edge.toConnector, 'to')
+            const startX = start.x
+            const startY = start.y
+            const endX = end.x
+            const endY = end.y
             const midX = (startX + endX) / 2
             const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`
             return (
@@ -205,12 +361,7 @@ export function Flowsheet2DScene() {
                   filter="url(#softGlow)"
                   opacity={0.6}
                 />
-                <path
-                  d={path}
-                  stroke="#1F3D4D"
-                  strokeWidth={2}
-                  fill="none"
-                />
+                <path d={path} stroke="#1F3D4D" strokeWidth={2} fill="none" />
               </g>
             )
           })}
@@ -221,39 +372,7 @@ export function Flowsheet2DScene() {
               transform={`translate(${node.x} ${node.y})`}
               onPointerDown={(event) => startNodeDrag(event, node)}
             >
-              <rect
-                x={0}
-                y={0}
-                rx={18}
-                ry={18}
-                width={node.width}
-                height={node.height}
-                fill="#F3E9D9"
-                stroke="#1F3D4D"
-                strokeWidth={2}
-              />
-              <rect
-                x={10}
-                y={10}
-                rx={12}
-                ry={12}
-                width={node.width - 20}
-                height={node.height - 20}
-                fill="#FAF5EA"
-                stroke="#2D5166"
-                strokeWidth={1}
-                opacity={0.9}
-              />
-              <text
-                x={node.width / 2}
-                y={node.height / 2 + 5}
-                textAnchor="middle"
-                fontFamily="'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace"
-                fontSize={14}
-                fill="#1F3D4D"
-              >
-                {node.label}
-              </text>
+              <FlowNodeGraphic node={node} />
             </g>
           ))}
         </g>

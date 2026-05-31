@@ -84,9 +84,9 @@ function BodyItem({
 
   const isSelected =
     kclManager.editorState.selection.main.from >=
-      toUtf16(sourceRange[0], kclManager.code) &&
+    toUtf16(sourceRange[0], kclManager.code) &&
     kclManager.editorState.selection.main.to <=
-      toUtf16(sourceRange[1], kclManager.code)
+    toUtf16(sourceRange[1], kclManager.code)
   const onSelect = () =>
     sendSelectionEvent(
       {

@@ -10,7 +10,7 @@ import { DefaultLayoutPaneID } from '@src/lib/layout/configs/default'
 import { ProjectExplorerPane } from '@src/components/layout/areas/ProjectExplorerPane'
 import { KclEditorPane } from '@src/components/layout/areas/KclEditorPane'
 import { MlEphantConversationPaneWrapper } from '@src/components/layout/areas/MlEphantConversationPaneWrapper'
-import { FeatureTreePane } from '@src/components/layout/areas/FeatureTreePane'
+import { StreamsPane } from '@src/components/layout/areas/StreamsPane'
 import { MemoryPane } from '@src/components/layout/areas/MemoryPane'
 import { LogsPane } from '@src/components/layout/areas/LoggingPanes'
 import { DebugPane } from '@src/components/layout/areas/DebugPane'
@@ -59,7 +59,7 @@ export const useDefaultAreaLibrary = () => {
         streams: {
           hide: () => false,
           shortcut: 'Shift + T',
-          Component: FeatureTreePane,
+          Component: StreamsPane,
         },
         bodies: {
           hide: () => false,
