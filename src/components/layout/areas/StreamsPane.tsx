@@ -21,6 +21,9 @@ export function StreamsPane(props: AreaTypeComponentProps) {
         title={props.layout.label}
       />
       <section className="overflow-auto mr-1 pb-8">
+        <div className='p-2 border b-4 focus-within:b-default flex flex-col gap-2 relative'>
+          <input className="bg-transparent outline-none w-full text-sm overflow-auto" />
+        </div>
         <ul>
           {streamPalette.map((item) => (
             <li key={item.kind} className="px-1 py-0.5">
@@ -52,9 +55,10 @@ export function StreamsPane(props: AreaTypeComponentProps) {
                 </span>
               </RowItemWithIconMenuAndToggle>
             </li>
-          ))}
-        </ul>
-      </section>
-    </LayoutPanel>
+          ))
+          }
+        </ul >
+      </section >
+    </LayoutPanel >
   )
 }
