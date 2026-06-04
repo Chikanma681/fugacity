@@ -3,21 +3,27 @@ export type UnitType =
   | 'EnergyStream'
   | 'Valve'
   | 'Compressor'
+  | 'Expander'
   | 'Pump'
+  | 'Mixer'
+  | 'Splitter'
+  | 'Cooler'
   | 'HeatExchanger'
+  | 'Heater'
+  | 'SeparatorVessel'
+  | 'AbsorptionColumn'
+  | 'DistillationColumn'
+  | 'CSTR'
+  | 'ConversionReactor'
+  | 'EquilibriumReactor'
+  | 'GibbsReactor'
+  | 'PFR'
 
 export type ConnectorType = 'in' | 'out' | 'energy'
 
 export type ConnectorDirection = 'up' | 'down' | 'left' | 'right'
 
-export type FlowConnectorId =
-  | 'inlet'
-  | 'outlet'
-  | 'energyIn'
-  | 'inlet1'
-  | 'inlet2'
-  | 'outlet1'
-  | 'outlet2'
+export type FlowConnectorId = string
 
 export type FlowConnector = {
   id: FlowConnectorId
