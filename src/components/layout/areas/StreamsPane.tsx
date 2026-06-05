@@ -3,7 +3,6 @@ import { LayoutPanel, LayoutPanelHeader } from '@src/components/layout/Panel'
 import { RowItemWithIconMenuAndToggle } from '@src/components/RowItemWithIconMenuAndToggle'
 import { CustomIcon } from '@src/components/CustomIcon'
 import {
-  FLOWSHEET_ADD_STREAM_EVENT,
   STREAM_DRAG_TYPE,
   streamPalette,
 } from '@src/flowsheet/streamPalette'
@@ -38,7 +37,6 @@ export function StreamsPane(props: AreaTypeComponentProps) {
           {filteredPalette.map((item) => (
             <li key={item.kind} className="px-1 py-0.5">
               <RowItemWithIconMenuAndToggle
-
                 draggable
                 onDragStart={(event) => {
                   event.dataTransfer.setData(
