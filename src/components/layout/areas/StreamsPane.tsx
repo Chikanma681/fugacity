@@ -38,13 +38,7 @@ export function StreamsPane(props: AreaTypeComponentProps) {
           {filteredPalette.map((item) => (
             <li key={item.kind} className="px-1 py-0.5">
               <RowItemWithIconMenuAndToggle
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent(FLOWSHEET_ADD_STREAM_EVENT, {
-                      detail: { kind: item.kind },
-                    })
-                  )
-                }}
+
                 draggable
                 onDragStart={(event) => {
                   event.dataTransfer.setData(
