@@ -29,7 +29,7 @@ jobs:
           app-id: ${{ secrets.MODELING_APP_GH_APP_ID }}
           private-key: ${{ secrets.MODELING_APP_GH_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
       - name: Track setup
@@ -170,7 +170,7 @@ jobs:
           app-id: ${{ secrets.MODELING_APP_GH_APP_ID }}
           private-key: ${{ secrets.MODELING_APP_GH_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
       - name: Use correct Rust toolchain
@@ -242,7 +242,7 @@ jobs:
           app-id: ${{ secrets.MODELING_APP_GH_APP_ID }}
           private-key: ${{ secrets.MODELING_APP_GH_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           token: ${{ steps.app-token.outputs.token }}
       - name: Use correct Rust toolchain
@@ -313,7 +313,7 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - name: Use correct Rust toolchain
         shell: bash
         run: |
@@ -323,7 +323,7 @@ jobs:
         with:
           cache: false # Configured below.
           rustflags: '' # Use .cargo/config.toml
-      - uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
+      - uses: taiki-e/install-action@50b4a718b59c718df4ef27a3b445f86cd57b9f00
         with:
           tool: wasm-pack
       - name: Rust Cache

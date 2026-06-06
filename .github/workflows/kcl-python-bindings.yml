@@ -33,7 +33,7 @@ jobs:
     name: kcl-python-bindings (linux-x86_64)
     runs-on: namespace-profile-ubuntu-2-cores
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -61,7 +61,7 @@ jobs:
           - x64
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -93,7 +93,7 @@ jobs:
           - aarch64
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - uses: actions/setup-python@v6
         with:
           python-version: 3.x
@@ -113,7 +113,7 @@ jobs:
     name: kcl-python-bindings (test)
     runs-on: namespace-profile-ubuntu-2-cores
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - name: Track setup
         run: .github/ci-cd-scripts/track-step.sh
         env:
@@ -156,7 +156,7 @@ jobs:
     name: kcl-python-bindings (sdist)
     runs-on: namespace-profile-ubuntu-2-cores
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v7
       - name: Create venv
@@ -184,7 +184,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [linux-x86_64, windows, macos, sdist]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - uses: actions/download-artifact@v8
         with:
           path: rust/kcl-python-bindings
