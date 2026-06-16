@@ -1,7 +1,8 @@
 import type { FlowConnector, FlowNode } from '@src/flowsheet/types'
 
 const lineColor = '#1F3D4D'
-const fillColor = '#1F3D4D33'
+const fillColor = '#D0D7DA'
+const energyFillColor = '#FEF0DC'
 const energyColor = '#FFD761'
 const inletColor = '#61B8FF'
 const outletColor = '#FFB761'
@@ -21,7 +22,7 @@ function UnitLabel({ node }: { node: FlowNode }) {
       textAnchor="middle"
       fontFamily="'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace"
       fontSize={12}
-      fill={lineColor}
+      className="fill-[#1F3D4D] dark:fill-white"
     >
       {node.tag}
     </text>
@@ -64,7 +65,7 @@ function StreamGraphic({ node, energy }: { node: FlowNode; energy?: boolean }) {
     <>
       <path
         d={path}
-        fill={energy ? '#FFD76155' : fillColor}
+        fill={energy ? energyFillColor : fillColor}
         stroke={lineColor}
         strokeWidth={2}
         strokeLinejoin="round"

@@ -3,7 +3,6 @@ import { unitRegistry } from '@src/flowsheet/registry'
 import type { UnitType } from '@src/flowsheet/types'
 
 export const STREAM_DRAG_TYPE = 'application/x-zoo-stream'
-export const FLOWSHEET_ADD_STREAM_EVENT = 'flowsheet:add-stream'
 
 export type StreamKind = UnitType
 

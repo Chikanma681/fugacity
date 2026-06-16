@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createFlowObject, createSeedFlowObject } from '@src/flowsheet/factory'
 import { FlowNodeGraphic } from '@src/flowsheet/renderers'
 import {
-  FLOWSHEET_ADD_STREAM_EVENT,
   STREAM_DRAG_TYPE,
   type StreamKind,
   streamPalette,
@@ -19,13 +18,13 @@ type DragState =
   | { type: 'none' }
   | { type: 'pan'; originX: number; originY: number; start: Viewport }
   | {
-      type: 'node'
-      nodeId: string
-      originX: number
-      originY: number
-      startX: number
-      startY: number
-    }
+    type: 'node'
+    nodeId: string
+    originX: number
+    originY: number
+    startX: number
+    startY: number
+  }
 
 const initialViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
@@ -161,41 +160,6 @@ export function Flowsheet2DScene() {
       y: (localY - currentViewport.y) / currentViewport.scale,
     }
   }, [])
-
-  const placeNodeCentered = useCallback(
-    (kind: StreamKind) => {
-      const rect = containerRef.current?.getBoundingClientRect()
-      if (!rect) {
-        return
-      }
-      const center = screenToWorld(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2
-      )
-      const paletteItem = streamPalette.find((item) => item.kind === kind)
-      if (!paletteItem) {
-        return
-      }
-      createNode(
-        kind,
-        center.x - paletteItem.width / 2,
-        center.y - paletteItem.height / 2
-      )
-    },
-    [createNode, screenToWorld]
-  )
-
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ kind: StreamKind }>).detail
-      if (!detail) {
-        return
-      }
-      placeNodeCentered(detail.kind)
-    }
-    window.addEventListener(FLOWSHEET_ADD_STREAM_EVENT, handler)
-    return () => window.removeEventListener(FLOWSHEET_ADD_STREAM_EVENT, handler)
-  }, [placeNodeCentered])
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -377,14 +341,6 @@ export function Flowsheet2DScene() {
           ))}
         </g>
       </svg>
-      <div className="absolute left-6 bottom-6 rounded-xl border border-chalkboard-30 bg-chalkboard-10/90 dark:bg-chalkboard-90/80 px-4 py-3 shadow-lg">
-        <p className="text-xs uppercase tracking-[0.2em] text-chalkboard-50">
-          Flowsheet 2D
-        </p>
-        <p className="text-sm text-chalkboard-80 dark:text-chalkboard-20">
-          Drag units or pan. Scroll to zoom.
-        </p>
-      </div>
     </div>
   )
 }
