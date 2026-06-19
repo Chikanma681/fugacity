@@ -20,7 +20,6 @@ import { IS_STAGING_OR_DEBUG } from '@src/routes/utils'
 export type ToolbarModeName = 'modeling' | 'sketching' | 'sketchSolve'
 
 type ToolbarMode = {
-  check: (state: StateFrom<typeof modelingMachine>) => boolean
   items: (ToolbarItem | ToolbarDropdown | 'break')[]
 }
 
@@ -52,15 +51,15 @@ export type ToolbarItem = {
   title: string | ((props: ToolbarItemCallbackProps) => string)
   showTitle?: boolean
   hotkey?:
-    | string
-    | ((state: StateFrom<typeof modelingMachine>) => string | string[])
+  | string
+  | ((state: StateFrom<typeof modelingMachine>) => string | string[])
   description: string
   extraNote?: string
   links: { label: string; url: string }[]
   isActive?: (state: StateFrom<typeof modelingMachine>) => boolean
   disabledReason?:
-    | string
-    | ((state: StateFrom<typeof modelingMachine>) => string | undefined)
+  | string
+  | ((state: StateFrom<typeof modelingMachine>) => string | undefined)
 }
 
 export type ToolbarItemResolved = Omit<
@@ -100,6 +99,75 @@ export const useToolbarConfig = () => {
             state.matches('sketchSolveMode')
           ),
         items: [
+          {
+            id: 'property-packages',
+            array: [
+              {
+                id: 'property-package-selector',
+                onClick: () => { },
+                icon: 'beaker',
+                status: 'unavailable',
+                title: 'Property Package',
+                showTitle: true,
+                description:
+                  'Choose the thermodynamic property package for the process simulation model.',
+                extraNote:
+                  'Thermodynamics commands are not implemented yet, so package selection is currently a placeholder for the simulator workflow.',
+                links: [],
+              },
+              {
+                id: 'property-package-peng-robinson',
+                onClick: () => { },
+                icon: 'beaker',
+                status: 'unavailable',
+                title: 'Peng-Robinson',
+                description:
+                  'Cubic equation of state commonly used for hydrocarbons and high-pressure vapor-liquid equilibrium.',
+                links: [],
+              },
+              {
+                id: 'property-package-srk',
+                onClick: () => { },
+                icon: 'beaker',
+                status: 'unavailable',
+                title: 'Soave-Redlich-Kwong',
+                description:
+                  'Cubic equation of state often used for gas processing and light hydrocarbon systems.',
+                links: [],
+              },
+              {
+                id: 'property-package-nrtl',
+                onClick: () => { },
+                icon: 'beaker',
+                status: 'unavailable',
+                title: 'NRTL',
+                description:
+                  'Activity-coefficient model suited to strongly non-ideal liquid mixtures.',
+                links: [],
+              },
+              {
+                id: 'property-package-unifac',
+                onClick: () => { },
+                icon: 'beaker',
+                status: 'unavailable',
+                title: 'UNIFAC',
+                description:
+                  'Group-contribution activity-coefficient model for estimating non-ideal liquid behavior.',
+                links: [],
+              },
+              {
+                id: 'property-package-ideal',
+                onClick: () => { },
+                icon: 'beaker',
+                status: 'unavailable',
+                title: 'Ideal',
+                description:
+                  'Ideal-mixture approximation for simple cases and baseline studies.',
+                links: [],
+              },
+            ],
+          },
+          'break',
           {
             id: 'sketch',
             onClick: ({
@@ -145,704 +213,6 @@ export const useToolbarConfig = () => {
                 url: withSiteBaseURL(
                   '/docs/kcl-std/functions/std-sketch-startSketchOn'
                 ),
-              },
-            ],
-          },
-          // This is temporary staging-only button to reduce friction on trying
-          // out the sketch solve mode. Once we reach basic engine parity, this
-          // can be made the primary button in staging.
-          ...((IS_STAGING_OR_DEBUG && !isPlaywright()
-            ? [
-                {
-                  id: 'sketch-solve',
-                  onClick: ({ modelingSend }) => {
-                    modelingSend({
-                      type: 'Enter sketch',
-                      data: {
-                        forceNewSketch: true,
-                        forceSketchSolveMode: true,
-                      },
-                    })
-                  },
-                  icon: 'sketch',
-                  iconColor: '#dc2626',
-                  status: 'experimental',
-                  title: 'Ѕtart Sketch', // Cyrillic 'S' prevents Playwright matching
-                  showTitle: false,
-                  description:
-                    'Staging Only: Start drawing a 2D sketch, using the new solver-based sketch mode.',
-                  links: [
-                    // TODO: Add link once merged: https://github.com/KittyCAD/modeling-app/pull/10212
-                  ],
-                },
-              ]
-            : []) as ToolbarItem[]),
-          'break',
-          {
-            id: 'extrude',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Extrude', groupId: 'modeling' },
-              }),
-            icon: 'extrude',
-            status: 'available',
-            title: 'Extrude',
-            hotkey: 'E',
-            description:
-              'Pull a sketch into 3D along its normal or perpendicular.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL(
-                  '/docs/kcl-std/functions/std-sketch-extrude'
-                ),
-              },
-            ],
-          },
-          {
-            id: 'sweep',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Sweep', groupId: 'modeling' },
-              }),
-            icon: 'sweep',
-            status: 'available',
-            title: 'Sweep',
-            hotkey: 'W',
-            description:
-              'Create a 3D body by moving a sketch region along an arbitrary path.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL(
-                  '/docs/kcl-std/functions/std-sketch-sweep'
-                ),
-              },
-            ],
-          },
-          {
-            id: 'loft',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Loft', groupId: 'modeling' },
-              }),
-            icon: 'loft',
-            status: 'available',
-            title: 'Loft',
-            hotkey: 'L',
-            description:
-              'Create a 3D body by blending between two or more sketches.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL('/docs/kcl-std/functions/std-sketch-loft'),
-              },
-            ],
-          },
-          {
-            id: 'revolve',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Revolve', groupId: 'modeling' },
-              }),
-            icon: 'revolve',
-            status: 'available',
-            title: 'Revolve',
-            hotkey: 'R',
-            description:
-              'Create a 3D body by rotating a sketch region about an axis.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL(
-                  '/docs/kcl-std/functions/std-sketch-revolve'
-                ),
-              },
-              {
-                label: 'KCL example',
-                url: withSiteBaseURL('/docs/kcl-samples/ball-bearing'),
-              },
-            ],
-          },
-          'break',
-          {
-            id: 'fillet3d',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Fillet', groupId: 'modeling' },
-              }),
-            icon: 'fillet3d',
-            status: 'available',
-            title: 'Fillet',
-            hotkey: 'F',
-            description: 'Round the edges of a 3D solid.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL(
-                  '/docs/kcl-std/functions/std-solid-fillet'
-                ),
-              },
-            ],
-          },
-          {
-            id: 'chamfer3d',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Chamfer', groupId: 'modeling' },
-              }),
-            icon: 'chamfer3d',
-            status: 'available',
-            title: 'Chamfer',
-            hotkey: 'C',
-            description: 'Bevel the edges of a 3D solid.',
-            extraNote:
-              'Chamfers cannot touch other chamfers yet. This is under development, see issue tracker.',
-            links: [
-              {
-                label: 'issue tracker',
-                url: 'https://github.com/KittyCAD/modeling-app/issues/6617',
-              },
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL(
-                  '/docs/kcl-std/functions/std-solid-chamfer'
-                ),
-              },
-            ],
-          },
-          {
-            id: 'shell',
-            onClick: () => {
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Shell', groupId: 'modeling' },
-              })
-            },
-            icon: 'shell',
-            status: 'available',
-            title: 'Shell',
-            description: 'Hollow out a 3D solid.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL('/docs/kcl-std/functions/std-solid-shell'),
-              },
-            ],
-          },
-          {
-            id: 'hole',
-            onClick: () => {
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Hole', groupId: 'modeling' },
-              })
-            },
-            icon: 'hole',
-            status: 'available',
-            title: 'Hole',
-            description:
-              'Standard holes that could be drilled or cut into a 3D solid.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL('/docs/kcl-std/modules/std-hole'),
-              },
-            ],
-          },
-          'break',
-          {
-            id: 'booleans',
-            array: [
-              {
-                id: 'boolean-union',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Boolean Union', groupId: 'modeling' },
-                  }),
-                icon: 'booleanUnion',
-                status: 'available',
-                title: 'Union',
-                description: 'Combine two or more solids into a single solid.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-union'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'boolean-subtract',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Boolean Subtract', groupId: 'modeling' },
-                  }),
-                icon: 'booleanSubtract',
-                status: 'available',
-                title: 'Subtract',
-                description: 'Subtract one solid from another.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-subtract'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'boolean-intersect',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Boolean Intersect', groupId: 'modeling' },
-                  }),
-                icon: 'booleanIntersect',
-                status: 'available',
-                title: 'Intersect',
-                description:
-                  'Create a solid from the intersection of two solids.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-intersect'
-                    ),
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            id: 'split',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Boolean Split', groupId: 'modeling' },
-              }),
-            icon: 'split',
-            status: 'available',
-            title: 'Split',
-            description: 'Split a solid or surface into multiple surfaces.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL('/docs/kcl-std/functions/std-solid-split'),
-              },
-            ],
-          },
-          {
-            id: 'surface',
-            array: [
-              {
-                id: 'blend-surface',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Blend', groupId: 'modeling' },
-                  }),
-                icon: 'blend',
-                status: 'experimental',
-                title: 'Blend',
-                description: 'Blend two selected surface edges.',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-blend'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'flip-surface',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Flip Surface', groupId: 'modeling' },
-                  }),
-                icon: 'flipSurface',
-                status: 'available',
-                title: 'Flip Surface',
-                description:
-                  'Flip the orientation of a surface, swapping which side is the front and which is the reverse.',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-flipSurface'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'join',
-                // TODO: enable with https://github.com/KittyCAD/modeling-app/issues/9080
-                onClick: () => {},
-                status: 'unavailable',
-                title: 'Join',
-                description: 'Join surfaces together',
-                links: [],
-              },
-              {
-                id: 'delete-face',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Delete Face', groupId: 'modeling' },
-                  }),
-                icon: 'deleteFace',
-                status: 'experimental',
-                title: 'Delete Face',
-                description:
-                  'Delete a face from a body (a solid, or a polysurface).',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-deleteFace'
-                    ),
-                  },
-                ],
-              },
-            ],
-          },
-          'break',
-          {
-            id: 'planes',
-            array: [
-              {
-                id: 'plane-offset',
-                onClick: () => {
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Offset plane', groupId: 'modeling' },
-                  })
-                },
-                hotkey: 'O',
-                icon: 'plane',
-                status: 'available',
-                title: 'Offset plane',
-                description: 'Create a plane parallel to an existing plane.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-offsetPlane'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'plane-points',
-                onClick: () =>
-                  console.error('Plane through points not yet implemented'),
-                status: 'unavailable',
-                title: '3-point plane',
-                description: 'Create a plane from three points.',
-                links: [],
-              },
-            ],
-          },
-          {
-            id: 'helix',
-            onClick: () => {
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Helix', groupId: 'modeling' },
-              })
-            },
-            hotkey: 'H',
-            icon: 'helix',
-            status: 'available',
-            title: 'Helix',
-            description: 'Create a helix or spiral in 3D about an axis.',
-            links: [
-              {
-                label: 'KCL docs',
-                url: withSiteBaseURL('/docs/kcl-std/functions/std-helix'),
-              },
-            ],
-          },
-          'break',
-          {
-            id: 'insert',
-            onClick: () =>
-              commands.send({
-                type: 'Find and select command',
-                data: { name: 'Insert', groupId: 'code' },
-              }),
-            hotkey: 'I',
-            icon: 'import',
-            status: 'available',
-            disabled: () => !isDesktop(),
-            title: 'Insert',
-            description: 'Insert from a file in the current project directory',
-            links: [
-              {
-                label: 'API docs',
-                url: withSiteBaseURL('/docs/kcl-lang/modules'),
-              },
-            ],
-          },
-          {
-            id: 'transform',
-            array: [
-              {
-                id: 'translate',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Translate', groupId: 'modeling' },
-                  }),
-                icon: 'move',
-                status: 'available',
-                title: 'Translate',
-                description: 'Apply a translation to a solid or sketch.',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-transform-translate'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'rotate',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Rotate', groupId: 'modeling' },
-                  }),
-                icon: 'rotate',
-                status: 'available',
-                title: 'Rotate',
-                description: 'Apply a rotation to a solid or sketch.',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-transform-rotate'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'scale',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Scale', groupId: 'modeling' },
-                  }),
-                icon: 'scale',
-                status: 'available',
-                title: 'Scale',
-                description: 'Apply scaling to a solid or sketch.',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: 'https://zoo.dev/docs/kcl-std/functions/std-transform-scale',
-                  },
-                ],
-              },
-              {
-                id: 'clone',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Clone', groupId: 'modeling' },
-                  }),
-                status: 'available',
-                title: 'Clone',
-                icon: 'clone',
-                description: 'Clone a solid or sketch.',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: withSiteBaseURL('/docs/kcl-std/functions/std-clone'),
-                  },
-                ],
-              },
-              {
-                id: 'appearance',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Appearance', groupId: 'modeling' },
-                  }),
-                status: 'available',
-                title: 'Appearance',
-                icon: 'text',
-                description:
-                  'Set the appearance of a solid. This only works on solids, not sketches or individual paths.',
-                links: [
-                  {
-                    label: 'API docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-appearance'
-                    ),
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            id: 'pattern',
-            array: [
-              {
-                id: 'pattern-circular-3d',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Pattern Circular 3D', groupId: 'modeling' },
-                  }),
-                status: 'available',
-                title: 'Circular Pattern',
-                icon: 'patternCircular3d',
-                description:
-                  'Create a circular pattern of 3D solids around an axis.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-patternCircular3d'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'pattern-linear-3d',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'Pattern Linear 3D', groupId: 'modeling' },
-                  }),
-                status: 'available',
-                title: 'Linear Pattern',
-                icon: 'patternLinear3d',
-                description:
-                  'Create a linear pattern of 3D solids along an axis.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-solid-patternLinear3d'
-                    ),
-                  },
-                ],
-              },
-            ],
-          },
-          'break',
-          {
-            id: 'gdt',
-            array: [
-              {
-                id: 'gdt-flatness',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'GDT Flatness', groupId: 'modeling' },
-                  }),
-                status: 'experimental',
-                title: 'Flatness',
-                icon: 'gdtFlatness',
-                description:
-                  'Specifies flatness tolerance - how much a surface can deviate from perfectly flat.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-gdt-flatness'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'gdt-datum',
-                onClick: () =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: { name: 'GDT Datum', groupId: 'modeling' },
-                  }),
-                status: 'experimental',
-                title: 'Datum',
-                icon: 'gdtDatum',
-                description:
-                  'Establishes a reference surface for other GD&T measurements.',
-                links: [
-                  {
-                    label: 'KCL docs',
-                    url: withSiteBaseURL(
-                      '/docs/kcl-std/functions/std-gdt-datum'
-                    ),
-                  },
-                ],
-              },
-              {
-                id: 'gdt-profile',
-                onClick: () => {},
-                status: 'unavailable',
-                title: 'Profile',
-                description:
-                  'Specifies how much a surface or edge can deviate from its ideal shape.',
-                links: [],
-              },
-              {
-                id: 'gdt-position',
-                onClick: () => {},
-                status: 'unavailable',
-                title: 'Position',
-                description:
-                  'Controls location tolerance of holes, pins, and other features.',
-                links: [],
-              },
-              {
-                id: 'gdt-perpendicularity',
-                onClick: () => {},
-                status: 'unavailable',
-                title: 'Perpendicularity',
-                description:
-                  'Specifies how perpendicular one feature must be to another.',
-                links: [],
-              },
-              {
-                id: 'gdt-parallelism',
-                onClick: () => {},
-                status: 'unavailable',
-                title: 'Parallelism',
-                description:
-                  'Specifies how parallel one feature must be to another.',
-                links: [],
-              },
-              {
-                id: 'gdt-dimension',
-                onClick: () => {},
-                status: 'unavailable',
-                title: 'Dimension',
-                description:
-                  'Adds size dimensions with manufacturing tolerances.',
-                links: [],
-              },
-              {
-                id: 'gdt-note',
-                onClick: () => {},
-                status: 'unavailable',
-                title: 'Note',
-                description:
-                  'Adds text notes for manufacturing instructions or inspection requirements.',
-                links: [],
               },
             ],
           },
@@ -1422,12 +792,12 @@ export const useToolbarConfig = () => {
             onClick: ({ modelingSend, isActive }) =>
               isActive
                 ? modelingSend({
-                    type: 'unequip tool',
-                  })
+                  type: 'unequip tool',
+                })
                 : modelingSend({
-                    type: 'equip tool',
-                    data: { tool: 'lineTool' },
-                  }),
+                  type: 'equip tool',
+                  data: { tool: 'lineTool' },
+                }),
             icon: 'line',
             status: 'available',
             title: 'Line',
@@ -1443,12 +813,12 @@ export const useToolbarConfig = () => {
             onClick: ({ modelingSend, isActive }) =>
               isActive
                 ? modelingSend({
-                    type: 'unequip tool',
-                  })
+                  type: 'unequip tool',
+                })
                 : modelingSend({
-                    type: 'equip tool',
-                    data: { tool: 'pointTool' },
-                  }),
+                  type: 'equip tool',
+                  data: { tool: 'pointTool' },
+                }),
             icon: 'oneDot',
             status: 'available',
             title: 'Point',
@@ -1467,12 +837,12 @@ export const useToolbarConfig = () => {
                 onClick: ({ modelingSend, isActive }) =>
                   isActive
                     ? modelingSend({
-                        type: 'unequip tool',
-                      })
+                      type: 'unequip tool',
+                    })
                     : modelingSend({
-                        type: 'equip tool',
-                        data: { tool: 'centerArcTool' },
-                      }),
+                      type: 'equip tool',
+                      data: { tool: 'centerArcTool' },
+                    }),
                 icon: 'arcCenter',
                 status: 'available',
                 title: 'Center Arc',
@@ -1488,12 +858,12 @@ export const useToolbarConfig = () => {
                 onClick: ({ modelingSend, isActive }) =>
                   isActive
                     ? modelingSend({
-                        type: 'unequip tool',
-                      })
+                      type: 'unequip tool',
+                    })
                     : modelingSend({
-                        type: 'equip tool',
-                        data: { tool: 'threePointArcTool' },
-                      }),
+                      type: 'equip tool',
+                      data: { tool: 'threePointArcTool' },
+                    }),
                 icon: 'arc',
                 status: 'available',
                 title: '3-Point Arc',
@@ -1508,12 +878,12 @@ export const useToolbarConfig = () => {
                 onClick: ({ modelingSend, isActive }) =>
                   isActive
                     ? modelingSend({
-                        type: 'unequip tool',
-                      })
+                      type: 'unequip tool',
+                    })
                     : modelingSend({
-                        type: 'equip tool',
-                        data: { tool: 'tangentialArcTool' },
-                      }),
+                      type: 'equip tool',
+                      data: { tool: 'tangentialArcTool' },
+                    }),
                 icon: 'tangent',
                 status: 'available',
                 title: 'Tangential Arc',
@@ -1532,9 +902,9 @@ export const useToolbarConfig = () => {
               isActive
                 ? modelingSend({ type: 'unequip tool' })
                 : modelingSend({
-                    type: 'equip tool',
-                    data: { tool: 'trimTool' },
-                  }),
+                  type: 'equip tool',
+                  data: { tool: 'trimTool' },
+                }),
             icon: 'trimTool',
             status: 'experimental',
             title: 'Trim',
@@ -1554,12 +924,12 @@ export const useToolbarConfig = () => {
                 onClick: ({ modelingSend, isActive }) =>
                   isActive
                     ? modelingSend({
-                        type: 'unequip tool',
-                      })
+                      type: 'unequip tool',
+                    })
                     : modelingSend({
-                        type: 'equip tool',
-                        data: { tool: 'cornerRectTool' },
-                      }),
+                      type: 'equip tool',
+                      data: { tool: 'cornerRectTool' },
+                    }),
                 icon: 'rectangle',
                 status: 'available',
                 title: 'Corner Rectangle',
@@ -1575,12 +945,12 @@ export const useToolbarConfig = () => {
                 onClick: ({ modelingSend, isActive }) =>
                   isActive
                     ? modelingSend({
-                        type: 'unequip tool',
-                      })
+                      type: 'unequip tool',
+                    })
                     : modelingSend({
-                        type: 'equip tool',
-                        data: { tool: 'centerRectTool' },
-                      }),
+                      type: 'equip tool',
+                      data: { tool: 'centerRectTool' },
+                    }),
                 icon: 'rectangleCenter',
                 status: 'available',
                 title: 'Center Rectangle',
@@ -1596,12 +966,12 @@ export const useToolbarConfig = () => {
                 onClick: ({ modelingSend, isActive }) =>
                   isActive
                     ? modelingSend({
-                        type: 'unequip tool',
-                      })
+                      type: 'unequip tool',
+                    })
                     : modelingSend({
-                        type: 'equip tool',
-                        data: { tool: 'angledRectTool' },
-                      }),
+                      type: 'equip tool',
+                      data: { tool: 'angledRectTool' },
+                    }),
                 icon: 'rectangleAngled',
                 status: 'available',
                 title: 'Angled Rectangle',
