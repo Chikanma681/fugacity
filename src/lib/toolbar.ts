@@ -102,25 +102,26 @@ export const useToolbarConfig = () => {
           {
             id: 'property-packages',
             array: [
-              {
-                id: 'property-package-selector',
-                onClick: () => { },
-                icon: 'beaker',
-                status: 'unavailable',
-                title: 'Property Package',
-                showTitle: true,
-                description:
-                  'Choose the thermodynamic property package for the process simulation model.',
-                extraNote:
-                  'Thermodynamics commands are not implemented yet, so package selection is currently a placeholder for the simulator workflow.',
-                links: [],
-              },
+              // {
+              //   id: 'property-package-selector',
+              //   onClick: () => { },
+              //   icon: 'beaker',
+              //   status: 'unavailable',
+              //   title: 'Property Package',
+              //   showTitle: true,
+              //   description:
+              //     'Choose the thermodynamic property package for the process simulation model.',
+              //   extraNote:
+              //     'Thermodynamics commands are not implemented yet, so package selection is currently a placeholder for the simulator workflow.',
+              //   links: [],
+              // },
               {
                 id: 'property-package-peng-robinson',
                 onClick: () => { },
                 icon: 'beaker',
                 status: 'unavailable',
                 title: 'Peng-Robinson',
+                showTitle: true,
                 description:
                   'Cubic equation of state commonly used for hydrocarbons and high-pressure vapor-liquid equilibrium.',
                 links: [],
@@ -131,6 +132,7 @@ export const useToolbarConfig = () => {
                 icon: 'beaker',
                 status: 'unavailable',
                 title: 'Soave-Redlich-Kwong',
+                showTitle: true,
                 description:
                   'Cubic equation of state often used for gas processing and light hydrocarbon systems.',
                 links: [],
@@ -141,6 +143,7 @@ export const useToolbarConfig = () => {
                 icon: 'beaker',
                 status: 'unavailable',
                 title: 'NRTL',
+                showTitle: true,
                 description:
                   'Activity-coefficient model suited to strongly non-ideal liquid mixtures.',
                 links: [],
@@ -151,6 +154,7 @@ export const useToolbarConfig = () => {
                 icon: 'beaker',
                 status: 'unavailable',
                 title: 'UNIFAC',
+                showTitle: true,
                 description:
                   'Group-contribution activity-coefficient model for estimating non-ideal liquid behavior.',
                 links: [],
@@ -161,6 +165,7 @@ export const useToolbarConfig = () => {
                 icon: 'beaker',
                 status: 'unavailable',
                 title: 'Ideal',
+                showTitle: true,
                 description:
                   'Ideal-mixture approximation for simple cases and baseline studies.',
                 links: [],
