@@ -85,19 +85,30 @@ export const isToolbarItemResolvedDropdown = (
   return (item as ToolbarItemResolvedDropdown).array !== undefined
 }
 
+export const getToolbarMode = (
+  state: StateFrom<typeof modelingMachine>
+): ToolbarModeName => {
+  if (state.matches('sketchSolveMode')) {
+    return 'sketchSolve'
+  }
+
+  if (
+    state.matches('Sketch') ||
+    state.matches('Sketch no face') ||
+    state.matches('animating to existing sketch') ||
+    state.matches('animating to plane')
+  ) {
+    return 'sketching'
+  }
+
+  return 'modeling'
+}
+
 export const useToolbarConfig = () => {
   const { commands } = useApp()
   return useMemo<Record<ToolbarModeName, ToolbarMode>>(
     () => ({
       modeling: {
-        check: (state) =>
-          !(
-            state.matches('Sketch') ||
-            state.matches('Sketch no face') ||
-            state.matches('animating to existing sketch') ||
-            state.matches('animating to plane') ||
-            state.matches('sketchSolveMode')
-          ),
         items: [
           {
             id: 'property-packages',
@@ -224,11 +235,6 @@ export const useToolbarConfig = () => {
         ],
       },
       sketching: {
-        check: (state) =>
-          state.matches('Sketch') ||
-          state.matches('Sketch no face') ||
-          state.matches('animating to existing sketch') ||
-          state.matches('animating to plane'),
         items: [
           {
             id: 'sketch-exit',
@@ -776,7 +782,6 @@ export const useToolbarConfig = () => {
         ],
       },
       sketchSolve: {
-        check: (state) => state.matches('sketchSolveMode'),
         items: [
           {
             id: 'sketch-exit',

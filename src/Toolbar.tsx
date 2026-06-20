@@ -23,6 +23,7 @@ import type {
   ToolbarModeName,
 } from '@src/lib/toolbar'
 import {
+  getToolbarMode,
   isToolbarItemResolvedDropdown,
   useToolbarConfig,
 } from '@src/lib/toolbar'
@@ -85,10 +86,7 @@ const Toolbar_ = memo(
       !props.isStreamReady ||
       !props.isStreamAcceptingInput
 
-    const currentMode =
-      (Object.entries(toolbarConfig).find(([_, mode]) =>
-        mode.check(props.state)
-      )?.[0] as ToolbarModeName) || 'modeling'
+    const currentMode: ToolbarModeName = getToolbarMode(props.state)
 
     /** These are the props that will be passed to the callbacks in the toolbar config
      * They are memoized to prevent unnecessary re-renders,
