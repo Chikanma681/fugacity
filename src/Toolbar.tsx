@@ -1,5 +1,6 @@
-import { memo, use, useCallback, useMemo, useRef, useState } from 'react'
+import { memo, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
+import { useMachine } from '@xstate/react'
 
 import { useAppState } from '@src/AppState'
 import { ActionButton } from '@src/components/ActionButton'
@@ -33,6 +34,51 @@ import { COMPOUNDS_STORAGE_KEY, DEFAULT_COMPOUNDS } from '@src/lib/compounds'
 import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
 import { useSignals } from '@preact/signals-react/runtime'
 import { useApp, useSingletons } from '@src/lib/boot'
+import {
+  DEFAULT_PROPERTY_PACKAGE_ID,
+  simulationMachine,
+  type SimulationPropertyPackageId,
+} from '@src/machines/simulationMachine'
+
+const PROPERTY_PACKAGE_STORAGE_KEY = 'fugacity-selected-property-package'
+
+function getStoredCompoundIds(): string[] {
+  if (typeof window === 'undefined') {
+    return []
+  }
+
+  const rawValue = window.localStorage.getItem(COMPOUNDS_STORAGE_KEY)
+  if (!rawValue) {
+    return []
+  }
+
+  try {
+    const parsedValue = JSON.parse(rawValue)
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter((value): value is string => typeof value === 'string')
+      : []
+  } catch {
+    return []
+  }
+}
+
+function getStoredPropertyPackageId(): SimulationPropertyPackageId {
+  if (typeof window === 'undefined') {
+    return DEFAULT_PROPERTY_PACKAGE_ID
+  }
+
+  const rawValue = window.localStorage.getItem(PROPERTY_PACKAGE_STORAGE_KEY)
+  switch (rawValue) {
+    case 'peng-robinson':
+    case 'srk':
+    case 'nrtl':
+    case 'unifac':
+    case 'ideal':
+      return rawValue
+    default:
+      return DEFAULT_PROPERTY_PACKAGE_ID
+  }
+}
 
 type ToolbarProps = { isExecuting: boolean } & Omit<
   ReturnType<typeof useModelingContext>,
@@ -77,29 +123,31 @@ const Toolbar_ = memo(
 
     const toolbarButtonsRef = useRef<HTMLUListElement>(null)
     const [showRichContent, setShowRichContent] = useState(false)
-    const [isCompoundsDialogOpen, setIsCompoundsDialogOpen] = useState(false)
-    const [selectedCompoundIds, setSelectedCompoundIds] = useState<string[]>(
-      () => {
-        if (typeof window === 'undefined') return []
-
-        const rawValue = window.localStorage.getItem(COMPOUNDS_STORAGE_KEY)
-        if (!rawValue) return []
-
-        try {
-          const parsedValue = JSON.parse(rawValue)
-          return Array.isArray(parsedValue)
-            ? parsedValue.filter(
-                (value): value is string => typeof value === 'string'
-              )
-            : []
-        } catch {
-          return []
-        }
-      }
-    )
+    const [simulationState, simulationSend] = useMachine(simulationMachine, {
+      input: {
+        selectedCompoundIds: getStoredCompoundIds(),
+        selectedPropertyPackageId: getStoredPropertyPackageId(),
+      },
+    })
     const openCompoundsDialog = useCallback(() => {
-      setIsCompoundsDialogOpen(true)
-    }, [])
+      simulationSend({ type: 'Open compounds dialog' })
+    }, [simulationSend])
+
+    useEffect(() => {
+      if (typeof window === 'undefined') {
+        return
+      }
+
+      window.localStorage.setItem(
+        COMPOUNDS_STORAGE_KEY,
+        JSON.stringify(simulationState.context.selectedCompoundIds)
+      )
+      window.localStorage.setItem(
+        PROPERTY_PACKAGE_STORAGE_KEY,
+        simulationState.context.selectedPropertyPackageId
+      )
+    }, [simulationState.context.selectedCompoundIds, simulationState.context.selectedPropertyPackageId])
+
     const toolbarConfig = useToolbarConfig({
       openCompoundsDialog,
     })
@@ -124,6 +172,8 @@ const Toolbar_ = memo(
       () => ({
         modelingState: props.state,
         modelingSend: props.send,
+        simulationState,
+        simulationSend,
         sketchPathId,
         editorHasFocus: kclManager.editorView.hasFocus,
         isActive: false, // Default value - individual items will override this
@@ -133,6 +183,8 @@ const Toolbar_ = memo(
       [
         props.state,
         props.send,
+        simulationState,
+        simulationSend,
         // eslint-disable-next-line @typescript-eslint/unbound-method
         commands.send,
         sketchPathId,
@@ -474,17 +526,12 @@ const Toolbar_ = memo(
           )}
         </div>
         <CompoundsDialog
-          isOpen={isCompoundsDialogOpen}
-          selectedCompoundIds={selectedCompoundIds}
+          isOpen={simulationState.matches('compoundsDialogOpen')}
+          selectedCompoundIds={simulationState.context.selectedCompoundIds}
           compounds={DEFAULT_COMPOUNDS}
-          onClose={() => setIsCompoundsDialogOpen(false)}
+          onClose={() => simulationSend({ type: 'Close compounds dialog' })}
           onSave={(compoundIds) => {
-            setSelectedCompoundIds(compoundIds)
-            window.localStorage.setItem(
-              COMPOUNDS_STORAGE_KEY,
-              JSON.stringify(compoundIds)
-            )
-            setIsCompoundsDialogOpen(false)
+            simulationSend({ type: 'Save compounds', compoundIds })
           }}
         />
       </menu>
