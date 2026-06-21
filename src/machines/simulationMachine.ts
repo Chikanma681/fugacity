@@ -26,9 +26,9 @@ export const simulationMachine = setup({
       | { type: 'Close compounds dialog' }
       | { type: 'Save compounds'; compoundIds: string[] }
       | {
-          type: 'Select property package'
-          propertyPackageId: SimulationPropertyPackageId
-        },
+        type: 'Select property package'
+        propertyPackageId: SimulationPropertyPackageId
+      },
   },
 }).createMachine({
   id: 'simulation',
