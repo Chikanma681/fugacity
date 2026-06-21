@@ -4,6 +4,7 @@ import { useHotkeys } from 'react-hotkeys-hook'
 import { useAppState } from '@src/AppState'
 import { ActionButton } from '@src/components/ActionButton'
 import { ActionButtonDropdown } from '@src/components/ActionButtonDropdown'
+import { CompoundsDialog } from '@src/components/CompoundsDialog'
 import { CustomIcon } from '@src/components/CustomIcon'
 import Tooltip from '@src/components/Tooltip'
 import { useModelingContext } from '@src/hooks/useModelingContext'
@@ -28,6 +29,7 @@ import {
   useToolbarConfig,
 } from '@src/lib/toolbar'
 import { EngineConnectionStateType } from '@src/network/utils'
+import { COMPOUNDS_STORAGE_KEY, DEFAULT_COMPOUNDS } from '@src/lib/compounds'
 import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
 import { useSignals } from '@preact/signals-react/runtime'
 import { useApp, useSingletons } from '@src/lib/boot'
@@ -49,7 +51,6 @@ const Toolbar_ = memo(
   (props: ToolbarProps) => {
     const { commands } = useApp()
     const { kclManager } = useSingletons()
-    const toolbarConfig = useToolbarConfig()
     const wasmInstance = use(kclManager.wasmInstancePromise)
     const iconClassName =
       'group-disabled:text-chalkboard-50 !text-inherit dark:group-enabled:group-hover:!text-inherit'
@@ -76,6 +77,32 @@ const Toolbar_ = memo(
 
     const toolbarButtonsRef = useRef<HTMLUListElement>(null)
     const [showRichContent, setShowRichContent] = useState(false)
+    const [isCompoundsDialogOpen, setIsCompoundsDialogOpen] = useState(false)
+    const [selectedCompoundIds, setSelectedCompoundIds] = useState<string[]>(
+      () => {
+        if (typeof window === 'undefined') return []
+
+        const rawValue = window.localStorage.getItem(COMPOUNDS_STORAGE_KEY)
+        if (!rawValue) return []
+
+        try {
+          const parsedValue = JSON.parse(rawValue)
+          return Array.isArray(parsedValue)
+            ? parsedValue.filter(
+                (value): value is string => typeof value === 'string'
+              )
+            : []
+        } catch {
+          return []
+        }
+      }
+    )
+    const openCompoundsDialog = useCallback(() => {
+      setIsCompoundsDialogOpen(true)
+    }, [])
+    const toolbarConfig = useToolbarConfig({
+      openCompoundsDialog,
+    })
 
     const disableAllButtons =
       (props.overallState !== NetworkHealthState.Ok &&
@@ -100,6 +127,7 @@ const Toolbar_ = memo(
         sketchPathId,
         editorHasFocus: kclManager.editorView.hasFocus,
         isActive: false, // Default value - individual items will override this
+        openCompoundsDialog,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
       [
@@ -108,7 +136,7 @@ const Toolbar_ = memo(
         // eslint-disable-next-line @typescript-eslint/unbound-method
         commands.send,
         sketchPathId,
-
+        openCompoundsDialog,
         kclManager.editorView.hasFocus,
       ]
     )
@@ -445,6 +473,20 @@ const Toolbar_ = memo(
             </div>
           )}
         </div>
+        <CompoundsDialog
+          isOpen={isCompoundsDialogOpen}
+          selectedCompoundIds={selectedCompoundIds}
+          compounds={DEFAULT_COMPOUNDS}
+          onClose={() => setIsCompoundsDialogOpen(false)}
+          onSave={(compoundIds) => {
+            setSelectedCompoundIds(compoundIds)
+            window.localStorage.setItem(
+              COMPOUNDS_STORAGE_KEY,
+              JSON.stringify(compoundIds)
+            )
+            setIsCompoundsDialogOpen(false)
+          }}
+        />
       </menu>
     )
   },
