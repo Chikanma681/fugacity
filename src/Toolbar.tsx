@@ -28,8 +28,6 @@ import {
 } from '@src/lib/toolbar'
 import { EngineConnectionStateType } from '@src/network/utils'
 import { COMPOUNDS_STORAGE_KEY, DEFAULT_COMPOUNDS } from '@src/lib/compounds'
-import { useSignals } from '@preact/signals-react/runtime'
-import { useSingletons } from '@src/lib/boot'
 import {
   DEFAULT_PROPERTY_PACKAGE_ID,
   simulationMachine,
@@ -76,9 +74,7 @@ function getStoredPropertyPackageId(): SimulationPropertyPackageId {
   }
 }
 
-type ToolbarProps = {
-  isExecuting: boolean
-} & Pick<
+type ToolbarProps = Pick<
   ReturnType<typeof useNetworkContext>,
   'overallState' | 'immediateState'
 > &
@@ -130,7 +126,6 @@ const Toolbar_ = memo(
     const disableAllButtons =
       (props.overallState !== NetworkHealthState.Ok &&
         props.overallState !== NetworkHealthState.Weak) ||
-      props.isExecuting ||
       props.immediateState.type !==
         EngineConnectionStateType.ConnectionEstablished ||
       !props.isStreamReady ||
@@ -466,7 +461,6 @@ const Toolbar_ = memo(
     )
   },
   (oldP, newP) =>
-    oldP.isExecuting === newP.isExecuting &&
     oldP.overallState === newP.overallState &&
     oldP.immediateState?.type === newP.immediateState?.type &&
     oldP.isStreamReady === newP.isStreamReady &&
@@ -600,16 +594,6 @@ const ToolbarItemTooltipRichContent = memo(
             <kbd className="flex-none hotkey">
               {filterEscHotkey(itemConfig.hotkey)}
             </kbd>
-          ) : itemConfig.status === 'kcl-only' ? (
-            <>
-              <span className="text-wrap font-sans flex-0 text-chalkboard-70 dark:text-chalkboard-40">
-                KCL code only
-              </span>
-              <CustomIcon
-                name="code"
-                className="w-5 h-5 text-chalkboard-70 dark:text-chalkboard-40"
-              />
-            </>
           ) : (
             itemConfig.status === 'unavailable' && (
               <>
@@ -670,10 +654,8 @@ const ToolbarItemTooltipRichContent = memo(
 // Making this toplevel Toolbar memo'd is no-op, because we use context
 // inside that causes a render anyway. Instead we memo the inner.
 export function Toolbar() {
-  const { kclManager } = useSingletons()
   const { overallState, immediateState } = useNetworkContext()
   const { isStreamReady, isStreamAcceptingInput } = useAppState()
-  useSignals()
 
   return (
     <Toolbar_
@@ -681,7 +663,6 @@ export function Toolbar() {
       immediateState={immediateState}
       isStreamReady={isStreamReady}
       isStreamAcceptingInput={isStreamAcceptingInput}
-      isExecuting={kclManager.isExecutingSignal.value}
     />
   )
 }

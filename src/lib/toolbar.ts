@@ -1,7 +1,7 @@
 import type { EventFrom, StateFrom } from 'xstate'
 
 import type { CustomIconName } from '@src/components/CustomIcon'
-import type { simulationMachine } from '@src/machines/simulationMachine'
+import { simulationMachine } from '@src/machines/simulationMachine'
 
 export type ToolbarModeName = 'simulation'
 
@@ -27,7 +27,7 @@ export type ToolbarItem = {
   icon?: CustomIconName
   iconColor?: string
   alwaysDark?: true
-  status: 'available' | 'unavailable' | 'kcl-only' | 'experimental'
+  status: 'available' | 'unavailable' | 'experimental'
   disabled?: boolean
   disableHotkey?: boolean
   title: string | ((props: ToolbarItemCallbackProps) => string)
@@ -60,7 +60,7 @@ export const isToolbarItemResolvedDropdown = (
 export const getToolbarMode = (): ToolbarModeName => 'simulation'
 
 export const useToolbarConfig = ({
-  openCompoundsDialog = () => {},
+  openCompoundsDialog = () => { },
 }: {
   openCompoundsDialog?: () => void
 } = {}): Record<ToolbarModeName, ToolbarMode> => ({
@@ -80,7 +80,7 @@ export const useToolbarConfig = ({
             status: 'available',
             title: ({ simulationState }) =>
               simulationState.context.selectedPropertyPackageId ===
-              'peng-robinson'
+                'peng-robinson'
                 ? 'Peng-Robinson (Selected)'
                 : 'Peng-Robinson',
             showTitle: true,
