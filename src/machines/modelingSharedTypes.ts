@@ -5,7 +5,6 @@ import type { DefaultPlaneStr } from '@src/lib/planes'
 import type { Coords2d } from '@src/lang/util'
 import type { CameraProjectionType } from '@rust/kcl-lib/bindings/CameraProjectionType'
 import type { Setting } from '@src/lib/settings/initialSettings'
-import type { ToolbarModeName } from '@src/lib/toolbar'
 import type { EquipTool } from '@src/machines/sketchSolve/sketchSolveImpl'
 import type { KclManager } from '@src/lang/KclManager'
 import type { ConnectionManager } from '@src/network/connectionManager'
@@ -237,7 +236,7 @@ export type ModelingMachineInput = {
   store?: Store
 }
 export type ModelingMachineInternalContext = {
-  currentMode: ToolbarModeName
+  currentMode: ModelingModeName
   currentTool: SketchTool
   toastId: string | null
   selection: string[]
@@ -271,3 +270,4 @@ export type PlaneVisibilityMap = {
   xz: boolean
   yz: boolean
 }
+export type ModelingModeName = 'modeling' | 'sketching' | 'sketchSolve'

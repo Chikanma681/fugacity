@@ -1,9 +1,10 @@
 import { NetworkHealthState } from '@src/hooks/useNetworkStatus'
 import { useApp } from '@src/lib/boot'
-import type { ToolbarModeName } from '@src/lib/toolbar'
 import { reportRejection } from '@src/lib/trap'
 import type { MenuLabels, WebContentSendPayload } from '@src/menu/channels'
 import { useEffect } from 'react'
+
+type ModelingMenuMode = 'modeling' | 'sketching' | 'sketchSolve'
 
 export function useMenuListener(
   callback: (data: WebContentSendPayload) => void
@@ -29,7 +30,7 @@ export function useMenuListener(
 // Enable disable menu actions specifically based on if you are in the modeling mode of sketching or modeling.
 // This is a similar behavior of the command bar which disables action if you are in sketch mode
 export function useSketchModeMenuEnableDisable(
-  currentMode: ToolbarModeName,
+  currentMode: ModelingMenuMode,
   overallState: NetworkHealthState,
   isExecuting: boolean,
   isStreamReady: boolean,

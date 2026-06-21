@@ -39,7 +39,7 @@ import {
   removeSingleConstraint,
   transformAstSketchLines,
 } from '@src/lang/std/sketchcombos'
-import { getSketchSolveToolIconMap, useToolbarConfig } from '@src/lib/toolbar'
+import { sketchSolveToolIconMap } from '@src/lib/sketchSolveToolIconMap'
 import type { SceneInfra } from '@src/clientSideScene/sceneInfra'
 import { cleanupSketchSolveGroup } from '@src/machines/sketchSolve/sketchSolveImpl'
 import { EditingConstraintInput } from '@src/clientSideScene/EditingConstraintInput'
@@ -211,11 +211,6 @@ export const ClientSideScene = ({
 
 const SketchSolveToolIconOverlay = () => {
   const { state, context } = useModelingContext()
-  const toolbarConfig = useToolbarConfig()
-  const toolIconMap = useMemo(
-    () => getSketchSolveToolIconMap(toolbarConfig),
-    [toolbarConfig]
-  )
   const [mousePosition, setMousePosition] = useState<{
     x: number
     y: number
@@ -225,7 +220,7 @@ const SketchSolveToolIconOverlay = () => {
   const isToolEquipped =
     state.matches('sketchSolveMode') && context.sketchSolveToolName !== null
   const iconName = isToolEquipped
-    ? (toolIconMap[context.sketchSolveToolName ?? ''] ?? null)
+    ? (sketchSolveToolIconMap[context.sketchSolveToolName ?? ''] ?? null)
     : null
 
   useEffect(() => {

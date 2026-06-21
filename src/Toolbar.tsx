@@ -1,4 +1,4 @@
-import { memo, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useMachine } from '@xstate/react'
 
@@ -8,11 +8,8 @@ import { ActionButtonDropdown } from '@src/components/ActionButtonDropdown'
 import { CompoundsDialog } from '@src/components/CompoundsDialog'
 import { CustomIcon } from '@src/components/CustomIcon'
 import Tooltip from '@src/components/Tooltip'
-import { useModelingContext } from '@src/hooks/useModelingContext'
 import { useNetworkContext } from '@src/hooks/useNetworkContext'
 import { NetworkHealthState } from '@src/hooks/useNetworkStatus'
-import { isCursorInFunctionDefinition } from '@src/lang/queryAst'
-import { isCursorInSketchCommandRange } from '@src/lang/util'
 import { filterEscHotkey } from '@src/lib/hotkeyWrapper'
 import { isDesktop } from '@src/lib/isDesktop'
 import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
@@ -31,9 +28,8 @@ import {
 } from '@src/lib/toolbar'
 import { EngineConnectionStateType } from '@src/network/utils'
 import { COMPOUNDS_STORAGE_KEY, DEFAULT_COMPOUNDS } from '@src/lib/compounds'
-import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
 import { useSignals } from '@preact/signals-react/runtime'
-import { useApp, useSingletons } from '@src/lib/boot'
+import { useSingletons } from '@src/lib/boot'
 import {
   DEFAULT_PROPERTY_PACKAGE_ID,
   simulationMachine,
@@ -80,14 +76,12 @@ function getStoredPropertyPackageId(): SimulationPropertyPackageId {
   }
 }
 
-type ToolbarProps = { isExecuting: boolean } & Omit<
-  ReturnType<typeof useModelingContext>,
-  'theProject'
+type ToolbarProps = {
+  isExecuting: boolean
+} & Pick<
+  ReturnType<typeof useNetworkContext>,
+  'overallState' | 'immediateState'
 > &
-  Pick<
-    ReturnType<typeof useNetworkContext>,
-    'overallState' | 'immediateState'
-  > &
   Pick<
     ReturnType<typeof useAppState>,
     'isStreamReady' | 'isStreamAcceptingInput'
@@ -95,31 +89,12 @@ type ToolbarProps = { isExecuting: boolean } & Omit<
 
 const Toolbar_ = memo(
   (props: ToolbarProps) => {
-    const { commands } = useApp()
-    const { kclManager } = useSingletons()
-    const wasmInstance = use(kclManager.wasmInstancePromise)
     const iconClassName =
       'group-disabled:text-chalkboard-50 !text-inherit dark:group-enabled:group-hover:!text-inherit'
     const bgClassName = '!bg-transparent'
     const buttonBgClassName =
       'bg-chalkboard-transparent dark:bg-transparent disabled:bg-transparent dark:disabled:bg-transparent enabled:hover:bg-chalkboard-10 dark:enabled:hover:bg-chalkboard-100 pressed:!bg-primary pressed:enabled:hover:!text-chalkboard-10'
     const buttonBorderClassName = '!border-transparent'
-
-    const sketchPathId = useMemo(() => {
-      if (
-        isCursorInFunctionDefinition(
-          kclManager.ast,
-          props.context.selectionRanges.graphSelections[0],
-          wasmInstance
-        )
-      )
-        return false
-      return isCursorInSketchCommandRange(
-        kclManager.artifactGraph,
-        props.context.selectionRanges
-      )
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-    }, [kclManager.artifactGraph, props.context.selectionRanges])
 
     const toolbarButtonsRef = useRef<HTMLUListElement>(null)
     const [showRichContent, setShowRichContent] = useState(false)
@@ -161,7 +136,7 @@ const Toolbar_ = memo(
       !props.isStreamReady ||
       !props.isStreamAcceptingInput
 
-    const currentMode: ToolbarModeName = getToolbarMode(props.state)
+    const currentMode: ToolbarModeName = getToolbarMode()
 
     /** These are the props that will be passed to the callbacks in the toolbar config
      * They are memoized to prevent unnecessary re-renders,
@@ -170,26 +145,16 @@ const Toolbar_ = memo(
      */
     const configCallbackProps: ToolbarItemCallbackProps = useMemo(
       () => ({
-        modelingState: props.state,
-        modelingSend: props.send,
         simulationState,
         simulationSend,
-        sketchPathId,
-        editorHasFocus: kclManager.editorView.hasFocus,
         isActive: false, // Default value - individual items will override this
         openCompoundsDialog,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
       [
-        props.state,
-        props.send,
         simulationState,
         simulationSend,
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        commands.send,
-        sketchPathId,
         openCompoundsDialog,
-        kclManager.editorView.hasFocus,
       ]
     )
 
@@ -242,32 +207,25 @@ const Toolbar_ = memo(
         } else if (isToolbarDropdown(maybeIconConfig)) {
           return {
             id: maybeIconConfig.id,
-            array: maybeIconConfig.array.map((item) =>
-              resolveItemConfig(item, wasmInstance)
-            ),
+            array: maybeIconConfig.array.map((item) => resolveItemConfig(item)),
           }
         } else {
-          return resolveItemConfig(maybeIconConfig, wasmInstance)
+          return resolveItemConfig(maybeIconConfig)
         }
       })
 
-      function resolveItemConfig(
-        maybeIconConfig: ToolbarItem,
-        wasmInstance: ModuleType
-      ): ToolbarItemResolved {
+      function resolveItemConfig(maybeIconConfig: ToolbarItem): ToolbarItemResolved {
         const isConfiguredAvailable = ['available', 'experimental'].includes(
           maybeIconConfig.status
         )
-        const isDisabled =
-          disableAllButtons ||
-          !isConfiguredAvailable ||
-          maybeIconConfig.disabled?.(props.state, wasmInstance) === true
-
-        // Calculate the isActive state for this specific item
-        const itemIsActive = maybeIconConfig.isActive?.(props.state) || false
-
-        // Create item-specific callback props with the correct isActive value
         const itemCallbackProps = {
+          ...configCallbackProps,
+          isActive: false,
+        }
+        const itemIsActive = maybeIconConfig.isActive?.(itemCallbackProps) || false
+        const isDisabled = disableAllButtons || !isConfiguredAvailable || maybeIconConfig.disabled === true
+
+        const resolvedCallbackProps = {
           ...configCallbackProps,
           isActive: itemIsActive,
         }
@@ -277,27 +235,20 @@ const Toolbar_ = memo(
           title:
             typeof maybeIconConfig.title === 'string'
               ? maybeIconConfig.title
-              : maybeIconConfig.title(itemCallbackProps),
+              : maybeIconConfig.title(resolvedCallbackProps),
           description: maybeIconConfig.description,
           links: maybeIconConfig.links || [],
           isActive: itemIsActive,
-          hotkey:
-            typeof maybeIconConfig.hotkey === 'string'
-              ? maybeIconConfig.hotkey
-              : maybeIconConfig.hotkey?.(props.state),
+          hotkey: maybeIconConfig.hotkey,
           disabled: isDisabled,
-          disabledReason:
-            typeof maybeIconConfig.disabledReason === 'function'
-              ? maybeIconConfig.disabledReason(props.state)
-              : maybeIconConfig.disabledReason,
-          disableHotkey: maybeIconConfig.disableHotkey?.(props.state),
+          disabledReason: maybeIconConfig.disabledReason,
+          disableHotkey: maybeIconConfig.disableHotkey,
           status: maybeIconConfig.status,
-          // Store the item-specific callback props for use in onClick handlers
-          callbackProps: itemCallbackProps,
+          callbackProps: resolvedCallbackProps,
         }
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-    }, [currentMode, disableAllButtons, configCallbackProps, wasmInstance])
+    }, [currentMode, disableAllButtons, configCallbackProps])
 
     // To remember the last selected item in an ActionButtonDropdown
     const [lastSelectedMultiActionItem, _] = useState(
@@ -421,10 +372,7 @@ const Toolbar_ = memo(
                         contentClassName={tooltipContentClassName}
                       >
                         {showRichContent ? (
-                          <ToolbarItemTooltipRichContent
-                            itemConfig={selectedIcon}
-                            state={props.state}
-                          />
+                          <ToolbarItemTooltipRichContent itemConfig={selectedIcon} />
                         ) : (
                           <ToolbarItemTooltipShortContent
                             status={selectedIcon.status}
@@ -492,10 +440,7 @@ const Toolbar_ = memo(
                   contentClassName={tooltipContentClassName}
                 >
                   {showRichContent ? (
-                    <ToolbarItemTooltipRichContent
-                      itemConfig={itemConfig}
-                      state={props.state}
-                    />
+                    <ToolbarItemTooltipRichContent itemConfig={itemConfig} />
                   ) : (
                     <ToolbarItemTooltipShortContent
                       status={itemConfig.status}
@@ -508,23 +453,6 @@ const Toolbar_ = memo(
             )
           })}
         </ul>
-        <div className="flex flex-col items-center absolute top-full left-1/2 -translate-x-1/2">
-          {props.state.matches('Sketch no face') && (
-            <div className="mt-2 py-1 px-2 bg-chalkboard-10 dark:bg-chalkboard-90 border border-chalkboard-20 dark:border-chalkboard-80 rounded shadow-lg">
-              <p className="text-xs">
-                Select a plane or face to start sketching
-              </p>
-            </div>
-          )}
-          {props.state.matches('sketchSolveMode') && (
-            <div className="mt-2 py-1 px-2 bg-chalkboard-10 dark:bg-chalkboard-90 border border-chalkboard-20 dark:border-chalkboard-80 rounded shadow-lg">
-              <p className="text-xs">
-                Sketch solve mode is experimental. Disable in settings if you
-                want classic sketch mode.
-              </p>
-            </div>
-          )}
-        </div>
         <CompoundsDialog
           isOpen={simulationState.matches('compoundsDialogOpen')}
           selectedCompoundIds={simulationState.context.selectedCompoundIds}
@@ -539,13 +467,10 @@ const Toolbar_ = memo(
   },
   (oldP, newP) =>
     oldP.isExecuting === newP.isExecuting &&
-    oldP.state.value === newP.state.value &&
     oldP.overallState === newP.overallState &&
     oldP.immediateState?.type === newP.immediateState?.type &&
     oldP.isStreamReady === newP.isStreamReady &&
-    oldP.isStreamAcceptingInput === newP.isStreamAcceptingInput &&
-    oldP.context?.currentMode === newP.context?.currentMode &&
-    oldP.context?.currentTool === newP.context?.currentTool
+    oldP.isStreamAcceptingInput === newP.isStreamAcceptingInput
 )
 
 interface ToolbarItemContentsProps extends React.PropsWithChildren {
@@ -642,13 +567,7 @@ const ToolbarItemTooltipShortContent = ({
 )
 
 const ToolbarItemTooltipRichContent = memo(
-  ({
-    itemConfig,
-    state,
-  }: {
-    itemConfig: ToolbarItemResolved
-    state: ReturnType<typeof useModelingContext>['state']
-  }) => {
+  ({ itemConfig }: { itemConfig: ToolbarItemResolved }) => {
     const shouldBeEnabled = ['available', 'experimental'].includes(
       itemConfig.status
     )
@@ -717,9 +636,7 @@ const ToolbarItemTooltipRichContent = memo(
           <>
             <hr className="border-chalkboard-20 dark:border-chalkboard-80" />
             <p className="px-2 my-2 text-ch font-sans text-chalkboard-70 dark:text-chalkboard-40">
-              {typeof itemConfig.disabledReason === 'function'
-                ? itemConfig.disabledReason(state)
-                : itemConfig.disabledReason}
+              {itemConfig.disabledReason}
             </p>
           </>
         )}
@@ -747,28 +664,22 @@ const ToolbarItemTooltipRichContent = memo(
       </>
     )
   },
-  (oldP, newP) =>
-    oldP.state.value === newP.state.value && oldP.itemConfig === newP.itemConfig
+  (oldP, newP) => oldP.itemConfig === newP.itemConfig
 )
 
 // Making this toplevel Toolbar memo'd is no-op, because we use context
 // inside that causes a render anyway. Instead we memo the inner.
 export function Toolbar() {
   const { kclManager } = useSingletons()
-  const { state, send, context, actor } = useModelingContext()
   const { overallState, immediateState } = useNetworkContext()
   const { isStreamReady, isStreamAcceptingInput } = useAppState()
   useSignals()
 
   return (
     <Toolbar_
-      state={state}
-      send={send}
-      context={context}
       overallState={overallState}
       immediateState={immediateState}
       isStreamReady={isStreamReady}
-      actor={actor}
       isStreamAcceptingInput={isStreamAcceptingInput}
       isExecuting={kclManager.isExecutingSignal.value}
     />
