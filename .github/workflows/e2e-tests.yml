@@ -103,7 +103,7 @@ jobs:
         run: npm install
 
       - name: Download browser cache
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.cache/ms-playwright/
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
@@ -240,7 +240,7 @@ jobs:
         run: npm install
 
       - name: Download browser cache
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.cache/ms-playwright/
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
@@ -367,7 +367,7 @@ jobs:
         run: npm install
 
       - name: Download browser cache
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.cache/ms-playwright/
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
@@ -459,7 +459,7 @@ jobs:
         run: npm install
 
       - name: Download browser cache
-        uses: actions/cache@v5
+        uses: actions/cache@v5.0.5
         with:
           path: ~/.cache/ms-playwright/
           key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}

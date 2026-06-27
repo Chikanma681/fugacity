@@ -34,7 +34,7 @@ jobs:
     runs-on: namespace-profile-ubuntu-2-cores
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: 3.x
       - name: Build wheels
@@ -62,7 +62,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: 3.x
           architecture: ${{ matrix.target }}
@@ -94,7 +94,7 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: 3.x
       - name: Build wheels
@@ -125,7 +125,7 @@ jobs:
           CI_STEP: setup
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: actions-rust-lang/setup-rust-toolchain@v1.16.1
         with:
           rustflags: '' # Use .cargo/config.toml
       - uses: taiki-e/install-action@just
