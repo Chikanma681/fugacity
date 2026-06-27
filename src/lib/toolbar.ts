@@ -37,7 +37,6 @@ export interface ToolbarItemCallbackProps {
   simulationState: StateFrom<typeof simulationMachine>
   simulationSend: (event: EventFrom<typeof simulationMachine>) => void
   isActive: boolean
-  openCompoundsDialog: () => void
 }
 
 export const useToolbarConfig = ({
@@ -153,7 +152,7 @@ export const useToolbarConfig = ({
     },
     {
       id: 'compounds',
-      onClick: ({ openCompoundsDialog }) => openCompoundsDialog(),
+      onClick: () => openCompoundsDialog(),
       icon: 'beaker',
       status: 'available',
       title: ({ simulationState }) =>

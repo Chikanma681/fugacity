@@ -2,14 +2,11 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useMachine } from '@xstate/react'
 
-import { useAppState } from '@src/AppState'
 import { ActionButton } from '@src/components/ActionButton'
 import { ActionButtonDropdown } from '@src/components/ActionButtonDropdown'
 import { CompoundsDialog } from '@src/components/CompoundsDialog'
 import { CustomIcon } from '@src/components/CustomIcon'
 import Tooltip from '@src/components/Tooltip'
-import { useNetworkContext } from '@src/hooks/useNetworkContext'
-import { NetworkHealthState } from '@src/hooks/useNetworkStatus'
 import { filterEscHotkey } from '@src/lib/hotkeyWrapper'
 import { isDesktop } from '@src/lib/isDesktop'
 import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
@@ -17,17 +14,11 @@ import type {
   ToolbarDropdown,
   ToolbarItem,
   ToolbarItemCallbackProps,
-  ToolbarItemResolved,
-  ToolbarItemResolvedDropdown,
-  ToolbarModeName,
 } from '@src/lib/toolbar'
-import {
-  getToolbarMode,
-  isToolbarItemResolvedDropdown,
-  useToolbarConfig,
-} from '@src/lib/toolbar'
-import { EngineConnectionStateType } from '@src/network/utils'
+import { useToolbarConfig } from '@src/lib/toolbar'
 import { COMPOUNDS_STORAGE_KEY, DEFAULT_COMPOUNDS } from '@src/lib/compounds'
+import { useSignals } from '@preact/signals-react/runtime'
+import { useSingletons } from '@src/lib/boot'
 import {
   DEFAULT_PROPERTY_PACKAGE_ID,
   simulationMachine,
@@ -35,6 +26,17 @@ import {
 } from '@src/machines/simulationMachine'
 
 const PROPERTY_PACKAGE_STORAGE_KEY = 'fugacity-selected-property-package'
+
+type ResolvedToolbarItem = Omit<ToolbarItem, 'isActive' | 'title'> & {
+  title: string
+  isActive?: boolean
+  callbackProps: ToolbarItemCallbackProps
+}
+
+type ResolvedToolbarDropdown = {
+  id: string
+  array: ResolvedToolbarItem[]
+}
 
 function getStoredCompoundIds(): string[] {
   if (typeof window === 'undefined') {
@@ -74,14 +76,9 @@ function getStoredPropertyPackageId(): SimulationPropertyPackageId {
   }
 }
 
-type ToolbarProps = Pick<
-  ReturnType<typeof useNetworkContext>,
-  'overallState' | 'immediateState'
-> &
-  Pick<
-    ReturnType<typeof useAppState>,
-    'isStreamReady' | 'isStreamAcceptingInput'
-  >
+type ToolbarProps = {
+  isExecuting: boolean
+}
 
 const Toolbar_ = memo(
   (props: ToolbarProps) => {
@@ -119,21 +116,13 @@ const Toolbar_ = memo(
       )
     }, [simulationState.context.selectedCompoundIds, simulationState.context.selectedPropertyPackageId])
 
-    const toolbarConfig = useToolbarConfig({
+    const toolbar = useToolbarConfig({
       openCompoundsDialog,
     })
 
-    const disableAllButtons =
-      (props.overallState !== NetworkHealthState.Ok &&
-        props.overallState !== NetworkHealthState.Weak) ||
-      props.immediateState.type !==
-        EngineConnectionStateType.ConnectionEstablished ||
-      !props.isStreamReady ||
-      !props.isStreamAcceptingInput
+    const disableAllButtons = props.isExecuting
 
-    const currentMode: ToolbarModeName = getToolbarMode()
-
-    /** These are the props that will be passed to the callbacks in the toolbar config
+    /** These are the props that will be passed to the toolbar item callbacks
      * They are memoized to prevent unnecessary re-renders,
      * but they still get a lot of churn from the state machine
      * so I think there's a lot of room for improvement here
@@ -143,13 +132,11 @@ const Toolbar_ = memo(
         simulationState,
         simulationSend,
         isActive: false, // Default value - individual items will override this
-        openCompoundsDialog,
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
       [
         simulationState,
         simulationSend,
-        openCompoundsDialog,
       ]
     )
 
@@ -187,16 +174,12 @@ const Toolbar_ = memo(
       }, 500)
     }, [setShowRichContent])
 
-    /**
-     * Resolve all the callbacks and values for the current mode,
-     * so we don't need to worry about the other modes
-     */
-    const currentModeItems: (
-      | ToolbarItemResolved
-      | ToolbarItemResolvedDropdown
+    const resolvedToolbarItems: (
+      | ResolvedToolbarItem
+      | ResolvedToolbarDropdown
       | 'break'
     )[] = useMemo(() => {
-      return toolbarConfig[currentMode].items.map((maybeIconConfig) => {
+      return toolbar.items.map((maybeIconConfig) => {
         if (maybeIconConfig === 'break') {
           return 'break'
         } else if (isToolbarDropdown(maybeIconConfig)) {
@@ -209,7 +192,7 @@ const Toolbar_ = memo(
         }
       })
 
-      function resolveItemConfig(maybeIconConfig: ToolbarItem): ToolbarItemResolved {
+      function resolveItemConfig(maybeIconConfig: ToolbarItem): ResolvedToolbarItem {
         const isConfiguredAvailable = ['available', 'experimental'].includes(
           maybeIconConfig.status
         )
@@ -243,19 +226,19 @@ const Toolbar_ = memo(
         }
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-    }, [currentMode, disableAllButtons, configCallbackProps])
+    }, [disableAllButtons, configCallbackProps, toolbar])
 
     // To remember the last selected item in an ActionButtonDropdown
     const [lastSelectedMultiActionItem, _] = useState(
       new Map<
-        number /* index in currentModeItems */,
+        number /* index in resolvedToolbarItems */,
         number /* index in maybeIconConfig */
       >()
     )
 
     return (
       <menu
-        data-current-mode={currentMode}
+        data-current-mode="simulation"
         data-testid="toolbar"
         data-onboarding-id="toolbar"
         className="toolbar z-[19] max-w-full whitespace-nowrap px-2 py-1 mx-auto bg-chalkboard-10 dark:bg-chalkboard-90 relative border border-chalkboard-30 dark:border-chalkboard-80 border-t-0 shadow-sm"
@@ -267,7 +250,7 @@ const Toolbar_ = memo(
           }
         >
           {/* A menu item will either be a vertical line break, a button with a dropdown, or a single button */}
-          {currentModeItems.map((maybeIconConfig, i) => {
+          {resolvedToolbarItems.map((maybeIconConfig, i) => {
             // Vertical Line Break
             if (maybeIconConfig === 'break') {
               return (
@@ -276,7 +259,7 @@ const Toolbar_ = memo(
                   className="h-5 w-[1px] block bg-chalkboard-30 dark:bg-chalkboard-80"
                 />
               )
-            } else if (isToolbarItemResolvedDropdown(maybeIconConfig)) {
+            } else if (isResolvedToolbarDropdown(maybeIconConfig)) {
               // A button with a dropdown
               const selectedIcon =
                 maybeIconConfig.array.find((c) => c.isActive) ||
@@ -460,15 +443,11 @@ const Toolbar_ = memo(
       </menu>
     )
   },
-  (oldP, newP) =>
-    oldP.overallState === newP.overallState &&
-    oldP.immediateState?.type === newP.immediateState?.type &&
-    oldP.isStreamReady === newP.isStreamReady &&
-    oldP.isStreamAcceptingInput === newP.isStreamAcceptingInput
+  (oldP, newP) => oldP.isExecuting === newP.isExecuting
 )
 
 interface ToolbarItemContentsProps extends React.PropsWithChildren {
-  itemConfig: ToolbarItemResolved
+  itemConfig: ResolvedToolbarItem
   configCallbackProps: ToolbarItemCallbackProps
   wrapperClassName?: string
   contentClassName?: string
@@ -508,7 +487,7 @@ const ToolbarItemTooltip = memo(function ToolbarItemContents({
     () =>
       onDesktop
         ? // Without this, the tooltip disappears before being able to click on anything in it
-          ({ WebkitAppRegion: 'no-drag' } as React.CSSProperties)
+        ({ WebkitAppRegion: 'no-drag' } as React.CSSProperties)
         : {},
     [onDesktop]
   )
@@ -537,11 +516,10 @@ const ToolbarItemTooltipShortContent = ({
   hotkey?: string | string[]
 }) => (
   <div
-    className={`text-sm flex flex-col ${
-      !['available', 'experimental'].includes(status)
-        ? 'text-chalkboard-70 dark:text-chalkboard-40'
-        : ''
-    }`}
+    className={`text-sm flex flex-col ${!['available', 'experimental'].includes(status)
+      ? 'text-chalkboard-70 dark:text-chalkboard-40'
+      : ''
+      }`}
   >
     {status === 'experimental' && (
       <div className="text-xs flex justify-center item-center gap-1 pb-1 border-b border-chalkboard-50">
@@ -561,7 +539,7 @@ const ToolbarItemTooltipShortContent = ({
 )
 
 const ToolbarItemTooltipRichContent = memo(
-  ({ itemConfig }: { itemConfig: ToolbarItemResolved }) => {
+  ({ itemConfig }: { itemConfig: ResolvedToolbarItem }) => {
     const shouldBeEnabled = ['available', 'experimental'].includes(
       itemConfig.status
     )
@@ -582,11 +560,10 @@ const ToolbarItemTooltipRichContent = memo(
             />
           )}
           <div
-            className={`text-sm flex-1 flex flex-col gap-1 ${
-              !shouldBeEnabled
-                ? 'text-chalkboard-70 dark:text-chalkboard-40'
-                : ''
-            }`}
+            className={`text-sm flex-1 flex flex-col gap-1 ${!shouldBeEnabled
+              ? 'text-chalkboard-70 dark:text-chalkboard-40'
+              : ''
+              }`}
           >
             {itemConfig.title}
           </div>
@@ -594,6 +571,16 @@ const ToolbarItemTooltipRichContent = memo(
             <kbd className="flex-none hotkey">
               {filterEscHotkey(itemConfig.hotkey)}
             </kbd>
+          ) : itemConfig.status === 'kcl-only' ? (
+            <>
+              <span className="text-wrap font-sans flex-0 text-chalkboard-70 dark:text-chalkboard-40">
+                KCL code only
+              </span>
+              <CustomIcon
+                name="code"
+                className="w-5 h-5 text-chalkboard-70 dark:text-chalkboard-40"
+              />
+            </>
           ) : (
             itemConfig.status === 'unavailable' && (
               <>
@@ -654,21 +641,20 @@ const ToolbarItemTooltipRichContent = memo(
 // Making this toplevel Toolbar memo'd is no-op, because we use context
 // inside that causes a render anyway. Instead we memo the inner.
 export function Toolbar() {
-  const { overallState, immediateState } = useNetworkContext()
-  const { isStreamReady, isStreamAcceptingInput } = useAppState()
+  const { kclManager } = useSingletons()
+  useSignals()
 
-  return (
-    <Toolbar_
-      overallState={overallState}
-      immediateState={immediateState}
-      isStreamReady={isStreamReady}
-      isStreamAcceptingInput={isStreamAcceptingInput}
-    />
-  )
+  return <Toolbar_ isExecuting={kclManager.isExecutingSignal.value} />
 }
 
 function isToolbarDropdown(
   item: ToolbarItem | ToolbarDropdown
 ): item is ToolbarDropdown {
+  return 'array' in item
+}
+
+function isResolvedToolbarDropdown(
+  item: ResolvedToolbarItem | ResolvedToolbarDropdown
+): item is ResolvedToolbarDropdown {
   return 'array' in item
 }
