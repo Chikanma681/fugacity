@@ -17,8 +17,6 @@ import type {
 } from '@src/lib/toolbar'
 import { useToolbarConfig } from '@src/lib/toolbar'
 import { COMPOUNDS_STORAGE_KEY, DEFAULT_COMPOUNDS } from '@src/lib/compounds'
-import { useSignals } from '@preact/signals-react/runtime'
-import { useSingletons } from '@src/lib/boot'
 import {
   DEFAULT_PROPERTY_PACKAGE_ID,
   simulationMachine,
@@ -76,12 +74,8 @@ function getStoredPropertyPackageId(): SimulationPropertyPackageId {
   }
 }
 
-type ToolbarProps = {
-  isExecuting: boolean
-}
-
 const Toolbar_ = memo(
-  (props: ToolbarProps) => {
+  () => {
     const iconClassName =
       'group-disabled:text-chalkboard-50 !text-inherit dark:group-enabled:group-hover:!text-inherit'
     const bgClassName = '!bg-transparent'
@@ -120,7 +114,7 @@ const Toolbar_ = memo(
       openCompoundsDialog,
     })
 
-    const disableAllButtons = props.isExecuting
+    const disableAllButtons = false
 
     /** These are the props that will be passed to the toolbar item callbacks
      * They are memoized to prevent unnecessary re-renders,
@@ -442,8 +436,7 @@ const Toolbar_ = memo(
         />
       </menu>
     )
-  },
-  (oldP, newP) => oldP.isExecuting === newP.isExecuting
+  }
 )
 
 interface ToolbarItemContentsProps extends React.PropsWithChildren {
@@ -571,16 +564,6 @@ const ToolbarItemTooltipRichContent = memo(
             <kbd className="flex-none hotkey">
               {filterEscHotkey(itemConfig.hotkey)}
             </kbd>
-          ) : itemConfig.status === 'kcl-only' ? (
-            <>
-              <span className="text-wrap font-sans flex-0 text-chalkboard-70 dark:text-chalkboard-40">
-                KCL code only
-              </span>
-              <CustomIcon
-                name="code"
-                className="w-5 h-5 text-chalkboard-70 dark:text-chalkboard-40"
-              />
-            </>
           ) : (
             itemConfig.status === 'unavailable' && (
               <>
@@ -641,10 +624,7 @@ const ToolbarItemTooltipRichContent = memo(
 // Making this toplevel Toolbar memo'd is no-op, because we use context
 // inside that causes a render anyway. Instead we memo the inner.
 export function Toolbar() {
-  const { kclManager } = useSingletons()
-  useSignals()
-
-  return <Toolbar_ isExecuting={kclManager.isExecutingSignal.value} />
+  return <Toolbar_ />
 }
 
 function isToolbarDropdown(
