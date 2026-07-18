@@ -12,7 +12,6 @@ import (
 var f embed.FS
 
 const (
-	artisticLicensePath          = "assets/Compounds.Databases/Artistic_license_2_0.txt"
 	biodieselDatabasePath        = "assets/Compounds.Databases/biod_db.xml"
 	chedlThermoDatabasePath      = "assets/Compounds.Databases/chedl_thermo.json"
 	chemsep1DatabasePath         = "assets/Compounds.Databases/chemsep1.xml"
@@ -26,7 +25,6 @@ const (
 )
 
 type CompoundDatabases struct {
-	ArtisticLicense        string
 	Biodiesel              []Compound
 	ChEDLThermo            []map[string]any
 	ChemSep                []Compound
@@ -51,17 +49,20 @@ type xmlNode struct {
 }
 
 func main() {
-	if _, err := LoadCompoundDatabases(); err != nil {
+	compounds, err := LoadCompoundDatabases()
+	if err != nil {
 		panic(err)
 	}
+
+	data, err := json.MarshalIndent(compounds, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(data))
 }
 
 func LoadCompoundDatabases() (CompoundDatabases, error) {
-	license, err := readEmbeddedText(artisticLicensePath)
-	if err != nil {
-		return CompoundDatabases{}, err
-	}
-
 	biodiesel, err := loadCompoundsFromXMLFile(biodieselDatabasePath, "Biodiesel")
 	if err != nil {
 		return CompoundDatabases{}, err
@@ -113,7 +114,6 @@ func LoadCompoundDatabases() (CompoundDatabases, error) {
 	}
 
 	return CompoundDatabases{
-		ArtisticLicense:        license,
 		Biodiesel:              biodiesel,
 		ChEDLThermo:            chedlThermo,
 		ChemSep:                append(chemsep1, chemsep2...),
