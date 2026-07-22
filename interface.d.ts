@@ -61,7 +61,7 @@ export interface IElectronAPI {
   move: (
     source: string | URL,
     destination: string | URL
-  ) => Promise<void | Error>
+  ) => Promise<undefined | Error>
   rename: (prev: string, next: string) => Promise<undefined>
   packageJson: {
     name: string
@@ -95,6 +95,26 @@ export interface IElectronAPI {
   appCheckForUpdates: () => Promise<unknown>
   getArgvParsed: () => any
   getAppTestProperty: (propertyName: string) => any
+  thermo: {
+    listCompounds: () => Promise<
+      Array<{ id: string; name: string; formula: string; category: string }>
+    >
+    getCompound: (id: string) => Promise<any>
+    listPropertyPackages: () => Promise<
+      Array<{ id: string; name: string; description: string }>
+    >
+    validateSelection: (selection: {
+      propertyPackageId: string
+      compoundIds: string[]
+    }) => Promise<{ valid: boolean }>
+    calculatePTFlash: (request: {
+      propertyPackageId: string
+      compoundIds: string[]
+      moleFractions: number[]
+      temperatureK: number
+      pressurePa: number
+    }) => Promise<any>
+  }
 
   // Helper functions to create application Menus
   createHomePageMenu: () => Promise<any>
