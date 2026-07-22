@@ -15,6 +15,7 @@ type CompoundsDialogProps = {
   isOpen: boolean
   selectedCompoundIds: string[]
   compounds: CompoundOption[]
+  error?: string | null
   onClose: () => void
   onSave: (compoundIds: string[]) => void
 }
@@ -23,6 +24,7 @@ export function CompoundsDialog({
   isOpen,
   selectedCompoundIds,
   compounds,
+  error = null,
   onClose,
   onSave,
 }: CompoundsDialogProps) {
@@ -89,7 +91,7 @@ export function CompoundsDialog({
                   Compounds
                 </Dialog.Title>
                 <p className="mt-1 text-sm text-chalkboard-70 dark:text-chalkboard-40">
-                  Select the compounds available to the process simulation.
+                  Select the DWSIM compounds available to the process simulation.
                 </p>
               </div>
               <button
@@ -103,6 +105,11 @@ export function CompoundsDialog({
             </div>
 
             <div className="px-5 pb-4 flex flex-col gap-4 overflow-hidden">
+              {error && (
+                <div className="rounded border border-destroy-40 bg-destroy-10 px-3 py-2 text-sm text-destroy-80 dark:border-destroy-60 dark:bg-destroy-90/30 dark:text-destroy-20">
+                  {error}
+                </div>
+              )}
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <label className="flex-1">
                   <span className="sr-only">Search compounds</span>
@@ -129,6 +136,7 @@ export function CompoundsDialog({
                         <label className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-chalkboard-5 dark:hover:bg-chalkboard-90/60">
                           <input
                             type="checkbox"
+                            aria-label={`Select ${compound.name}`}
                             checked={checked}
                             onChange={() => {
                               setDraftCompoundIds((current) =>
@@ -158,7 +166,9 @@ export function CompoundsDialog({
                   })}
                   {filteredCompounds.length === 0 && (
                     <li className="px-4 py-6 text-sm text-chalkboard-70 dark:text-chalkboard-40">
-                      No compounds match the current search.
+                      {error
+                        ? 'DWSIM compounds are unavailable.'
+                        : 'No compounds match the current search.'}
                     </li>
                   )}
                 </ul>
@@ -173,6 +183,7 @@ export function CompoundsDialog({
                 Element="button"
                 type="button"
                 iconStart={{ icon: 'checkmark' }}
+                disabled={!!error || compounds.length === 0}
                 onClick={() => onSave(draftCompoundIds)}
               >
                 Apply compounds

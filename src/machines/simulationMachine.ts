@@ -1,14 +1,7 @@
 import { assign, setup } from 'xstate'
+import type { PropertyPackageId } from '@src/lib/thermo'
 
-export type SimulationPropertyPackageId =
-  | 'peng-robinson'
-  | 'srk'
-  | 'nrtl'
-  | 'unifac'
-  | 'ideal'
-
-export const DEFAULT_PROPERTY_PACKAGE_ID: SimulationPropertyPackageId =
-  'peng-robinson'
+export type SimulationPropertyPackageId = PropertyPackageId
 
 export type SimulationMachineContext = {
   selectedCompoundIds: string[]

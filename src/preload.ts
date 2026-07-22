@@ -53,6 +53,15 @@ const appRestart = () => ipcRenderer.invoke('app.restart')
 const appCheckForUpdates = () => ipcRenderer.invoke('app.checkForUpdates')
 const getAppTestProperty = (propertyName: string) =>
   ipcRenderer.invoke('app.testProperty', propertyName)
+const thermo = {
+  listCompounds: () => ipcRenderer.invoke('thermo.listCompounds'),
+  getCompound: (id: string) => ipcRenderer.invoke('thermo.getCompound', { id }),
+  listPropertyPackages: () => ipcRenderer.invoke('thermo.listPropertyPackages'),
+  validateSelection: (selection: any) =>
+    ipcRenderer.invoke('thermo.validateSelection', selection),
+  calculatePTFlash: (request: any) =>
+    ipcRenderer.invoke('thermo.calculatePTFlash', request),
+}
 
 const isMac = os.platform() === 'darwin'
 const isWindows = os.platform() === 'win32'
@@ -305,6 +314,7 @@ contextBridge.exposeInMainWorld('electron', {
   // Use this to access dynamic properties from the node side.
   // INTENDED ONLY TO BE USED FOR TESTS.
   getAppTestProperty,
+  thermo,
   process: {
     // These are read-only over the boundary.
     env: Object.assign(

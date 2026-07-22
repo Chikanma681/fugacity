@@ -1,4 +1,5 @@
 import os from 'node:os'
+import { execFile } from 'node:child_process'
 import path from 'path'
 // Some of the following was taken from bits and pieces of the vite-typescript
 // template that ElectronJS provides.
@@ -37,6 +38,7 @@ import getCurrentProjectFile from '@src/lib/getCurrentProjectFile'
 import { reportRejection } from '@src/lib/trap'
 let mainWindow: BrowserWindow | null = null
 let isInstallingUpdate = false
+const thermoAPIRoot = process.cwd()
 /** All Electron windows will share this WASM module */
 const initPromise = initialiseWasmNode()
 
@@ -408,6 +410,64 @@ ipcMain.handle(
 ipcMain.handle('argv.parser', (event, data) => {
   return argvFromYargs
 })
+
+const invokeThermoCommand = async (command: string, payload?: unknown) => {
+  const thermoExecutable = process.env.FUGACITY_THERMO_API
+  const executable = thermoExecutable || 'go'
+  const args = thermoExecutable
+    ? [command]
+    : ['run', './thermo/cmd/thermo-api', command]
+
+  return new Promise((resolve, reject) => {
+    const child = execFile(
+      executable,
+      args,
+      {
+        cwd: thermoAPIRoot,
+        env: {
+          ...process.env,
+          FUGACITY_APP_ROOT: thermoAPIRoot,
+        },
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          try {
+            const thermoError = JSON.parse(stderr)
+            reject(new Error(thermoError.message || stderr || error.message))
+          } catch {
+            reject(new Error(stderr || error.message))
+          }
+          return
+        }
+
+        try {
+          resolve(JSON.parse(stdout))
+        } catch {
+          reject(new Error(`Invalid thermodynamics response for ${command}`))
+        }
+      }
+    )
+
+    if (payload !== undefined) {
+      child.stdin?.end(JSON.stringify(payload))
+    }
+  })
+}
+
+ipcMain.handle('thermo.listCompounds', () => invokeThermoCommand('ListCompounds'))
+ipcMain.handle('thermo.getCompound', (_event, data) =>
+  invokeThermoCommand('GetCompound', data)
+)
+ipcMain.handle('thermo.listPropertyPackages', () =>
+  invokeThermoCommand('ListPropertyPackages')
+)
+ipcMain.handle('thermo.validateSelection', async (_event, data) => {
+  await invokeThermoCommand('ValidateThermoSelection', data)
+  return { valid: true }
+})
+ipcMain.handle('thermo.calculatePTFlash', (_event, data) =>
+  invokeThermoCommand('CalculatePTFlash', data)
+)
 
 ipcMain.handle('startDeviceFlow', async (_, host: string) => {
   // Do an OAuth 2.0 Device Authorization Grant dance to get a token.

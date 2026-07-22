@@ -10,15 +10,22 @@ import Tooltip from '@src/components/Tooltip'
 import { filterEscHotkey } from '@src/lib/hotkeyWrapper'
 import { isDesktop } from '@src/lib/isDesktop'
 import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
+import { isArray } from '@src/lib/utils'
 import type {
   ToolbarDropdown,
   ToolbarItem,
   ToolbarItemCallbackProps,
 } from '@src/lib/toolbar'
 import { useToolbarConfig } from '@src/lib/toolbar'
-import { COMPOUNDS_STORAGE_KEY, DEFAULT_COMPOUNDS } from '@src/lib/compounds'
+import type { CompoundOption } from '@src/components/CompoundsDialog'
+import { COMPOUNDS_STORAGE_KEY } from '@src/lib/compounds'
 import {
   DEFAULT_PROPERTY_PACKAGE_ID,
+  listCompounds,
+  listPropertyPackages,
+  type PropertyPackageOption,
+} from '@src/lib/thermo'
+import {
   simulationMachine,
   type SimulationPropertyPackageId,
 } from '@src/machines/simulationMachine'
@@ -48,7 +55,7 @@ function getStoredCompoundIds(): string[] {
 
   try {
     const parsedValue = JSON.parse(rawValue)
-    return Array.isArray(parsedValue)
+    return isArray(parsedValue)
       ? parsedValue.filter((value): value is string => typeof value === 'string')
       : []
   } catch {
@@ -62,16 +69,7 @@ function getStoredPropertyPackageId(): SimulationPropertyPackageId {
   }
 
   const rawValue = window.localStorage.getItem(PROPERTY_PACKAGE_STORAGE_KEY)
-  switch (rawValue) {
-    case 'peng-robinson':
-    case 'srk':
-    case 'nrtl':
-    case 'unifac':
-    case 'ideal':
-      return rawValue
-    default:
-      return DEFAULT_PROPERTY_PACKAGE_ID
-  }
+  return rawValue || DEFAULT_PROPERTY_PACKAGE_ID
 }
 
 const Toolbar_ = memo(
@@ -85,6 +83,9 @@ const Toolbar_ = memo(
 
     const toolbarButtonsRef = useRef<HTMLUListElement>(null)
     const [showRichContent, setShowRichContent] = useState(false)
+    const [compounds, setCompounds] = useState<CompoundOption[]>([])
+    const [propertyPackages, setPropertyPackages] = useState<PropertyPackageOption[]>([])
+    const [thermoError, setThermoError] = useState<string | null>(null)
     const [simulationState, simulationSend] = useMachine(simulationMachine, {
       input: {
         selectedCompoundIds: getStoredCompoundIds(),
@@ -94,6 +95,37 @@ const Toolbar_ = memo(
     const openCompoundsDialog = useCallback(() => {
       simulationSend({ type: 'Open compounds dialog' })
     }, [simulationSend])
+
+    useEffect(() => {
+      let cancelled = false
+
+      Promise.all([listCompounds(), listPropertyPackages()])
+        .then(([nextCompounds, nextPropertyPackages]) => {
+          if (cancelled) {
+            return
+          }
+
+          setCompounds(nextCompounds)
+          setPropertyPackages(nextPropertyPackages)
+          setThermoError(null)
+        })
+        .catch((error) => {
+          console.warn('Failed to load thermodynamics data', error)
+          if (!cancelled) {
+            setCompounds([])
+            setPropertyPackages([])
+            setThermoError(
+              error instanceof Error
+                ? error.message
+                : 'DWSIM thermodynamics data is unavailable.'
+            )
+          }
+        })
+
+      return () => {
+        cancelled = true
+      }
+    }, [])
 
     useEffect(() => {
       if (typeof window === 'undefined') {
@@ -112,6 +144,8 @@ const Toolbar_ = memo(
 
     const toolbar = useToolbarConfig({
       openCompoundsDialog,
+      propertyPackages,
+      thermoUnavailableReason: thermoError,
     })
 
     const disableAllButtons = false
@@ -428,7 +462,8 @@ const Toolbar_ = memo(
         <CompoundsDialog
           isOpen={simulationState.matches('compoundsDialogOpen')}
           selectedCompoundIds={simulationState.context.selectedCompoundIds}
-          compounds={DEFAULT_COMPOUNDS}
+          compounds={compounds}
+          error={thermoError}
           onClose={() => simulationSend({ type: 'Close compounds dialog' })}
           onSave={(compoundIds) => {
             simulationSend({ type: 'Save compounds', compoundIds })
