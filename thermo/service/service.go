@@ -25,14 +25,6 @@ func (s *Service) ListCompounds() ([]api.CompoundSummary, error) {
 	return compounds, nil
 }
 
-func (s *Service) GetCompound(id string) (api.CompoundDetails, error) {
-	var compound api.CompoundDetails
-	if err := s.client.Call(api.CommandGetCompound, map[string]string{"id": id}, &compound); err != nil {
-		return api.CompoundDetails{}, err
-	}
-	return compound, nil
-}
-
 func (s *Service) ListPropertyPackages() ([]api.PropertyPackageSummary, error) {
 	var packages []api.PropertyPackageSummary
 	if err := s.client.Call(api.CommandListPropertyPackages, nil, &packages); err != nil {

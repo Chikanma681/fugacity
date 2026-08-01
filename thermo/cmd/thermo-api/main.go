@@ -42,18 +42,6 @@ func main() {
 			exitError(err)
 		}
 		writeJSON(result)
-	case api.CommandGetCompound:
-		var request struct {
-			ID string `json:"id"`
-		}
-		if err := readRequest(&request); err != nil {
-			exitError(err)
-		}
-		result, err := svc.GetCompound(request.ID)
-		if err != nil {
-			exitError(err)
-		}
-		writeJSON(result)
 	case api.CommandValidateThermoSelection:
 		var request api.ThermoSelection
 		if err := readRequest(&request); err != nil {
