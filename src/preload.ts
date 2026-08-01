@@ -55,7 +55,6 @@ const getAppTestProperty = (propertyName: string) =>
   ipcRenderer.invoke('app.testProperty', propertyName)
 const thermo = {
   listCompounds: () => ipcRenderer.invoke('thermo.listCompounds'),
-  getCompound: (id: string) => ipcRenderer.invoke('thermo.getCompound', { id }),
   listPropertyPackages: () => ipcRenderer.invoke('thermo.listPropertyPackages'),
   validateSelection: (selection: any) =>
     ipcRenderer.invoke('thermo.validateSelection', selection),

@@ -417,6 +417,15 @@ const invokeThermoCommand = async (command: string, payload?: unknown) => {
   const args = thermoExecutable
     ? [command]
     : ['run', './thermo/cmd/thermo-api', command]
+  const defaultDWSIMWorker = path.join(
+    thermoAPIRoot,
+    'workers',
+    'DWSIMWorkerMono',
+    'DWSIMWorkerMono'
+  )
+  const dwsimWorker =
+    process.env.FUGACITY_DWSIM_WORKER ||
+    (fs.existsSync(defaultDWSIMWorker) ? defaultDWSIMWorker : undefined)
 
   return new Promise((resolve, reject) => {
     const child = execFile(
@@ -427,6 +436,7 @@ const invokeThermoCommand = async (command: string, payload?: unknown) => {
         env: {
           ...process.env,
           FUGACITY_APP_ROOT: thermoAPIRoot,
+          ...(dwsimWorker ? { FUGACITY_DWSIM_WORKER: dwsimWorker } : {}),
         },
       },
       (error, stdout, stderr) => {
@@ -455,9 +465,6 @@ const invokeThermoCommand = async (command: string, payload?: unknown) => {
 }
 
 ipcMain.handle('thermo.listCompounds', () => invokeThermoCommand('ListCompounds'))
-ipcMain.handle('thermo.getCompound', (_event, data) =>
-  invokeThermoCommand('GetCompound', data)
-)
 ipcMain.handle('thermo.listPropertyPackages', () =>
   invokeThermoCommand('ListPropertyPackages')
 )

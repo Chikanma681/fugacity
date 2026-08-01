@@ -45,6 +45,7 @@ func (c *Client) Call(method string, params any, result any) error {
 	}
 
 	scanner := bufio.NewScanner(stdout)
+	scanner.Buffer(make([]byte, 1024), 32*1024*1024)
 	if !scanner.Scan() {
 		_ = cmd.Wait()
 		message := stderr.String()

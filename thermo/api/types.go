@@ -8,12 +8,6 @@ type CompoundSummary struct {
 	Source   string `json:"source,omitempty"`
 }
 
-type CompoundDetails struct {
-	CompoundSummary
-	CASNumber string            `json:"casNumber,omitempty"`
-	Fields    map[string]string `json:"fields,omitempty"`
-}
-
 type PropertyPackageSummary struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -40,7 +34,6 @@ type FlashResult struct {
 	PressurePa    float64            `json:"pressurePa"`
 	VaporFraction float64            `json:"vaporFraction"`
 	Phases        []PhaseResult      `json:"phases"`
-	Properties    map[string]float64 `json:"properties,omitempty"`
 }
 
 type PhaseResult struct {

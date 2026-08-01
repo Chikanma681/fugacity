@@ -35,7 +35,6 @@ export type FlashResult = {
     fraction: number
     moleFractions: Record<string, number>
   }>
-  properties?: Record<string, number>
 }
 
 export type ThermoError = {
