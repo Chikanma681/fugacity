@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+if [[ ! -f "$DIR/DWSIMWorkerMono.exe" || "$DIR/Program.cs" -nt "$DIR/DWSIMWorkerMono.exe" ]]; then
+  if ! command -v mcs >/dev/null 2>&1; then
+    echo '{"jsonrpc":"2.0","result":null,"error":{"code":"mono_compiler_unavailable","message":"mcs is required to compile DWSIMWorkerMono.exe. Install Mono or prebuild the worker."},"id":0}'
+    exit 1
+  fi
+  mcs -r:System.Web.Extensions.dll -out:"$DIR/DWSIMWorkerMono.exe" "$DIR/Program.cs"
+fi
+exec mono "$DIR/DWSIMWorkerMono.exe"

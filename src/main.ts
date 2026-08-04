@@ -38,7 +38,7 @@ import getCurrentProjectFile from '@src/lib/getCurrentProjectFile'
 import { reportRejection } from '@src/lib/trap'
 let mainWindow: BrowserWindow | null = null
 let isInstallingUpdate = false
-const thermoAPIRoot = process.cwd()
+const thermoAPIRoot = app.isPackaged ? process.resourcesPath : process.cwd()
 /** All Electron windows will share this WASM module */
 const initPromise = initialiseWasmNode()
 
