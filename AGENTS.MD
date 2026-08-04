@@ -41,8 +41,50 @@ When adding thermodynamics features:
 - Web must call a backend service for real DWSIM thermodynamics; browsers cannot spawn Go or .NET workers directly.
 - If no backend is configured, do not provide fake DWSIM compounds or property packages. Surface clear unavailable errors and disabled states instead.
 
+### DWSIM Compound Database Loading
 
+Do not parse DWSIM compound databases in React or Go as the source of truth for simulations. DWSIM already has database loaders that convert database records into `DWSIM.Thermodynamics.BaseClasses.ConstantProperties`, and those `ConstantProperties` objects are what property packages and material streams use during calculations.
 
+The verified local DWSIM flow is:
+
+```vb
+Dim dtlc As New DWSIM.Thermodynamics.CalculatorInterface.Calculator
+dtlc.Initialize()
+```
+
+Inside `Calculator.Initialize()`, DWSIM creates `_availablecomps As Dictionary(Of String, ConstantProperties)` and loads compound databases through DWSIM's own database classes:
+
+- `LoadCSDB()` uses `Databases.ChemSep`, which reads embedded `DWSIM.Thermodynamics.chemsep1.xml` and `DWSIM.Thermodynamics.chemsep2.xml`.
+- `LoadDWSIMDB()` uses `Databases.DWSIM`, which reads embedded `DWSIM.Thermodynamics.dwsim.xml`.
+- `LoadBDDB()` uses `Databases.Biodiesel`, which reads embedded `DWSIM.Thermodynamics.biod_db.xml`.
+- `LoadEDB()` uses `Databases.Electrolyte`, which reads embedded `DWSIM.Thermodynamics.electrolyte.xml`.
+- `LoadCheDLDB()` uses `Databases.ChEDL_Thermo`, which reads embedded `DWSIM.Thermodynamics.chedl_thermo.json` and deserializes it into `List(Of ConstantProperties)`.
+- `LoadCPDB()` exists for CoolProp and is used by property-package initialization paths.
+
+Each database class exposes `Load()` and `Transfer()` methods. `Transfer()` returns DWSIM-native `ConstantProperties` instances, not raw XML or JSON records. DWSIM then stores these objects in `Calculator.AvailableCompounds` keyed by compound name.
+
+During flash calculations, DWSIM transfers the same compound registry into the selected property package and material stream. For each requested compound name, DWSIM does the equivalent of:
+
+```vb
+phase.Compounds.Add(c, New Compound(c, ""))
+phase.Compounds(c).ConstantProperties = pp._availablecomps(c)
+pp._selectedcomps.Add(c, pp._availablecomps(c))
+```
+
+Therefore Fugacity's DWSIM integration must treat the `.NET DWSIMWorker` as the DWSIM compatibility boundary:
+
+- The worker should instantiate `DWSIM.Thermodynamics.CalculatorInterface.Calculator`.
+- The worker should call `Initialize()` once and fail clearly if DWSIM cannot initialize.
+- `ListCompounds` and `GetCompound` should read from `calculator.AvailableCompounds`.
+- Compound IDs sent to DWSIM should remain DWSIM-resolvable compound names unless an explicit internal mapping is added.
+- `ListPropertyPackages` should use DWSIM's `GetPropPackList()`.
+- `ValidateThermoSelection` should verify that the property package can be created and that every compound exists in `AvailableCompounds`.
+- Flash calculations should call DWSIM APIs such as `PTFlash()` or `CalcEquilibrium()` using compounds from `AvailableCompounds`.
+
+Avoid maintaining an independent Go-side `ConstantProperties` parser as the simulation source of truth. It can be useful for inspection or experiments, but if it does not produce the same DWSIM-native objects that property packages consume, the UI may show compounds that cannot actually simulate.
+
+Throughout, the code very important, we try to DEFINE methods, function or classes in the same file before we call them for example. let say in a .cs file, we call a GetAvailableCompounds method but define it 300 lines later. while the code still works 
+it makes review it difficult. it is not MUST to do this but at the same time we should always do this when possible
 
 
 
