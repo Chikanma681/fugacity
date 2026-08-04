@@ -69,6 +69,10 @@ Mac_App_Distribution.provisionprofile
 # electron
 out/
 
+# DWSIM thermodynamics runtime
+/dwsim-runtime/
+/workers/DWSIMWorkerMono/DWSIMWorkerMono.exe
+
 # python
 __pycache__/
 uv.lock
