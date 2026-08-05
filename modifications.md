@@ -21,3 +21,10 @@ dwsim-runtime/ has the dll files for thermodynamics. we need to figure out this 
 - build to windows ,mac linux
 - shareable with colleagues
 - text to CAD
+
+
+
+## simulations
+- understand how dwsim simulations work (if you find it, you might need to figure out an intermediate ground (because in the future we are also going to add tool calls))
+- then also get flowsheet to work PROPERLY, 
+- then you make a streamdialog (where user can set things entering the stream , leaving it extra)
