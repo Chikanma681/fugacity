@@ -11,6 +11,12 @@
   "description": "Zoo Design Studio",
   "main": ".vite/build/main.js",
   "license": "MIT",
+  "overrides": {
+    "@electron/rebuild": {
+      ".": "4.0.3",
+      "yargs": "17.7.2"
+    }
+  },
   "workspaces": [
     "packages/codemirror-lang-kcl",
     "packages/codemirror-lsp-client",
@@ -157,6 +163,7 @@
     "@electron-forge/plugin-vite": "^7.11.1",
     "@electron/fuses": "^2.1.0",
     "@electron/notarize": "^2.5.0",
+    "@electron/rebuild": "4.0.3",
     "@eslint/compat": "^2.0.3",
     "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.39.2",
@@ -224,5 +231,8 @@
     "vitest": "^4.0.18",
     "vitest-webgl-canvas-mock": "^1.1.0",
     "ws": "^8.19.0"
+  },
+  "allowScripts": {
+    "electron@40.8.0": true
   }
 }
