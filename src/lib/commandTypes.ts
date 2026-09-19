@@ -159,7 +159,7 @@ export type CommandArgumentConfig<
 } & (
   | {
       inputType: 'options'
-          options:
+      options:
         | CommandArgumentOption<OutputType>[]
         | ((
             commandBarContext: {

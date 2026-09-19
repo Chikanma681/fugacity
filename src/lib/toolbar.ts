@@ -41,7 +41,7 @@ export interface ToolbarItemCallbackProps {
 }
 
 export const useToolbarConfig = ({
-  openCompoundsDialog = () => { },
+  openCompoundsDialog = () => {},
   propertyPackages = [],
   thermoUnavailableReason = null,
 }: {
@@ -64,14 +64,16 @@ export const useToolbarConfig = ({
               icon: 'beaker',
               status: 'available',
               title: ({ simulationState }) =>
-                simulationState.context.selectedPropertyPackageId === propertyPackage.id
+                simulationState.context.selectedPropertyPackageId ===
+                propertyPackage.id
                   ? `${propertyPackage.name} (Selected)`
                   : propertyPackage.name,
               showTitle: true,
               description: propertyPackage.description,
               links: [],
               isActive: ({ simulationState }) =>
-                simulationState.context.selectedPropertyPackageId === propertyPackage.id,
+                simulationState.context.selectedPropertyPackageId ===
+                propertyPackage.id,
             }))
           : [
               {
@@ -81,11 +83,13 @@ export const useToolbarConfig = ({
                 status: 'unavailable',
                 disabled: true,
                 disabledReason:
-                  thermoUnavailableReason || 'DWSIM property packages are unavailable.',
+                  thermoUnavailableReason ||
+                  'DWSIM property packages are unavailable.',
                 title: 'Property packages unavailable',
                 showTitle: true,
                 description:
-                  thermoUnavailableReason || 'DWSIM property packages are unavailable.',
+                  thermoUnavailableReason ||
+                  'DWSIM property packages are unavailable.',
                 links: [],
               },
             ],

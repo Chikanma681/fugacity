@@ -62,7 +62,6 @@ export const TEST_SETTINGS_CORRUPTED = {
   },
 } satisfies Partial<SaveSettingsPayload>
 
-
 export const TEST_CODE_LONG_WITH_ERROR_OUT_OF_VIEW = `width = 50.8
 height = 30
 thickness = 2

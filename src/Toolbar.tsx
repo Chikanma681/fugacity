@@ -56,7 +56,9 @@ function getStoredCompoundIds(): string[] {
   try {
     const parsedValue = JSON.parse(rawValue)
     return isArray(parsedValue)
-      ? parsedValue.filter((value): value is string => typeof value === 'string')
+      ? parsedValue.filter(
+          (value): value is string => typeof value === 'string'
+        )
       : []
   } catch {
     return []
@@ -72,407 +74,411 @@ function getStoredPropertyPackageId(): SimulationPropertyPackageId {
   return rawValue || DEFAULT_PROPERTY_PACKAGE_ID
 }
 
-const Toolbar_ = memo(
-  () => {
-    const iconClassName =
-      'group-disabled:text-chalkboard-50 !text-inherit dark:group-enabled:group-hover:!text-inherit'
-    const bgClassName = '!bg-transparent'
-    const buttonBgClassName =
-      'bg-chalkboard-transparent dark:bg-transparent disabled:bg-transparent dark:disabled:bg-transparent enabled:hover:bg-chalkboard-10 dark:enabled:hover:bg-chalkboard-100 pressed:!bg-primary pressed:enabled:hover:!text-chalkboard-10'
-    const buttonBorderClassName = '!border-transparent'
+const Toolbar_ = memo(() => {
+  const iconClassName =
+    'group-disabled:text-chalkboard-50 !text-inherit dark:group-enabled:group-hover:!text-inherit'
+  const bgClassName = '!bg-transparent'
+  const buttonBgClassName =
+    'bg-chalkboard-transparent dark:bg-transparent disabled:bg-transparent dark:disabled:bg-transparent enabled:hover:bg-chalkboard-10 dark:enabled:hover:bg-chalkboard-100 pressed:!bg-primary pressed:enabled:hover:!text-chalkboard-10'
+  const buttonBorderClassName = '!border-transparent'
 
-    const toolbarButtonsRef = useRef<HTMLUListElement>(null)
-    const [showRichContent, setShowRichContent] = useState(false)
-    const [compounds, setCompounds] = useState<CompoundOption[]>([])
-    const [propertyPackages, setPropertyPackages] = useState<PropertyPackageOption[]>([])
-    const [thermoError, setThermoError] = useState<string | null>(null)
-    const [simulationState, simulationSend] = useMachine(simulationMachine, {
-      input: {
-        selectedCompoundIds: getStoredCompoundIds(),
-        selectedPropertyPackageId: getStoredPropertyPackageId(),
-      },
-    })
-    const openCompoundsDialog = useCallback(() => {
-      simulationSend({ type: 'Open compounds dialog' })
-    }, [simulationSend])
+  const toolbarButtonsRef = useRef<HTMLUListElement>(null)
+  const [showRichContent, setShowRichContent] = useState(false)
+  const [compounds, setCompounds] = useState<CompoundOption[]>([])
+  const [propertyPackages, setPropertyPackages] = useState<
+    PropertyPackageOption[]
+  >([])
+  const [thermoError, setThermoError] = useState<string | null>(null)
+  const [simulationState, simulationSend] = useMachine(simulationMachine, {
+    input: {
+      selectedCompoundIds: getStoredCompoundIds(),
+      selectedPropertyPackageId: getStoredPropertyPackageId(),
+    },
+  })
+  const openCompoundsDialog = useCallback(() => {
+    simulationSend({ type: 'Open compounds dialog' })
+  }, [simulationSend])
 
-    useEffect(() => {
-      let cancelled = false
+  useEffect(() => {
+    let cancelled = false
 
-      Promise.all([listCompounds(), listPropertyPackages()])
-        .then(([nextCompounds, nextPropertyPackages]) => {
-          if (cancelled) {
-            return
-          }
-
-          setCompounds(nextCompounds)
-          setPropertyPackages(nextPropertyPackages)
-          setThermoError(null)
-        })
-        .catch((error) => {
-          console.warn('Failed to load thermodynamics data', error)
-          if (!cancelled) {
-            setCompounds([])
-            setPropertyPackages([])
-            setThermoError(
-              error instanceof Error
-                ? error.message
-                : 'DWSIM thermodynamics data is unavailable.'
-            )
-          }
-        })
-
-      return () => {
-        cancelled = true
-      }
-    }, [])
-
-    useEffect(() => {
-      if (typeof window === 'undefined') {
-        return
-      }
-
-      window.localStorage.setItem(
-        COMPOUNDS_STORAGE_KEY,
-        JSON.stringify(simulationState.context.selectedCompoundIds)
-      )
-      window.localStorage.setItem(
-        PROPERTY_PACKAGE_STORAGE_KEY,
-        simulationState.context.selectedPropertyPackageId
-      )
-    }, [simulationState.context.selectedCompoundIds, simulationState.context.selectedPropertyPackageId])
-
-    const toolbar = useToolbarConfig({
-      openCompoundsDialog,
-      propertyPackages,
-      thermoUnavailableReason: thermoError,
-    })
-
-    const disableAllButtons = false
-
-    /** These are the props that will be passed to the toolbar item callbacks
-     * They are memoized to prevent unnecessary re-renders,
-     * but they still get a lot of churn from the state machine
-     * so I think there's a lot of room for improvement here
-     */
-    const configCallbackProps: ToolbarItemCallbackProps = useMemo(
-      () => ({
-        simulationState,
-        simulationSend,
-        isActive: false, // Default value - individual items will override this
-      }),
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-      [
-        simulationState,
-        simulationSend,
-      ]
-    )
-
-    const tooltipContentClassName = !showRichContent
-      ? ''
-      : '!text-left text-wrap !text-xs !p-0 !pb-2 flex !max-w-none !w-72 flex-col items-stretch'
-    const richContentTimeout = useRef<number | null>(null)
-    const richContentClearTimeout = useRef<number | null>(null)
-    // On mouse enter, show rich content after a 1s delay
-    const handleMouseEnter = useCallback(() => {
-      // Cancel the clear timeout if it's already set
-      if (richContentClearTimeout.current) {
-        clearTimeout(richContentClearTimeout.current)
-      }
-      // Start our own timeout to show the rich content
-      richContentTimeout.current = window.setTimeout(() => {
-        setShowRichContent(true)
-        if (richContentClearTimeout.current) {
-          clearTimeout(richContentClearTimeout.current)
+    Promise.all([listCompounds(), listPropertyPackages()])
+      .then(([nextCompounds, nextPropertyPackages]) => {
+        if (cancelled) {
+          return
         }
-      }, 1000)
-    }, [setShowRichContent])
-    // On mouse leave, clear the timeout and hide rich content
-    const handleMouseLeave = useCallback(() => {
-      // Clear the timeout to show rich content
-      if (richContentTimeout.current) {
-        clearTimeout(richContentTimeout.current)
-      }
-      // Start a timeout to hide the rich content
-      richContentClearTimeout.current = window.setTimeout(() => {
-        setShowRichContent(false)
-        if (richContentClearTimeout.current) {
-          clearTimeout(richContentClearTimeout.current)
-        }
-      }, 500)
-    }, [setShowRichContent])
 
-    const resolvedToolbarItems: (
-      | ResolvedToolbarItem
-      | ResolvedToolbarDropdown
-      | 'break'
-    )[] = useMemo(() => {
-      return toolbar.items.map((maybeIconConfig) => {
-        if (maybeIconConfig === 'break') {
-          return 'break'
-        } else if (isToolbarDropdown(maybeIconConfig)) {
-          return {
-            id: maybeIconConfig.id,
-            array: maybeIconConfig.array.map((item) => resolveItemConfig(item)),
-          }
-        } else {
-          return resolveItemConfig(maybeIconConfig)
+        setCompounds(nextCompounds)
+        setPropertyPackages(nextPropertyPackages)
+        setThermoError(null)
+      })
+      .catch((error) => {
+        console.warn('Failed to load thermodynamics data', error)
+        if (!cancelled) {
+          setCompounds([])
+          setPropertyPackages([])
+          setThermoError(
+            error instanceof Error
+              ? error.message
+              : 'DWSIM thermodynamics data is unavailable.'
+          )
         }
       })
 
-      function resolveItemConfig(maybeIconConfig: ToolbarItem): ResolvedToolbarItem {
-        const isConfiguredAvailable = ['available', 'experimental'].includes(
-          maybeIconConfig.status
-        )
-        const itemCallbackProps = {
-          ...configCallbackProps,
-          isActive: false,
-        }
-        const itemIsActive = maybeIconConfig.isActive?.(itemCallbackProps) || false
-        const isDisabled = disableAllButtons || !isConfiguredAvailable || maybeIconConfig.disabled === true
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
-        const resolvedCallbackProps = {
-          ...configCallbackProps,
-          isActive: itemIsActive,
-        }
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
 
-        return {
-          ...maybeIconConfig,
-          title:
-            typeof maybeIconConfig.title === 'string'
-              ? maybeIconConfig.title
-              : maybeIconConfig.title(resolvedCallbackProps),
-          description: maybeIconConfig.description,
-          links: maybeIconConfig.links || [],
-          isActive: itemIsActive,
-          hotkey: maybeIconConfig.hotkey,
-          disabled: isDisabled,
-          disabledReason: maybeIconConfig.disabledReason,
-          disableHotkey: maybeIconConfig.disableHotkey,
-          status: maybeIconConfig.status,
-          callbackProps: resolvedCallbackProps,
-        }
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-    }, [disableAllButtons, configCallbackProps, toolbar])
-
-    // To remember the last selected item in an ActionButtonDropdown
-    const [lastSelectedMultiActionItem, _] = useState(
-      new Map<
-        number /* index in resolvedToolbarItems */,
-        number /* index in maybeIconConfig */
-      >()
+    window.localStorage.setItem(
+      COMPOUNDS_STORAGE_KEY,
+      JSON.stringify(simulationState.context.selectedCompoundIds)
     )
+    window.localStorage.setItem(
+      PROPERTY_PACKAGE_STORAGE_KEY,
+      simulationState.context.selectedPropertyPackageId
+    )
+  }, [
+    simulationState.context.selectedCompoundIds,
+    simulationState.context.selectedPropertyPackageId,
+  ])
 
-    return (
-      <menu
-        data-current-mode="simulation"
-        data-testid="toolbar"
-        data-onboarding-id="toolbar"
-        className="toolbar z-[19] max-w-full whitespace-nowrap px-2 py-1 mx-auto bg-chalkboard-10 dark:bg-chalkboard-90 relative border border-chalkboard-30 dark:border-chalkboard-80 border-t-0 shadow-sm"
+  const toolbar = useToolbarConfig({
+    openCompoundsDialog,
+    propertyPackages,
+    thermoUnavailableReason: thermoError,
+  })
+
+  const disableAllButtons = false
+
+  /** These are the props that will be passed to the toolbar item callbacks
+   * They are memoized to prevent unnecessary re-renders,
+   * but they still get a lot of churn from the state machine
+   * so I think there's a lot of room for improvement here
+   */
+  const configCallbackProps: ToolbarItemCallbackProps = useMemo(
+    () => ({
+      simulationState,
+      simulationSend,
+      isActive: false, // Default value - individual items will override this
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
+    [simulationState, simulationSend]
+  )
+
+  const tooltipContentClassName = !showRichContent
+    ? ''
+    : '!text-left text-wrap !text-xs !p-0 !pb-2 flex !max-w-none !w-72 flex-col items-stretch'
+  const richContentTimeout = useRef<number | null>(null)
+  const richContentClearTimeout = useRef<number | null>(null)
+  // On mouse enter, show rich content after a 1s delay
+  const handleMouseEnter = useCallback(() => {
+    // Cancel the clear timeout if it's already set
+    if (richContentClearTimeout.current) {
+      clearTimeout(richContentClearTimeout.current)
+    }
+    // Start our own timeout to show the rich content
+    richContentTimeout.current = window.setTimeout(() => {
+      setShowRichContent(true)
+      if (richContentClearTimeout.current) {
+        clearTimeout(richContentClearTimeout.current)
+      }
+    }, 1000)
+  }, [setShowRichContent])
+  // On mouse leave, clear the timeout and hide rich content
+  const handleMouseLeave = useCallback(() => {
+    // Clear the timeout to show rich content
+    if (richContentTimeout.current) {
+      clearTimeout(richContentTimeout.current)
+    }
+    // Start a timeout to hide the rich content
+    richContentClearTimeout.current = window.setTimeout(() => {
+      setShowRichContent(false)
+      if (richContentClearTimeout.current) {
+        clearTimeout(richContentClearTimeout.current)
+      }
+    }, 500)
+  }, [setShowRichContent])
+
+  const resolvedToolbarItems: (
+    | ResolvedToolbarItem
+    | ResolvedToolbarDropdown
+    | 'break'
+  )[] = useMemo(() => {
+    return toolbar.items.map((maybeIconConfig) => {
+      if (maybeIconConfig === 'break') {
+        return 'break'
+      } else if (isToolbarDropdown(maybeIconConfig)) {
+        return {
+          id: maybeIconConfig.id,
+          array: maybeIconConfig.array.map((item) => resolveItemConfig(item)),
+        }
+      } else {
+        return resolveItemConfig(maybeIconConfig)
+      }
+    })
+
+    function resolveItemConfig(
+      maybeIconConfig: ToolbarItem
+    ): ResolvedToolbarItem {
+      const isConfiguredAvailable = ['available', 'experimental'].includes(
+        maybeIconConfig.status
+      )
+      const itemCallbackProps = {
+        ...configCallbackProps,
+        isActive: false,
+      }
+      const itemIsActive =
+        maybeIconConfig.isActive?.(itemCallbackProps) || false
+      const isDisabled =
+        disableAllButtons ||
+        !isConfiguredAvailable ||
+        maybeIconConfig.disabled === true
+
+      const resolvedCallbackProps = {
+        ...configCallbackProps,
+        isActive: itemIsActive,
+      }
+
+      return {
+        ...maybeIconConfig,
+        title:
+          typeof maybeIconConfig.title === 'string'
+            ? maybeIconConfig.title
+            : maybeIconConfig.title(resolvedCallbackProps),
+        description: maybeIconConfig.description,
+        links: maybeIconConfig.links || [],
+        isActive: itemIsActive,
+        hotkey: maybeIconConfig.hotkey,
+        disabled: isDisabled,
+        disabledReason: maybeIconConfig.disabledReason,
+        disableHotkey: maybeIconConfig.disableHotkey,
+        status: maybeIconConfig.status,
+        callbackProps: resolvedCallbackProps,
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
+  }, [disableAllButtons, configCallbackProps, toolbar])
+
+  // To remember the last selected item in an ActionButtonDropdown
+  const [lastSelectedMultiActionItem, _] = useState(
+    new Map<
+      number /* index in resolvedToolbarItems */,
+      number /* index in maybeIconConfig */
+    >()
+  )
+
+  return (
+    <menu
+      data-current-mode="simulation"
+      data-testid="toolbar"
+      data-onboarding-id="toolbar"
+      className="toolbar z-[19] max-w-full whitespace-nowrap px-2 py-1 mx-auto bg-chalkboard-10 dark:bg-chalkboard-90 relative border border-chalkboard-30 dark:border-chalkboard-80 border-t-0 shadow-sm"
+    >
+      <ul
+        ref={toolbarButtonsRef}
+        className={
+          'has-[[aria-expanded=true]]:!pointer-events-none m-0 py-1 rounded-l-sm flex flex-wrap gap-1.5 items-center '
+        }
       >
-        <ul
-          ref={toolbarButtonsRef}
-          className={
-            'has-[[aria-expanded=true]]:!pointer-events-none m-0 py-1 rounded-l-sm flex flex-wrap gap-1.5 items-center '
-          }
-        >
-          {/* A menu item will either be a vertical line break, a button with a dropdown, or a single button */}
-          {resolvedToolbarItems.map((maybeIconConfig, i) => {
-            // Vertical Line Break
-            if (maybeIconConfig === 'break') {
-              return (
-                <div
-                  key={'break-' + i}
-                  className="h-5 w-[1px] block bg-chalkboard-30 dark:bg-chalkboard-80"
-                />
-              )
-            } else if (isResolvedToolbarDropdown(maybeIconConfig)) {
-              // A button with a dropdown
-              const selectedIcon =
-                maybeIconConfig.array.find((c) => c.isActive) ||
-                maybeIconConfig.array[lastSelectedMultiActionItem.get(i) ?? 0]
-
-              // Save the last selected item in the dropdown
-              lastSelectedMultiActionItem.set(
-                i,
-                maybeIconConfig.array.indexOf(selectedIcon)
-              )
-              return (
-                <ActionButtonDropdown
-                  Element="button"
-                  key={selectedIcon.id}
-                  data-testid={selectedIcon.id + '-dropdown'}
-                  data-onboarding-id={selectedIcon.id + '-dropdown'}
-                  id={selectedIcon.id + '-dropdown'}
-                  name={maybeIconConfig.id}
-                  className={
-                    (maybeIconConfig.array[0].alwaysDark
-                      ? 'dark bg-chalkboard-90 '
-                      : '!bg-transparent ') +
-                    'group/wrapper ' +
-                    buttonBorderClassName +
-                    ' relative group !gap-0'
-                  }
-                  splitMenuItems={maybeIconConfig.array.map((itemConfig) => ({
-                    id: itemConfig.id,
-                    label: itemConfig.title,
-                    hotkey: itemConfig.hotkey,
-                    onClick: () => itemConfig.onClick(itemConfig.callbackProps),
-                    disabled:
-                      disableAllButtons ||
-                      !['available', 'experimental'].includes(
-                        itemConfig.status
-                      ) ||
-                      itemConfig.disabled === true ||
-                      itemConfig.disableHotkey === true,
-                    status: itemConfig.status,
-                  }))}
-                >
-                  <div
-                    className="contents"
-                    // Mouse events do not fire on disabled buttons
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    <ActionButton
-                      Element="button"
-                      id={selectedIcon.id}
-                      data-testid={selectedIcon.id}
-                      data-onboarding-id={selectedIcon.id}
-                      iconStart={{
-                        icon: selectedIcon.icon,
-                        iconColor: selectedIcon.iconColor,
-                        className: iconClassName,
-                        bgClassName: bgClassName,
-                      }}
-                      className={
-                        '!border-transparent !px-0 pressed:!text-chalkboard-10 pressed:enabled:hovered:!text-chalkboard-10 ' +
-                        buttonBgClassName
-                      }
-                      aria-pressed={selectedIcon.isActive}
-                      disabled={
-                        disableAllButtons ||
-                        !['available', 'experimental'].includes(
-                          selectedIcon.status
-                        ) ||
-                        selectedIcon.disabled
-                      }
-                      name={selectedIcon.title}
-                      // aria-description is still in ARIA 1.3 draft.
-
-                      aria-description={selectedIcon.description}
-                      onClick={() =>
-                        selectedIcon.onClick(selectedIcon.callbackProps)
-                      }
-                    >
-                      <span
-                        className={!selectedIcon.showTitle ? 'sr-only' : ''}
-                      >
-                        {selectedIcon.title}
-                      </span>
-                      <ToolbarItemTooltip
-                        itemConfig={selectedIcon}
-                        configCallbackProps={configCallbackProps}
-                        wrapperClassName="ui-open:!hidden"
-                        contentClassName={tooltipContentClassName}
-                      >
-                        {showRichContent ? (
-                          <ToolbarItemTooltipRichContent itemConfig={selectedIcon} />
-                        ) : (
-                          <ToolbarItemTooltipShortContent
-                            status={selectedIcon.status}
-                            title={selectedIcon.title}
-                            hotkey={selectedIcon.hotkey}
-                          />
-                        )}
-                      </ToolbarItemTooltip>
-                    </ActionButton>
-                  </div>
-                </ActionButtonDropdown>
-              )
-            }
-            const itemConfig = maybeIconConfig
-
-            // A single button
+        {/* A menu item will either be a vertical line break, a button with a dropdown, or a single button */}
+        {resolvedToolbarItems.map((maybeIconConfig, i) => {
+          // Vertical Line Break
+          if (maybeIconConfig === 'break') {
             return (
               <div
-                className={`relative ${itemConfig.alwaysDark ? ' dark bg-chalkboard-90 ' : ''}`}
-                key={itemConfig.id}
-                // Mouse events do not fire on disabled buttons
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              >
-                <ActionButton
-                  Element="button"
-                  key={itemConfig.id}
-                  id={itemConfig.id}
-                  data-testid={itemConfig.id}
-                  data-onboarding-id={itemConfig.id}
-                  iconStart={{
-                    icon: itemConfig.icon,
-                    iconColor: itemConfig.iconColor,
-                    className: iconClassName,
-                    bgClassName: bgClassName,
-                  }}
-                  className={
-                    'pressed:!text-chalkboard-10 pressed:enabled:hovered:!text-chalkboard-10 ' +
-                    buttonBorderClassName +
-                    ' ' +
-                    buttonBgClassName +
-                    (!itemConfig.showTitle ? ' !px-0' : '')
-                  }
-                  name={itemConfig.title}
-                  // aria-description is still in ARIA 1.3 draft.
+                key={'break-' + i}
+                className="h-5 w-[1px] block bg-chalkboard-30 dark:bg-chalkboard-80"
+              />
+            )
+          } else if (isResolvedToolbarDropdown(maybeIconConfig)) {
+            // A button with a dropdown
+            const selectedIcon =
+              maybeIconConfig.array.find((c) => c.isActive) ||
+              maybeIconConfig.array[lastSelectedMultiActionItem.get(i) ?? 0]
 
-                  aria-description={itemConfig.description}
-                  aria-pressed={itemConfig.isActive}
-                  disabled={
+            // Save the last selected item in the dropdown
+            lastSelectedMultiActionItem.set(
+              i,
+              maybeIconConfig.array.indexOf(selectedIcon)
+            )
+            return (
+              <ActionButtonDropdown
+                Element="button"
+                key={selectedIcon.id}
+                data-testid={selectedIcon.id + '-dropdown'}
+                data-onboarding-id={selectedIcon.id + '-dropdown'}
+                id={selectedIcon.id + '-dropdown'}
+                name={maybeIconConfig.id}
+                className={
+                  (maybeIconConfig.array[0].alwaysDark
+                    ? 'dark bg-chalkboard-90 '
+                    : '!bg-transparent ') +
+                  'group/wrapper ' +
+                  buttonBorderClassName +
+                  ' relative group !gap-0'
+                }
+                splitMenuItems={maybeIconConfig.array.map((itemConfig) => ({
+                  id: itemConfig.id,
+                  label: itemConfig.title,
+                  hotkey: itemConfig.hotkey,
+                  onClick: () => itemConfig.onClick(itemConfig.callbackProps),
+                  disabled:
                     disableAllButtons ||
                     !['available', 'experimental'].includes(
                       itemConfig.status
                     ) ||
-                    itemConfig.disabled
-                  }
-                  onClick={() => itemConfig.onClick(itemConfig.callbackProps)}
+                    itemConfig.disabled === true ||
+                    itemConfig.disableHotkey === true,
+                  status: itemConfig.status,
+                }))}
+              >
+                <div
+                  className="contents"
+                  // Mouse events do not fire on disabled buttons
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
                 >
-                  <span className={!itemConfig.showTitle ? 'sr-only' : ''}>
-                    {itemConfig.title}
-                  </span>
-                </ActionButton>
-                <ToolbarItemTooltip
-                  itemConfig={itemConfig}
-                  configCallbackProps={configCallbackProps}
-                  contentClassName={tooltipContentClassName}
-                >
-                  {showRichContent ? (
-                    <ToolbarItemTooltipRichContent itemConfig={itemConfig} />
-                  ) : (
-                    <ToolbarItemTooltipShortContent
-                      status={itemConfig.status}
-                      title={itemConfig.title}
-                      hotkey={itemConfig.hotkey}
-                    />
-                  )}
-                </ToolbarItemTooltip>
-              </div>
+                  <ActionButton
+                    Element="button"
+                    id={selectedIcon.id}
+                    data-testid={selectedIcon.id}
+                    data-onboarding-id={selectedIcon.id}
+                    iconStart={{
+                      icon: selectedIcon.icon,
+                      iconColor: selectedIcon.iconColor,
+                      className: iconClassName,
+                      bgClassName: bgClassName,
+                    }}
+                    className={
+                      '!border-transparent !px-0 pressed:!text-chalkboard-10 pressed:enabled:hovered:!text-chalkboard-10 ' +
+                      buttonBgClassName
+                    }
+                    aria-pressed={selectedIcon.isActive}
+                    disabled={
+                      disableAllButtons ||
+                      !['available', 'experimental'].includes(
+                        selectedIcon.status
+                      ) ||
+                      selectedIcon.disabled
+                    }
+                    name={selectedIcon.title}
+                    // aria-description is still in ARIA 1.3 draft.
+
+                    aria-description={selectedIcon.description}
+                    onClick={() =>
+                      selectedIcon.onClick(selectedIcon.callbackProps)
+                    }
+                  >
+                    <span className={!selectedIcon.showTitle ? 'sr-only' : ''}>
+                      {selectedIcon.title}
+                    </span>
+                    <ToolbarItemTooltip
+                      itemConfig={selectedIcon}
+                      configCallbackProps={configCallbackProps}
+                      wrapperClassName="ui-open:!hidden"
+                      contentClassName={tooltipContentClassName}
+                    >
+                      {showRichContent ? (
+                        <ToolbarItemTooltipRichContent
+                          itemConfig={selectedIcon}
+                        />
+                      ) : (
+                        <ToolbarItemTooltipShortContent
+                          status={selectedIcon.status}
+                          title={selectedIcon.title}
+                          hotkey={selectedIcon.hotkey}
+                        />
+                      )}
+                    </ToolbarItemTooltip>
+                  </ActionButton>
+                </div>
+              </ActionButtonDropdown>
             )
-          })}
-        </ul>
-        <CompoundsDialog
-          isOpen={simulationState.matches('compoundsDialogOpen')}
-          selectedCompoundIds={simulationState.context.selectedCompoundIds}
-          compounds={compounds}
-          error={thermoError}
-          onClose={() => simulationSend({ type: 'Close compounds dialog' })}
-          onSave={(compoundIds) => {
-            simulationSend({ type: 'Save compounds', compoundIds })
-          }}
-        />
-      </menu>
-    )
-  }
-)
+          }
+          const itemConfig = maybeIconConfig
+
+          // A single button
+          return (
+            <div
+              className={`relative ${itemConfig.alwaysDark ? ' dark bg-chalkboard-90 ' : ''}`}
+              key={itemConfig.id}
+              // Mouse events do not fire on disabled buttons
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <ActionButton
+                Element="button"
+                key={itemConfig.id}
+                id={itemConfig.id}
+                data-testid={itemConfig.id}
+                data-onboarding-id={itemConfig.id}
+                iconStart={{
+                  icon: itemConfig.icon,
+                  iconColor: itemConfig.iconColor,
+                  className: iconClassName,
+                  bgClassName: bgClassName,
+                }}
+                className={
+                  'pressed:!text-chalkboard-10 pressed:enabled:hovered:!text-chalkboard-10 ' +
+                  buttonBorderClassName +
+                  ' ' +
+                  buttonBgClassName +
+                  (!itemConfig.showTitle ? ' !px-0' : '')
+                }
+                name={itemConfig.title}
+                // aria-description is still in ARIA 1.3 draft.
+
+                aria-description={itemConfig.description}
+                aria-pressed={itemConfig.isActive}
+                disabled={
+                  disableAllButtons ||
+                  !['available', 'experimental'].includes(itemConfig.status) ||
+                  itemConfig.disabled
+                }
+                onClick={() => itemConfig.onClick(itemConfig.callbackProps)}
+              >
+                <span className={!itemConfig.showTitle ? 'sr-only' : ''}>
+                  {itemConfig.title}
+                </span>
+              </ActionButton>
+              <ToolbarItemTooltip
+                itemConfig={itemConfig}
+                configCallbackProps={configCallbackProps}
+                contentClassName={tooltipContentClassName}
+              >
+                {showRichContent ? (
+                  <ToolbarItemTooltipRichContent itemConfig={itemConfig} />
+                ) : (
+                  <ToolbarItemTooltipShortContent
+                    status={itemConfig.status}
+                    title={itemConfig.title}
+                    hotkey={itemConfig.hotkey}
+                  />
+                )}
+              </ToolbarItemTooltip>
+            </div>
+          )
+        })}
+      </ul>
+      <CompoundsDialog
+        isOpen={simulationState.matches('compoundsDialogOpen')}
+        selectedCompoundIds={simulationState.context.selectedCompoundIds}
+        compounds={compounds}
+        error={thermoError}
+        onClose={() => simulationSend({ type: 'Close compounds dialog' })}
+        onSave={(compoundIds) => {
+          simulationSend({ type: 'Save compounds', compoundIds })
+        }}
+      />
+    </menu>
+  )
+})
 
 interface ToolbarItemContentsProps extends React.PropsWithChildren {
   itemConfig: ResolvedToolbarItem
@@ -515,7 +521,7 @@ const ToolbarItemTooltip = memo(function ToolbarItemContents({
     () =>
       onDesktop
         ? // Without this, the tooltip disappears before being able to click on anything in it
-        ({ WebkitAppRegion: 'no-drag' } as React.CSSProperties)
+          ({ WebkitAppRegion: 'no-drag' } as React.CSSProperties)
         : {},
     [onDesktop]
   )
@@ -544,10 +550,11 @@ const ToolbarItemTooltipShortContent = ({
   hotkey?: string | string[]
 }) => (
   <div
-    className={`text-sm flex flex-col ${!['available', 'experimental'].includes(status)
-      ? 'text-chalkboard-70 dark:text-chalkboard-40'
-      : ''
-      }`}
+    className={`text-sm flex flex-col ${
+      !['available', 'experimental'].includes(status)
+        ? 'text-chalkboard-70 dark:text-chalkboard-40'
+        : ''
+    }`}
   >
     {status === 'experimental' && (
       <div className="text-xs flex justify-center item-center gap-1 pb-1 border-b border-chalkboard-50">
@@ -588,10 +595,11 @@ const ToolbarItemTooltipRichContent = memo(
             />
           )}
           <div
-            className={`text-sm flex-1 flex flex-col gap-1 ${!shouldBeEnabled
-              ? 'text-chalkboard-70 dark:text-chalkboard-40'
-              : ''
-              }`}
+            className={`text-sm flex-1 flex flex-col gap-1 ${
+              !shouldBeEnabled
+                ? 'text-chalkboard-70 dark:text-chalkboard-40'
+                : ''
+            }`}
           >
             {itemConfig.title}
           </div>

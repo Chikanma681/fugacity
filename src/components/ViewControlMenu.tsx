@@ -145,23 +145,23 @@ export function useViewControlMenuItems() {
       </ContextMenuItem>,
       ...(sketching
         ? [
-          <ContextMenuDivider />,
-          <ContextMenuItem
-            icon={snapToGrid ? 'checkmark' : undefined}
-            hotkey={SNAP_TO_GRID_HOTKEY}
-            onClick={() => {
-              settings.send({
-                type: 'set.modeling.snapToGrid',
-                data: {
-                  level: 'project',
-                  value: !snapToGrid,
-                },
-              })
-            }}
-          >
-            Snap to Grid
-          </ContextMenuItem>,
-        ]
+            <ContextMenuDivider />,
+            <ContextMenuItem
+              icon={snapToGrid ? 'checkmark' : undefined}
+              hotkey={SNAP_TO_GRID_HOTKEY}
+              onClick={() => {
+                settings.send({
+                  type: 'set.modeling.snapToGrid',
+                  data: {
+                    level: 'project',
+                    value: !snapToGrid,
+                  },
+                })
+              }}
+            >
+              Snap to Grid
+            </ContextMenuItem>,
+          ]
         : []),
     ],
     [

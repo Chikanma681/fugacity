@@ -577,7 +577,6 @@ test.describe(
           await changeUnitOfMeasureInCommandBar('cm')
           await changeUnitOfMeasureInCommandBar('m')
         })
-
       }
     )
 

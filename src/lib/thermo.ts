@@ -42,7 +42,8 @@ export type ThermoError = {
   message: string
 }
 
-export const DEFAULT_PROPERTY_PACKAGE_ID: KnownPropertyPackageId = 'peng-robinson'
+export const DEFAULT_PROPERTY_PACKAGE_ID: KnownPropertyPackageId =
+  'peng-robinson'
 
 function unavailableOnWeb(command: string) {
   return Promise.reject(
@@ -53,18 +54,28 @@ function unavailableOnWeb(command: string) {
 }
 
 export async function listCompounds(): Promise<CompoundOption[]> {
-  return window.electron?.thermo.listCompounds() ?? unavailableOnWeb('ListCompounds')
+  return (
+    window.electron?.thermo.listCompounds() ?? unavailableOnWeb('ListCompounds')
+  )
 }
 
 export async function listPropertyPackages(): Promise<PropertyPackageOption[]> {
-  return window.electron?.thermo.listPropertyPackages() ?? unavailableOnWeb('ListPropertyPackages')
+  return (
+    window.electron?.thermo.listPropertyPackages() ??
+    unavailableOnWeb('ListPropertyPackages')
+  )
 }
 
 export async function validateSelection(selection: ThermoSelection) {
-  return window.electron?.thermo.validateSelection(selection) ?? unavailableOnWeb('ValidateThermoSelection')
+  return (
+    window.electron?.thermo.validateSelection(selection) ??
+    unavailableOnWeb('ValidateThermoSelection')
+  )
 }
 
-export async function calculatePTFlash(request: FlashRequest): Promise<FlashResult> {
+export async function calculatePTFlash(
+  request: FlashRequest
+): Promise<FlashResult> {
   if (!window.electron?.thermo.calculatePTFlash) {
     return unavailableOnWeb('CalculatePTFlash')
   }

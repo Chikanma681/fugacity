@@ -5347,7 +5347,6 @@ export const modelingMachine = setup({
           guard: 'Has exportable geometry',
         },
 
-
         'Delete selection': {
           target: 'Applying Delete selection',
           guard: 'has valid selection for deletion',
@@ -7351,7 +7350,6 @@ export const modelingMachine = setup({
         onError: ['idle'],
       },
     },
-
 
     'Boolean subtracting': {
       invoke: {

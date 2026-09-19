@@ -18,13 +18,13 @@ type DragState =
   | { type: 'none' }
   | { type: 'pan'; originX: number; originY: number; start: Viewport }
   | {
-    type: 'node'
-    nodeId: string
-    originX: number
-    originY: number
-    startX: number
-    startY: number
-  }
+      type: 'node'
+      nodeId: string
+      originX: number
+      originY: number
+      startX: number
+      startY: number
+    }
 
 const initialViewport: Viewport = { x: 0, y: 0, scale: 1 }
 

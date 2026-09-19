@@ -446,7 +446,7 @@ export const ConnectionStream = (props: {
         guard={viewControlContextMenuGuard}
         menuTargetElement={videoWrapperRef}
       />
-      {(!flowsheetOnly && (!isSceneReady || showManualConnect)) && (
+      {!flowsheetOnly && (!isSceneReady || showManualConnect) && (
         <Loading
           isRetrying={false}
           retryAttemptCountdown={0}

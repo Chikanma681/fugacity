@@ -51,7 +51,6 @@ const scheduleMenuGC = () => {
   }, 10000)
 }
 
-
 // Check the command line arguments for a project path
 const args = parseCLIArgs(process.argv)
 
@@ -341,7 +340,6 @@ ipcMain.handle('app.testProperty', (event, propertyName) => {
   return app.testProperty[propertyName]
 })
 
-
 ipcMain.handle('app.resizeWindow', (event, data) => {
   return mainWindow?.setSize(data[0], data[1])
 })
@@ -464,7 +462,9 @@ const invokeThermoCommand = async (command: string, payload?: unknown) => {
   })
 }
 
-ipcMain.handle('thermo.listCompounds', () => invokeThermoCommand('ListCompounds'))
+ipcMain.handle('thermo.listCompounds', () =>
+  invokeThermoCommand('ListCompounds')
+)
 ipcMain.handle('thermo.listPropertyPackages', () =>
   invokeThermoCommand('ListPropertyPackages')
 )
@@ -522,7 +522,6 @@ ipcMain.handle('startDeviceFlow', async (_, host: string) => {
   // Return the user code so the app can display it.
   return handle.user_code
 })
-
 
 // Given the route create the new context menu
 // internal menu state will be reset since it creates a new one from
