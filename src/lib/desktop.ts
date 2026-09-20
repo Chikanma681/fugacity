@@ -124,6 +124,51 @@ export async function mkdirOrNOOP(directoryPath: string) {
   return directoryPath
 }
 
+const createProjectFlowsheetDatabase = async (
+  projectDir: string,
+  projectName: string
+) => {
+  if (typeof window === 'undefined' || !window.electron) {
+    return
+  }
+
+  try {
+    await fsZds.stat(projectDir)
+  } catch (error) {
+    if (error === 'ENOENT') {
+      return Promise.reject(
+        new Error(`Project directory does not exist: ${projectDir}`)
+      )
+    }
+    return Promise.reject(error)
+  }
+
+  if (!(await statIsDirectory(projectDir))) {
+    return Promise.reject(
+      new Error(`Project path is not a directory: ${projectDir}`)
+    )
+  }
+
+  const projectFileName = fsZds.basename(projectName)
+  const flowsheetName = projectFileName.toLowerCase().endsWith('.fgc')
+    ? projectFileName
+    : `${projectFileName}.fgc`
+  const flowsheetPath = fsZds.join(projectDir, flowsheetName)
+
+  try {
+    await fsZds.stat(flowsheetPath)
+    return Promise.reject(
+      new Error(`Flowsheet file already exists: ${flowsheetPath}`)
+    )
+  } catch (error) {
+    if (error !== 'ENOENT') {
+      return Promise.reject(error)
+    }
+  }
+
+  await window.electron.createFlowsheetDatabase(projectDir, projectName)
+}
+
 export async function createNewProjectDirectory(
   projectName: string,
   wasmInstance: ModuleType,
@@ -157,6 +202,8 @@ export async function createNewProjectDirectory(
       await fsZds.mkdir(projectDir, { recursive: true })
     }
   }
+
+  await createProjectFlowsheetDatabase(projectDir, projectName)
 
   const kclFileName = initialFileName || PROJECT_ENTRYPOINT
   const projectFile = fsZds.join(projectDir, kclFileName)

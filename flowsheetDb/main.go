@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -45,6 +46,24 @@ func ensureDatabaseDir(dbPath string) error {
 	return os.MkdirAll(dbDir, 0o755)
 }
 
+func createDatabaseFile(dbPath string) error {
+	const createExclusive = os.O_WRONLY | os.O_CREATE | os.O_EXCL
+
+	file, err := os.OpenFile(dbPath, createExclusive, 0o600)
+	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return fmt.Errorf("flowsheet file already exists: %s", dbPath)
+		}
+		return fmt.Errorf("create flowsheet file: %w", err)
+	}
+
+	if err := file.Close(); err != nil {
+		return fmt.Errorf("close flowsheet file: %w", err)
+	}
+
+	return nil
+}
+
 func ensureApplicationID(db *sql.DB) error {
 	var current int64
 	if err := db.QueryRow("PRAGMA application_id").Scan(&current); err != nil {
@@ -67,6 +86,9 @@ func main() {
 	options := parseOptions()
 
 	if err := ensureDatabaseDir(options.dbPath); err != nil {
+		log.Fatal(err)
+	}
+	if err := createDatabaseFile(options.dbPath); err != nil {
 		log.Fatal(err)
 	}
 

@@ -95,7 +95,10 @@ export interface IElectronAPI {
   appCheckForUpdates: () => Promise<unknown>
   getArgvParsed: () => any
   getAppTestProperty: (propertyName: string) => any
-  createFlowsheetDatabase: (path: string) => Promise<{ path: string }>
+  createFlowsheetDatabase: (
+    projectDir: string,
+    projectName: string
+  ) => Promise<{ path: string }>
   thermo: {
     listCompounds: () => Promise<
       Array<{ id: string; name: string; formula: string; category: string }>

@@ -53,6 +53,11 @@ const appRestart = () => ipcRenderer.invoke('app.restart')
 const appCheckForUpdates = () => ipcRenderer.invoke('app.checkForUpdates')
 const getAppTestProperty = (propertyName: string) =>
   ipcRenderer.invoke('app.testProperty', propertyName)
+const createFlowsheetDatabase = (
+  projectDir: string,
+  projectName: string
+): Promise<{ path: string }> =>
+  ipcRenderer.invoke('flowsheetDb.create', { projectDir, projectName })
 const thermo = {
   listCompounds: () => ipcRenderer.invoke('thermo.listCompounds'),
   listPropertyPackages: () => ipcRenderer.invoke('thermo.listPropertyPackages'),
@@ -313,6 +318,7 @@ contextBridge.exposeInMainWorld('electron', {
   // Use this to access dynamic properties from the node side.
   // INTENDED ONLY TO BE USED FOR TESTS.
   getAppTestProperty,
+  createFlowsheetDatabase,
   thermo,
   process: {
     // These are read-only over the boundary.

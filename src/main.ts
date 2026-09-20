@@ -409,6 +409,75 @@ ipcMain.handle('argv.parser', (event, data) => {
   return argvFromYargs
 })
 
+const createFlowsheetDatabase = async (dbPath: string) => {
+  const flowsheetDbRoot = path.join(thermoAPIRoot, 'flowsheetDb')
+  const flowsheetDbMigrations = path.join(flowsheetDbRoot, 'migrations')
+  const executable = app.isPackaged
+    ? path.join(
+        flowsheetDbRoot,
+        process.platform === 'win32' ? 'flowsheet-db.exe' : 'flowsheet-db'
+      )
+    : 'go'
+  const args = app.isPackaged
+    ? ['-path', dbPath, '-migrations', flowsheetDbMigrations]
+    : ['run', '.', '-path', dbPath, '-migrations', flowsheetDbMigrations]
+
+  return new Promise<void>((resolve, reject) => {
+    execFile(
+      executable,
+      args,
+      {
+        cwd: flowsheetDbRoot,
+        env: {
+          ...process.env,
+          FUGACITY_APP_ROOT: thermoAPIRoot,
+        },
+      },
+      (error, _stdout, stderr) => {
+        if (error) {
+          reject(new Error(stderr || error.message))
+          return
+        }
+
+        resolve()
+      }
+    )
+  })
+}
+
+ipcMain.handle(
+  'flowsheetDb.create',
+  async (_event, data: { projectDir: string; projectName: string }) => {
+    if (!data?.projectDir || !data?.projectName) {
+      return Promise.reject(
+        new Error('A project directory and project name are required')
+      )
+    }
+
+    const projectStats = await fs.promises.stat(data.projectDir)
+    if (!projectStats.isDirectory()) {
+      return Promise.reject(
+        new Error(`Project path is not a directory: ${data.projectDir}`)
+      )
+    }
+
+    const projectFileName = path.basename(data.projectName)
+    const flowsheetName = projectFileName.toLowerCase().endsWith('.fgc')
+      ? projectFileName
+      : `${projectFileName}.fgc`
+    const flowsheetPath = path.join(data.projectDir, flowsheetName)
+
+    if (fs.existsSync(flowsheetPath)) {
+      return Promise.reject(
+        new Error(`Flowsheet file already exists: ${flowsheetPath}`)
+      )
+    }
+
+    await createFlowsheetDatabase(flowsheetPath)
+    return { path: flowsheetPath }
+  }
+)
+
 const invokeThermoCommand = async (command: string, payload?: unknown) => {
   const thermoExecutable = process.env.FUGACITY_THERMO_API
   const executable = thermoExecutable || 'go'
