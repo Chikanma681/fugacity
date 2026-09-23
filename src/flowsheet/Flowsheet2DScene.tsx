@@ -28,61 +28,6 @@ type DragState =
 
 const initialViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
-const seedNodes: FlowNode[] = [
-  createSeedFlowObject({
-    id: 'feed',
-    unitType: 'MaterialStream',
-    tag: '1',
-    x: 120,
-    y: 152,
-  }),
-  createSeedFlowObject({
-    id: 'pump',
-    unitType: 'Pump',
-    tag: 'PUMP-1',
-    x: 340,
-    y: 136,
-  }),
-  createSeedFlowObject({
-    id: 'exchanger',
-    unitType: 'HeatExchanger',
-    tag: 'HX-1',
-    x: 610,
-    y: 128,
-  }),
-  createSeedFlowObject({
-    id: 'product',
-    unitType: 'MaterialStream',
-    tag: '2',
-    x: 900,
-    y: 152,
-  }),
-]
-
-const seedEdges: FlowEdge[] = [
-  {
-    id: 'e1',
-    from: 'feed',
-    to: 'pump',
-    fromConnector: 'outlet',
-    toConnector: 'inlet',
-  },
-  {
-    id: 'e2',
-    from: 'pump',
-    to: 'exchanger',
-    fromConnector: 'outlet',
-    toConnector: 'inlet1',
-  },
-  {
-    id: 'e3',
-    from: 'exchanger',
-    to: 'product',
-    fromConnector: 'outlet1',
-    toConnector: 'inlet',
-  },
-]
-
 function getPortPosition(
   node: FlowNode,
   connectorId: FlowConnectorId | undefined,
@@ -109,8 +54,8 @@ export function Flowsheet2DScene() {
   const svgRef = useRef<SVGSVGElement>(null)
   const [viewport, setViewport] = useState<Viewport>(initialViewport)
   const viewportRef = useRef<Viewport>(initialViewport)
-  const [nodes, setNodes] = useState<FlowNode[]>(seedNodes)
-  const [edges] = useState<FlowEdge[]>(seedEdges)
+  const [nodes, setNodes] = useState<FlowNode[]>()
+  const [edges] = useState<FlowEdge[]>()
   const [drag, setDrag] = useState<DragState>({ type: 'none' })
 
   const nodeMap = useMemo(() => {
