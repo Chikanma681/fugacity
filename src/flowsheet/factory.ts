@@ -67,32 +67,3 @@ export function createFlowObject({
     connectors: definition.connectors.map((connector) => ({ ...connector })),
   }
 }
-
-export function createSeedFlowObject({
-  id,
-  unitType,
-  tag,
-  x,
-  y,
-}: {
-  id: string
-  unitType: UnitType
-  tag: string
-  x: number
-  y: number
-}): FlowNode {
-  const definition = getUnitDefinition(unitType)
-  return {
-    id,
-    name: `${definition.namePrefix}-${id}`,
-    tag,
-    label: definition.label,
-    x,
-    y,
-    width: definition.width,
-    height: definition.height,
-    unitType,
-    dwsimObjectType: unitType,
-    connectors: definition.connectors.map((connector) => ({ ...connector })),
-  }
-}

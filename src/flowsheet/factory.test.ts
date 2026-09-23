@@ -1,6 +1,5 @@
 import {
   createFlowObject,
-  createSeedFlowObject,
   ensureUniqueTag,
   getNextTag,
 } from '@src/flowsheet/factory'
@@ -28,19 +27,19 @@ describe('flowsheet factory', () => {
 
   it('counts tags by unit type', () => {
     const nodes = [
-      createSeedFlowObject({
-        id: 'hx1',
+      createFlowObject({
         unitType: 'HeatExchanger',
         tag: 'HX-1',
         x: 0,
         y: 0,
+        nodes: [],
       }),
-      createSeedFlowObject({
-        id: 'pump1',
+      createFlowObject({
         unitType: 'Pump',
         tag: 'PUMP-1',
         x: 0,
         y: 0,
+        nodes: [],
       }),
     ]
 
@@ -51,19 +50,19 @@ describe('flowsheet factory', () => {
 
   it('increments conflicting numeric tags', () => {
     const nodes = [
-      createSeedFlowObject({
-        id: 'hx1',
+      createFlowObject({
         unitType: 'HeatExchanger',
         tag: 'HX-1',
         x: 0,
         y: 0,
+        nodes: [],
       }),
-      createSeedFlowObject({
-        id: 'hx2',
+      createFlowObject({
         unitType: 'HeatExchanger',
         tag: 'HX-2',
         x: 0,
         y: 0,
+        nodes: [],
       }),
     ]
 

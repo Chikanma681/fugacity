@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { createFlowObject, createSeedFlowObject } from '@src/flowsheet/factory'
+import { createFlowObject } from '@src/flowsheet/factory'
 import { FlowNodeGraphic } from '@src/flowsheet/renderers'
 import {
   STREAM_DRAG_TYPE,
@@ -54,8 +54,8 @@ export function Flowsheet2DScene() {
   const svgRef = useRef<SVGSVGElement>(null)
   const [viewport, setViewport] = useState<Viewport>(initialViewport)
   const viewportRef = useRef<Viewport>(initialViewport)
-  const [nodes, setNodes] = useState<FlowNode[]>()
-  const [edges] = useState<FlowEdge[]>()
+  const [nodes, setNodes] = useState<FlowNode[]>([])
+  const [edges] = useState<FlowEdge[]>([])
   const [drag, setDrag] = useState<DragState>({ type: 'none' })
 
   const nodeMap = useMemo(() => {
