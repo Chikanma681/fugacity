@@ -83,9 +83,7 @@ describe('flowsheet factory', () => {
       nodes: [],
     })
 
-    expect(
-      pump.ports.find((port) => port.id === 'energyIn')
-    ).toMatchObject({
+    expect(pump.ports.find((port) => port.id === 'energyIn')).toMatchObject({
       type: 'energy',
       index: 1,
     })

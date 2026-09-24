@@ -7,12 +7,7 @@ import {
   type StreamKind,
   streamPalette,
 } from '@src/flowsheet/streamPalette'
-import type {
-  PortId,
-  FlowEdge,
-  FlowNode,
-  Viewport,
-} from '@src/flowsheet/types'
+import type { PortId, FlowEdge, FlowNode, Viewport } from '@src/flowsheet/types'
 
 type DragState =
   | { type: 'none' }
