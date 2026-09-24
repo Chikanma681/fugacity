@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const heatExchangerConnectors: FlowConnector[] = [
+export const heatExchangerPorts: Port[] = [
   {
     id: 'inlet1',
     label: 'Inlet Stream 1',
@@ -47,5 +47,5 @@ export const heatExchangerUnitDefinition: UnitDefinition = {
   namePrefix: 'HE',
   width: 72,
   height: 72,
-  connectors: heatExchangerConnectors,
+  ports: heatExchangerPorts,
 }

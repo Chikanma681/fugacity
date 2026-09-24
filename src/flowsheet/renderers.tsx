@@ -1,4 +1,4 @@
-import type { FlowConnector, FlowNode } from '@src/flowsheet/types'
+import type { Port, FlowNode } from '@src/flowsheet/types'
 
 const lineColor = '#1F3D4D'
 const fillColor = '#D0D7DA'
@@ -7,11 +7,11 @@ const energyColor = '#FFD761'
 const inletColor = '#61B8FF'
 const outletColor = '#FFB761'
 
-function connectorColor(connector: FlowConnector) {
-  if (connector.type === 'energy') {
+function portColor(port: Port) {
+  if (port.type === 'energy') {
     return energyColor
   }
-  return connector.type === 'in' ? inletColor : outletColor
+  return port.type === 'in' ? inletColor : outletColor
 }
 
 function UnitLabel({ node }: { node: FlowNode }) {
@@ -29,23 +29,23 @@ function UnitLabel({ node }: { node: FlowNode }) {
   )
 }
 
-function Connectors({ node }: { node: FlowNode }) {
+function Ports({ node }: { node: FlowNode }) {
   return (
     <>
-      {node.connectors.map((connector) => (
+      {node.ports.map((port) => (
         <g
-          key={connector.id}
-          transform={`translate(${connector.x * node.width} ${
-            connector.y * node.height
+          key={port.id}
+          transform={`translate(${port.x * node.width} ${
+            port.y * node.height
           })`}
         >
           <circle
             r={5}
-            fill={connectorColor(connector)}
+            fill={portColor(port)}
             stroke={lineColor}
             strokeWidth={1.5}
           />
-          <title>{connector.label}</title>
+          <title>{port.label}</title>
         </g>
       ))}
     </>
@@ -70,7 +70,7 @@ function StreamGraphic({ node, energy }: { node: FlowNode; energy?: boolean }) {
         strokeWidth={2}
         strokeLinejoin="round"
       />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -86,7 +86,7 @@ function ValveGraphic({ node }: { node: FlowNode }) {
   return (
     <>
       <path d={path} fill={fillColor} stroke={lineColor} strokeWidth={2} />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -100,7 +100,7 @@ function CompressorGraphic({ node }: { node: FlowNode }) {
   return (
     <>
       <path d={path} fill={fillColor} stroke={lineColor} strokeWidth={2} />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -114,7 +114,7 @@ function ExpanderGraphic({ node }: { node: FlowNode }) {
   return (
     <>
       <path d={path} fill={fillColor} stroke={lineColor} strokeWidth={2} />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -155,7 +155,7 @@ function PumpGraphic({ node }: { node: FlowNode }) {
         stroke={lineColor}
         strokeWidth={2}
       />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -185,7 +185,7 @@ function HeatExchangerGraphic({ node }: { node: FlowNode }) {
         strokeWidth={2}
       />
       <path d={exchangerPath} stroke={lineColor} strokeWidth={2} fill="none" />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -199,7 +199,7 @@ function MixerGraphic({ node }: { node: FlowNode }) {
   return (
     <>
       <path d={path} fill={fillColor} stroke={lineColor} strokeWidth={2} />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -213,7 +213,7 @@ function SplitterGraphic({ node }: { node: FlowNode }) {
   return (
     <>
       <path d={path} fill={fillColor} stroke={lineColor} strokeWidth={2} />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -245,7 +245,7 @@ function HeaterCoolerGraphic({
       >
         {label}
       </text>
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -288,7 +288,7 @@ function SeparatorVesselGraphic({ node }: { node: FlowNode }) {
         strokeWidth={1.5}
         strokeDasharray="4 4"
       />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -382,7 +382,7 @@ function ColumnGraphic({
           />
         </>
       )}
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -435,7 +435,7 @@ function ReactorGraphic({
       >
         {label}
       </text>
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -497,7 +497,7 @@ function CSTRGraphic({ node }: { node: FlowNode }) {
         stroke={lineColor}
         strokeWidth={2}
       />
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )
@@ -529,7 +529,7 @@ function PFRGraphic({ node }: { node: FlowNode }) {
           />
         )
       })}
-      <Connectors node={node} />
+      <Ports node={node} />
       <UnitLabel node={node} />
     </>
   )

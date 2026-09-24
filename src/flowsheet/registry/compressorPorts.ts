@@ -1,22 +1,22 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const expanderConnectors: FlowConnector[] = [
+export const compressorPorts: Port[] = [
   {
     id: 'inlet',
     label: 'Inlet',
     type: 'in',
     direction: 'down',
     x: 0,
-    y: 0.3,
+    y: 0,
     index: 0,
   },
   {
-    id: 'energyOut',
+    id: 'energyIn',
     label: 'Energy Stream',
     type: 'energy',
     direction: 'right',
-    x: 1,
+    x: 0,
     y: 0.5,
     index: 1,
   },
@@ -26,17 +26,17 @@ export const expanderConnectors: FlowConnector[] = [
     type: 'out',
     direction: 'up',
     x: 1,
-    y: 0,
+    y: 0.3,
     index: 0,
   },
 ]
 
-export const expanderUnitDefinition: UnitDefinition = {
-  unitType: 'Expander',
-  label: 'Expander',
-  tagPrefix: 'EXP-',
-  namePrefix: 'EXP',
+export const compressorUnitDefinition: UnitDefinition = {
+  unitType: 'Compressor',
+  label: 'Compressor',
+  tagPrefix: 'C-',
+  namePrefix: 'COMP',
   width: 58,
   height: 58,
-  connectors: expanderConnectors,
+  ports: compressorPorts,
 }

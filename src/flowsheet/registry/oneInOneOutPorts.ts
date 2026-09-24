@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const oneInOneOutConnectors: FlowConnector[] = [
+export const oneInOneOutPorts: Port[] = [
   {
     id: 'inlet',
     label: 'Inlet',
@@ -29,5 +29,5 @@ export const valveUnitDefinition: UnitDefinition = {
   namePrefix: 'VALV',
   width: 48,
   height: 48,
-  connectors: oneInOneOutConnectors,
+  ports: oneInOneOutPorts,
 }

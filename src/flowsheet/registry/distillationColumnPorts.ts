@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const distillationColumnConnectors: FlowConnector[] = [
+export const distillationColumnPorts: Port[] = [
   ...Array.from({ length: 10 }, (_, index) => ({
     id: `feed${index + 1}`,
     label: `Column Feed Port #${index + 1}`,
@@ -74,5 +74,5 @@ export const distillationColumnUnitDefinition: UnitDefinition = {
   namePrefix: 'COL',
   width: 96,
   height: 128,
-  connectors: distillationColumnConnectors,
+  ports: distillationColumnPorts,
 }

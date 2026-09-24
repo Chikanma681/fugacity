@@ -26,8 +26,8 @@ describe('flowsheet unit registry', () => {
     ])
   })
 
-  it('matches heat exchanger connector indexes to DWSIM order', () => {
-    expect(unitRegistry.HeatExchanger.connectors).toMatchObject([
+  it('matches heat exchanger port indexes to DWSIM order', () => {
+    expect(unitRegistry.HeatExchanger.ports).toMatchObject([
       { id: 'inlet1', type: 'in', index: 0, x: 0, y: 0.5 },
       { id: 'inlet2', type: 'in', index: 1, x: 0.5, y: 0 },
       { id: 'outlet1', type: 'out', index: 0, x: 1, y: 0.5 },
@@ -35,8 +35,8 @@ describe('flowsheet unit registry', () => {
     ])
   })
 
-  it('matches mixer and splitter connector indexes to DWSIM order', () => {
-    expect(unitRegistry.Mixer.connectors).toMatchObject([
+  it('matches mixer and splitter port indexes to DWSIM order', () => {
+    expect(unitRegistry.Mixer.ports).toMatchObject([
       { id: 'inlet1', type: 'in', index: 0, x: 0, y: 0 },
       { id: 'inlet2', type: 'in', index: 1, x: 0, y: 0.2 },
       { id: 'inlet3', type: 'in', index: 2, x: 0, y: 0.4 },
@@ -46,7 +46,7 @@ describe('flowsheet unit registry', () => {
       { id: 'outlet', type: 'out', index: 0, x: 1, y: 0.5 },
     ])
 
-    expect(unitRegistry.Splitter.connectors).toMatchObject([
+    expect(unitRegistry.Splitter.ports).toMatchObject([
       { id: 'inlet', type: 'in', index: 0, x: 0, y: 0.5 },
       { id: 'outlet1', type: 'out', index: 0, x: 1, y: 0 },
       { id: 'outlet2', type: 'out', index: 1, x: 1, y: 0.5 },
@@ -54,24 +54,24 @@ describe('flowsheet unit registry', () => {
     ])
   })
 
-  it('keeps DWSIM energy connector positions for heater, cooler, expander, and PFR', () => {
-    expect(unitRegistry.Heater.connectors).toContainEqual(
+  it('keeps DWSIM energy port positions for heater, cooler, expander, and PFR', () => {
+    expect(unitRegistry.Heater.ports).toContainEqual(
       expect.objectContaining({ id: 'energyIn', type: 'energy', x: 0.5, y: 1 })
     )
-    expect(unitRegistry.Cooler.connectors).toContainEqual(
+    expect(unitRegistry.Cooler.ports).toContainEqual(
       expect.objectContaining({ id: 'energyIn', type: 'energy', x: 0.5, y: 0 })
     )
-    expect(unitRegistry.Expander.connectors).toContainEqual(
+    expect(unitRegistry.Expander.ports).toContainEqual(
       expect.objectContaining({ id: 'energyOut', type: 'energy', x: 1, y: 0.5 })
     )
-    expect(unitRegistry.PFR.connectors).toContainEqual(
+    expect(unitRegistry.PFR.ports).toContainEqual(
       expect.objectContaining({ id: 'energyIn', type: 'energy', x: 0.5, y: 1 })
     )
   })
 
-  it('ports large DWSIM column and separator connector counts', () => {
-    expect(unitRegistry.AbsorptionColumn.connectors).toHaveLength(20)
-    expect(unitRegistry.DistillationColumn.connectors).toHaveLength(22)
-    expect(unitRegistry.SeparatorVessel.connectors).toHaveLength(11)
+  it('ports large DWSIM column and separator port counts', () => {
+    expect(unitRegistry.AbsorptionColumn.ports).toHaveLength(20)
+    expect(unitRegistry.DistillationColumn.ports).toHaveLength(22)
+    expect(unitRegistry.SeparatorVessel.ports).toHaveLength(11)
   })
 })

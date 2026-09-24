@@ -46,7 +46,7 @@ export function StreamsPane(props: AreaTypeComponentProps) {
               height: item.height,
               unitType: item.kind,
               dwsimObjectType: item.kind,
-              connectors: [],
+              ports: [],
             }
 
             return (

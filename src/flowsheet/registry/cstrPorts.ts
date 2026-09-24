@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const cstrConnectors: FlowConnector[] = [
+export const cstrPorts: Port[] = [
   {
     id: 'inlet',
     label: 'Inlet',
@@ -47,5 +47,5 @@ export const cstrUnitDefinition: UnitDefinition = {
   namePrefix: 'CSTR',
   width: 72,
   height: 72,
-  connectors: cstrConnectors,
+  ports: cstrPorts,
 }

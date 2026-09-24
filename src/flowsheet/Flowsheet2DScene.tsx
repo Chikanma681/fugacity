@@ -8,7 +8,7 @@ import {
   streamPalette,
 } from '@src/flowsheet/streamPalette'
 import type {
-  FlowConnectorId,
+  PortId,
   FlowEdge,
   FlowNode,
   Viewport,
@@ -30,15 +30,15 @@ const initialViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
 function getPortPosition(
   node: FlowNode,
-  connectorId: FlowConnectorId | undefined,
+  portId: PortId | undefined,
   side: 'from' | 'to'
 ) {
-  if (connectorId) {
-    const connector = node.connectors.find((item) => item.id === connectorId)
-    if (connector) {
+  if (portId) {
+    const port = node.ports.find((item) => item.id === portId)
+    if (port) {
       return {
-        x: node.x + connector.x * node.width,
-        y: node.y + connector.y * node.height,
+        x: node.x + port.x * node.width,
+        y: node.y + port.y * node.height,
       }
     }
   }
@@ -252,8 +252,8 @@ export function Flowsheet2DScene() {
             if (!from || !to) {
               return null
             }
-            const start = getPortPosition(from, edge.fromConnector, 'from')
-            const end = getPortPosition(to, edge.toConnector, 'to')
+            const start = getPortPosition(from, edge.fromPort, 'from')
+            const end = getPortPosition(to, edge.toPort, 'to')
             const startX = start.x
             const startY = start.y
             const endX = end.x

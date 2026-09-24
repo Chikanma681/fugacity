@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const mixerConnectors: FlowConnector[] = [
+export const mixerPorts: Port[] = [
   ...Array.from({ length: 6 }, (_, index) => ({
     id: `inlet${index + 1}`,
     label: `Inlet Stream ${index + 1}`,
@@ -29,5 +29,5 @@ export const mixerUnitDefinition: UnitDefinition = {
   namePrefix: 'MIX',
   width: 64,
   height: 64,
-  connectors: mixerConnectors,
+  ports: mixerPorts,
 }

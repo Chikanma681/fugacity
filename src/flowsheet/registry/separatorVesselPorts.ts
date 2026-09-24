@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const separatorVesselConnectors: FlowConnector[] = [
+export const separatorVesselPorts: Port[] = [
   ...Array.from({ length: 6 }, (_, index) => ({
     id: `inlet${index + 1}`,
     label: `Inlet Stream #${index}`,
@@ -65,5 +65,5 @@ export const separatorVesselUnitDefinition: UnitDefinition = {
   namePrefix: 'SEP',
   width: 72,
   height: 96,
-  connectors: separatorVesselConnectors,
+  ports: separatorVesselPorts,
 }

@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const energyConnectors: FlowConnector[] = [
+export const materialPorts: Port[] = [
   {
     id: 'inlet',
     label: 'Inlet',
@@ -22,12 +22,12 @@ export const energyConnectors: FlowConnector[] = [
   },
 ]
 
-export const energyUnitDefinition: UnitDefinition = {
-  unitType: 'EnergyStream',
-  label: 'Energy Stream',
-  tagPrefix: 'E',
-  namePrefix: 'EN',
+export const materialUnitDefinition: UnitDefinition = {
+  unitType: 'MaterialStream',
+  label: 'Material Stream',
+  tagPrefix: '',
+  namePrefix: 'MAT',
   width: 96,
   height: 32,
-  connectors: energyConnectors,
+  ports: materialPorts,
 }

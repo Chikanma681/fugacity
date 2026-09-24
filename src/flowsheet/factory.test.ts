@@ -17,7 +17,7 @@ describe('flowsheet factory', () => {
     expect(node.tag).toBe('HX-1')
     expect(node.name.startsWith('HE-')).toBe(true)
     expect(node.dwsimObjectType).toBe('HeatExchanger')
-    expect(node.connectors.map((connector) => connector.id)).toEqual([
+    expect(node.ports.map((port) => port.id)).toEqual([
       'inlet1',
       'inlet2',
       'outlet1',
@@ -69,7 +69,7 @@ describe('flowsheet factory', () => {
     expect(ensureUniqueTag('HX-1', nodes)).toBe('HX-3')
   })
 
-  it('keeps energy connectors visible in pump and compressor data', () => {
+  it('keeps energy ports visible in pump and compressor data', () => {
     const pump = createFlowObject({
       unitType: 'Pump',
       x: 0,
@@ -84,13 +84,13 @@ describe('flowsheet factory', () => {
     })
 
     expect(
-      pump.connectors.find((connector) => connector.id === 'energyIn')
+      pump.ports.find((port) => port.id === 'energyIn')
     ).toMatchObject({
       type: 'energy',
       index: 1,
     })
     expect(
-      compressor.connectors.find((connector) => connector.id === 'energyIn')
+      compressor.ports.find((port) => port.id === 'energyIn')
     ).toMatchObject({
       type: 'energy',
       index: 1,

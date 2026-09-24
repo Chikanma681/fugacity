@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const reactorConnectors: FlowConnector[] = [
+export const reactorPorts: Port[] = [
   {
     id: 'inlet',
     label: 'Inlet',
@@ -47,7 +47,7 @@ export const equilibriumReactorUnitDefinition: UnitDefinition = {
   namePrefix: 'RE',
   width: 72,
   height: 72,
-  connectors: reactorConnectors,
+  ports: reactorPorts,
 }
 
 export const gibbsReactorUnitDefinition: UnitDefinition = {
@@ -57,5 +57,5 @@ export const gibbsReactorUnitDefinition: UnitDefinition = {
   namePrefix: 'RG',
   width: 72,
   height: 72,
-  connectors: reactorConnectors,
+  ports: reactorPorts,
 }

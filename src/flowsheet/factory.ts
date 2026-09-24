@@ -64,6 +64,6 @@ export function createFlowObject({
     height: definition.height,
     unitType,
     dwsimObjectType: unitType,
-    connectors: definition.connectors.map((connector) => ({ ...connector })),
+    ports: definition.ports.map((port) => ({ ...port })),
   }
 }

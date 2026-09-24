@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const coolerConnectors: FlowConnector[] = [
+export const pumpPorts: Port[] = [
   {
     id: 'inlet',
     label: 'Inlet',
@@ -13,11 +13,11 @@ export const coolerConnectors: FlowConnector[] = [
   },
   {
     id: 'energyIn',
-    label: 'Energy Stream (Secondary)',
+    label: 'Energy Stream',
     type: 'energy',
     direction: 'up',
     x: 0.5,
-    y: 0,
+    y: 1,
     index: 1,
   },
   {
@@ -26,17 +26,17 @@ export const coolerConnectors: FlowConnector[] = [
     type: 'out',
     direction: 'right',
     x: 1,
-    y: 0.5,
+    y: 0.1,
     index: 0,
   },
 ]
 
-export const coolerUnitDefinition: UnitDefinition = {
-  unitType: 'Cooler',
-  label: 'Cooler',
-  tagPrefix: 'COOL-',
-  namePrefix: 'COOL',
+export const pumpUnitDefinition: UnitDefinition = {
+  unitType: 'Pump',
+  label: 'Pump',
+  tagPrefix: 'PUMP-',
+  namePrefix: 'BB',
   width: 58,
   height: 58,
-  connectors: coolerConnectors,
+  ports: pumpPorts,
 }

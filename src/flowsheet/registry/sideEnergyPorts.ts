@@ -1,7 +1,7 @@
-import type { FlowConnector } from '@src/flowsheet/types'
+import type { Port } from '@src/flowsheet/types'
 import type { UnitDefinition } from './types'
 
-export const sideEnergyConnectors: FlowConnector[] = [
+export const sideEnergyPorts: Port[] = [
   {
     id: 'inlet',
     label: 'Inlet',
@@ -38,7 +38,7 @@ export const heaterUnitDefinition: UnitDefinition = {
   namePrefix: 'HEAT',
   width: 58,
   height: 58,
-  connectors: sideEnergyConnectors,
+  ports: sideEnergyPorts,
 }
 
 export const pfrUnitDefinition: UnitDefinition = {
@@ -48,5 +48,5 @@ export const pfrUnitDefinition: UnitDefinition = {
   namePrefix: 'PFR',
   width: 96,
   height: 48,
-  connectors: sideEnergyConnectors,
+  ports: sideEnergyPorts,
 }

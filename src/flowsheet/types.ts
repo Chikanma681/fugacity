@@ -19,17 +19,17 @@ export type UnitType =
   | 'GibbsReactor'
   | 'PFR'
 
-export type ConnectorType = 'in' | 'out' | 'energy'
+export type PortType = 'in' | 'out' | 'energy'
 
-export type ConnectorDirection = 'up' | 'down' | 'left' | 'right'
+export type PortDirection = 'up' | 'down' | 'left' | 'right'
 
-export type FlowConnectorId = string
+export type PortId = string
 
-export type FlowConnector = {
-  id: FlowConnectorId
+export type Port = {
+  id: PortId
   label: string
-  type: ConnectorType
-  direction: ConnectorDirection
+  type: PortType
+  direction: PortDirection
   x: number
   y: number
   index: number
@@ -46,15 +46,15 @@ export type FlowNode = {
   height: number
   unitType: UnitType
   dwsimObjectType: UnitType
-  connectors: FlowConnector[]
+  ports: Port[]
 }
 
 export type FlowEdge = {
   id: string
   from: string
   to: string
-  fromConnector?: FlowConnectorId
-  toConnector?: FlowConnectorId
+  fromPort?: PortId
+  toPort?: PortId
 }
 
 export type Viewport = {

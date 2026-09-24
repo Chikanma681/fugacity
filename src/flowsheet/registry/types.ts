@@ -1,4 +1,4 @@
-import type { FlowConnector, UnitType } from '@src/flowsheet/types'
+import type { Port, UnitType } from '@src/flowsheet/types'
 
 export type UnitDefinition = {
   unitType: UnitType
@@ -7,5 +7,5 @@ export type UnitDefinition = {
   namePrefix: string
   width: number
   height: number
-  connectors: FlowConnector[]
+  ports: Port[]
 }
