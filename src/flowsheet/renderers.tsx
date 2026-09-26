@@ -35,16 +35,20 @@ function Ports({ node }: { node: FlowNode }) {
       {node.ports.map((port) => (
         <g
           key={port.id}
+          data-port-id={port.id}
+          data-node-id={node.id}
           transform={`translate(${port.x * node.width} ${
             port.y * node.height
           })`}
         >
           <circle
+            className="cursor-crosshair"
             r={5}
             fill={portColor(port)}
             stroke={lineColor}
             strokeWidth={1.5}
           />
+          <circle r={10} fill="transparent" />
           <title>{port.label}</title>
         </g>
       ))}

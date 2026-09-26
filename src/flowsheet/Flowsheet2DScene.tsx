@@ -7,11 +7,16 @@ import {
   type StreamKind,
   streamPalette,
 } from '@src/flowsheet/streamPalette'
-import type { PortId, FlowEdge, FlowNode, Viewport } from '@src/flowsheet/types'
+import type { FlowEdge, FlowNode, PortId, Viewport } from '@src/flowsheet/types'
 
 type DragState =
   | { type: 'none' }
   | { type: 'pan'; originX: number; originY: number; start: Viewport }
+  | {
+      type: 'edge'
+      from: { nodeId: string; portId: PortId }
+      current: { x: number; y: number }
+    }
   | {
       type: 'node'
       nodeId: string
@@ -50,7 +55,7 @@ export function Flowsheet2DScene() {
   const [viewport, setViewport] = useState<Viewport>(initialViewport)
   const viewportRef = useRef<Viewport>(initialViewport)
   const [nodes, setNodes] = useState<FlowNode[]>([])
-  const [edges] = useState<FlowEdge[]>([])
+  const [edges, setEdges] = useState<FlowEdge[]>([])
   const [drag, setDrag] = useState<DragState>({ type: 'none' })
 
   const nodeMap = useMemo(() => {
@@ -101,6 +106,29 @@ export function Flowsheet2DScene() {
     }
   }, [])
 
+  const getPortTarget = useCallback((target: EventTarget | null) => {
+    const portElement = (target as Element | null)?.closest<SVGGElement>(
+      '[data-port-id][data-node-id]'
+    )
+    const nodeId = portElement?.dataset.nodeId
+    const portId = portElement?.dataset.portId
+    return nodeId && portId ? { nodeId, portId } : null
+  }, [])
+
+  const startEdgeDrag = (
+    event: React.PointerEvent,
+    node: FlowNode,
+    portId: PortId
+  ) => {
+    event.stopPropagation()
+    event.preventDefault()
+    setDrag({
+      type: 'edge',
+      from: { nodeId: node.id, portId },
+      current: screenToWorld(event.clientX, event.clientY),
+    })
+  }
+
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
       if (drag.type === 'pan') {
@@ -123,9 +151,30 @@ export function Flowsheet2DScene() {
           )
         )
       }
+      if (drag.type === 'edge') {
+        setDrag({
+          ...drag,
+          current: screenToWorld(event.clientX, event.clientY),
+        })
+      }
     }
 
-    const onPointerUp = () => {
+    const onPointerUp = (event: PointerEvent) => {
+      if (drag.type === 'edge') {
+        const target = getPortTarget(event.target)
+        if (target && target.nodeId !== drag.from.nodeId) {
+          setEdges((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              from: drag.from.nodeId,
+              fromPort: drag.from.portId,
+              to: target.nodeId,
+              toPort: target.portId,
+            },
+          ])
+        }
+      }
       setDrag({ type: 'none' })
     }
 
@@ -135,7 +184,7 @@ export function Flowsheet2DScene() {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
     }
-  }, [drag, viewport.scale])
+  }, [drag, getPortTarget, screenToWorld, viewport.scale])
 
   const handleWheel = (event: React.WheelEvent) => {
     event.preventDefault()
@@ -269,12 +318,38 @@ export function Flowsheet2DScene() {
               </g>
             )
           })}
+          {drag.type === 'edge' &&
+            (() => {
+              const fromNode = nodeMap.get(drag.from.nodeId)
+              if (!fromNode) {
+                return null
+              }
+              const start = getPortPosition(fromNode, drag.from.portId, 'from')
+              const midX = (start.x + drag.current.x) / 2
+              return (
+                <path
+                  d={`M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${drag.current.y}, ${drag.current.x} ${drag.current.y}`}
+                  stroke="#1F3D4D"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  fill="none"
+                  pointerEvents="none"
+                />
+              )
+            })()}
           {nodes.map((node) => (
             <g
               key={node.id}
               data-node-id={node.id}
               transform={`translate(${node.x} ${node.y})`}
-              onPointerDown={(event) => startNodeDrag(event, node)}
+              onPointerDown={(event) => {
+                const port = getPortTarget(event.target)
+                if (port) {
+                  startEdgeDrag(event, node, port.portId)
+                } else {
+                  startNodeDrag(event, node)
+                }
+              }}
             >
               <FlowNodeGraphic node={node} />
             </g>
