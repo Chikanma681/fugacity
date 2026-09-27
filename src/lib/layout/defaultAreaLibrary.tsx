@@ -1,21 +1,22 @@
-import { useApp, useSingletons } from '@src/lib/boot'
-import { ConnectionStream } from '@src/components/ConnectionStream'
+import { useSignals } from '@preact/signals-react/runtime'
 import { Toolbar } from '@src/Toolbar'
-import type { AreaType, AreaTypeDefinition } from '@src/lib/layout/types'
+import { ConnectionStream } from '@src/components/ConnectionStream'
+import { BodiesPane } from '@src/components/layout/areas/BodiesPane'
+import { DebugPane } from '@src/components/layout/areas/DebugPane'
+import { KclEditorPane } from '@src/components/layout/areas/KclEditorPane'
+import { LogsPane } from '@src/components/layout/areas/LoggingPanes'
+import { MemoryPane } from '@src/components/layout/areas/MemoryPane'
+import { MlEphantConversationPaneWrapper } from '@src/components/layout/areas/MlEphantConversationPaneWrapper'
+import { ProjectExplorerPane } from '@src/components/layout/areas/ProjectExplorerPane'
+import { ResultsPane } from '@src/components/layout/areas/ResultsPane'
+import { StreamsPane } from '@src/components/layout/areas/StreamsPane'
 import { kclErrorsByFilename } from '@src/lang/errors'
+import { useApp, useSingletons } from '@src/lib/boot'
+import { DefaultLayoutPaneID } from '@src/lib/layout/configs/default'
+import type { AreaType, AreaTypeDefinition } from '@src/lib/layout/types'
+import { togglePaneLayoutNode } from '@src/lib/layout/utils'
 import type { MouseEventHandler } from 'react'
 import { useCallback, useMemo } from 'react'
-import { togglePaneLayoutNode } from '@src/lib/layout/utils'
-import { DefaultLayoutPaneID } from '@src/lib/layout/configs/default'
-import { ProjectExplorerPane } from '@src/components/layout/areas/ProjectExplorerPane'
-import { KclEditorPane } from '@src/components/layout/areas/KclEditorPane'
-import { MlEphantConversationPaneWrapper } from '@src/components/layout/areas/MlEphantConversationPaneWrapper'
-import { StreamsPane } from '@src/components/layout/areas/StreamsPane'
-import { MemoryPane } from '@src/components/layout/areas/MemoryPane'
-import { LogsPane } from '@src/components/layout/areas/LoggingPanes'
-import { DebugPane } from '@src/components/layout/areas/DebugPane'
-import { BodiesPane } from '@src/components/layout/areas/BodiesPane'
-import { useSignals } from '@preact/signals-react/runtime'
 
 function ModelingArea() {
   const { auth } = useApp()
@@ -60,6 +61,10 @@ export const useDefaultAreaLibrary = () => {
           hide: () => false,
           shortcut: 'Shift + T',
           Component: StreamsPane,
+        },
+        results: {
+          hide: () => false,
+          Component: ResultsPane,
         },
         bodies: {
           hide: () => false,
@@ -131,7 +136,7 @@ export const useDefaultAreaLibrary = () => {
           shortcut: 'Shift + D',
           Component: DebugPane,
         },
-      } satisfies Record<AreaType, AreaTypeDefinition>),
+            } satisfies Record<AreaType, AreaTypeDefinition>),
     [getSettings, kclManager, onCodeNotificationClick]
   )
 }
@@ -157,4 +162,5 @@ export const testAreaLibrary = Object.freeze({
   logs: testArea('Logs'),
   variables: testArea('Variables'),
   debug: testArea('Debug'),
+  results: testArea('Results'),
 } satisfies Record<AreaType, AreaTypeDefinition>)

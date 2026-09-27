@@ -78,7 +78,7 @@ export function Flowsheet2DScene() {
       }
     })
     observer.observe(container)
-    return () => observer.disconnect()
+    return () => observer.disconnect() //being honest im not sure this works
   }, [])
 
   useEffect(() => {
@@ -92,6 +92,10 @@ export function Flowsheet2DScene() {
     ])
   }, [])
 
+  // Convert a pointer position from browser screen pixels into flowsheet coordinates.
+  // For example, this lets a dropped node land under the pointer after panning or
+  // zooming, and keeps the temporary connection endpoint under the pointer while
+  // dragging from a port.
   const screenToWorld = useCallback((clientX: number, clientY: number) => {
     const rect = containerRef.current?.getBoundingClientRect()
     if (!rect) {
