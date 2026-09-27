@@ -136,7 +136,7 @@ export const useDefaultAreaLibrary = () => {
           shortcut: 'Shift + D',
           Component: DebugPane,
         },
-            } satisfies Record<AreaType, AreaTypeDefinition>),
+      } satisfies Record<AreaType, AreaTypeDefinition>),
     [getSettings, kclManager, onCodeNotificationClick]
   )
 }
