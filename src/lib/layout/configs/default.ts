@@ -24,6 +24,7 @@ export enum DefaultLayoutPaneID {
   TTC = 'ttc',
   Variables = 'variables',
   Logs = 'logs',
+  Results = 'results',
 }
 
 export function isDefaultLayoutPaneID(s: string): s is DefaultLayoutPaneID {
@@ -46,7 +47,7 @@ const primaryPane: Layout = {
   label: 'left-toolbar',
   type: LayoutType.Panes,
   side: isMobile() ? 'block-end' : 'inline-start',
-  activeIndices: isDesktop() ? [0, 2] : [0],
+  activeIndices: isDesktop() ? [0, 1] : [0],
   sizes: isDesktop() ? [50, 50] : [100],
   splitOrientation: 'block',
   children: [
@@ -67,6 +68,13 @@ const primaryPane: Layout = {
       type: LayoutType.Simple,
       icon: 'model',
       areaType: AreaType.FeatureTree,
+    },
+    {
+      id: DefaultLayoutPaneID.Results,
+      label: 'Results',
+      type: LayoutType.Simple,
+      icon: 'logs',
+      areaType: AreaType.Results,
     },
     //   {
     //     id: DefaultLayoutPaneID.Code,
