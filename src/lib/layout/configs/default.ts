@@ -47,8 +47,8 @@ const primaryPane: Layout = {
   label: 'left-toolbar',
   type: LayoutType.Panes,
   side: isMobile() ? 'block-end' : 'inline-start',
-  activeIndices: isDesktop() ? [0, 1] : [0],
-  sizes: isDesktop() ? [50, 50] : [100],
+  activeIndices: [0],
+  sizes: [100],
   splitOrientation: 'block',
   children: [
     ...(isMobile()
@@ -68,13 +68,6 @@ const primaryPane: Layout = {
       type: LayoutType.Simple,
       icon: 'model',
       areaType: AreaType.FeatureTree,
-    },
-    {
-      id: DefaultLayoutPaneID.Results,
-      label: 'Results',
-      type: LayoutType.Simple,
-      icon: 'logs',
-      areaType: AreaType.Results,
     },
     //   {
     //     id: DefaultLayoutPaneID.Code,
@@ -143,11 +136,30 @@ const primaryPane: Layout = {
     },
   ],
 }
-const modelingPane: Layout = {
-  id: 'modeling-scene',
-  label: 'Modeling scene',
-  type: LayoutType.Simple,
-  areaType: AreaType.ModelingScene,
+const workspacePane: Layout = {
+  id: 'workspace-pane',
+  label: 'Workspace',
+  type: LayoutType.Panes,
+  side: 'block-start',
+  activeIndices: [0],
+  sizes: [100],
+  splitOrientation: 'block',
+  children: [
+    {
+      id: 'modeling-scene',
+      label: 'Modeling',
+      type: LayoutType.Simple,
+      areaType: AreaType.ModelingScene,
+      icon: 'model',
+    },
+    {
+      id: DefaultLayoutPaneID.Results,
+      label: 'Results',
+      type: LayoutType.Simple,
+      areaType: AreaType.Results,
+      icon: 'logs',
+    },
+  ],
 }
 const secondaryPane: Layout = {
   id: DefaultLayoutToolbarID.Right,
@@ -185,6 +197,6 @@ export const defaultLayoutConfig: Layout = {
   orientation: isMobile() ? 'block' : 'inline',
   sizes: isMobile() ? [50, 50] : [20, 50, 30],
   children: isMobile()
-    ? [modelingPane, primaryPane]
-    : [primaryPane, modelingPane, secondaryPane],
+    ? [workspacePane, primaryPane]
+    : [primaryPane, workspacePane, secondaryPane],
 }
