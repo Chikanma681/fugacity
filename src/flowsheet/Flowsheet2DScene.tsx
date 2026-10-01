@@ -230,8 +230,6 @@ export function Flowsheet2DScene() {
     }
   }, [drag, getPortTarget, screenToWorld, viewport.scale])
 
-
-
   return (
     <div
       ref={containerRef}
@@ -279,7 +277,7 @@ export function Flowsheet2DScene() {
         role="img"
         aria-label="2D flowsheet canvas"
       >
-       <g
+        <g
           transform={`translate(${viewport.x} ${viewport.y}) scale(${viewport.scale})`}
         >
           {edges.map((edge) => {
