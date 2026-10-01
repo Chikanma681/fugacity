@@ -133,6 +133,46 @@ export function Flowsheet2DScene() {
     })
   }
 
+  const handleWheel = (event: React.WheelEvent) => {
+    event.preventDefault()
+    const delta = -event.deltaY
+    const scaleFactor = delta > 0 ? 1.08 : 0.92
+    const nextScale = Math.min(2.2, Math.max(0.5, viewport.scale * scaleFactor))
+    setViewport((prev) => ({ ...prev, scale: nextScale }))
+  }
+
+  const startPan = (event: React.PointerEvent) => {
+    if (event.button !== 0) {
+      return
+    }
+    if ((event.target as Element).closest('[data-node-id]')) {
+      return
+    }
+    setDrag({
+      type: 'pan',
+      originX: event.clientX,
+      originY: event.clientY,
+      start: viewport,
+    })
+  }
+
+  const startNodeDrag = (event: React.PointerEvent, node: FlowNode) => {
+    event.stopPropagation()
+    setDrag({
+      type: 'node',
+      nodeId: node.id,
+      originX: event.clientX,
+      originY: event.clientY,
+      startX: node.x,
+      startY: node.y,
+    })
+  }
+
+  const backgroundStyle = {
+    backgroundImage:
+      'radial-gradient(circle at 1px 1px, rgba(20, 33, 45, 0.35) 1px, transparent 0)',
+    backgroundSize: '24px 24px',
+  }
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
       if (drag.type === 'pan') {
@@ -190,46 +230,7 @@ export function Flowsheet2DScene() {
     }
   }, [drag, getPortTarget, screenToWorld, viewport.scale])
 
-  const handleWheel = (event: React.WheelEvent) => {
-    event.preventDefault()
-    const delta = -event.deltaY
-    const scaleFactor = delta > 0 ? 1.08 : 0.92
-    const nextScale = Math.min(2.2, Math.max(0.5, viewport.scale * scaleFactor))
-    setViewport((prev) => ({ ...prev, scale: nextScale }))
-  }
 
-  const startPan = (event: React.PointerEvent) => {
-    if (event.button !== 0) {
-      return
-    }
-    if ((event.target as Element).closest('[data-node-id]')) {
-      return
-    }
-    setDrag({
-      type: 'pan',
-      originX: event.clientX,
-      originY: event.clientY,
-      start: viewport,
-    })
-  }
-
-  const startNodeDrag = (event: React.PointerEvent, node: FlowNode) => {
-    event.stopPropagation()
-    setDrag({
-      type: 'node',
-      nodeId: node.id,
-      originX: event.clientX,
-      originY: event.clientY,
-      startX: node.x,
-      startY: node.y,
-    })
-  }
-
-  const backgroundStyle = {
-    backgroundImage:
-      'radial-gradient(circle at 1px 1px, rgba(20, 33, 45, 0.35) 1px, transparent 0)',
-    backgroundSize: '24px 24px',
-  }
 
   return (
     <div
@@ -278,20 +279,7 @@ export function Flowsheet2DScene() {
         role="img"
         aria-label="2D flowsheet canvas"
       >
-        <defs>
-          <linearGradient id="pipeGlow" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#61B8FF" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#9AE6FF" stopOpacity="0.8" />
-          </linearGradient>
-          <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="6" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <g
+       <g
           transform={`translate(${viewport.x} ${viewport.y}) scale(${viewport.scale})`}
         >
           {edges.map((edge) => {
