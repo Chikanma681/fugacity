@@ -58,7 +58,7 @@ export function Flowsheet2DScene() {
   const fileName = file?.name
   const filePath = file?.path
 
-   const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [viewport, setViewport] = useState<Viewport>(initialViewport)
   const viewportRef = useRef<Viewport>(initialViewport)
