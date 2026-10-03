@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSignals } from '@preact/signals-react/runtime'
 
 import { createFlowObject } from '@src/flowsheet/factory'
 import { FlowNodeGraphic } from '@src/flowsheet/renderers'
@@ -8,6 +9,7 @@ import {
   streamPalette,
 } from '@src/flowsheet/streamPalette'
 import type { FlowEdge, FlowNode, PortId, Viewport } from '@src/flowsheet/types'
+import { useApp } from '@src/lib/boot'
 
 type DragState =
   | { type: 'none' }
@@ -50,7 +52,13 @@ function getPortPosition(
 }
 
 export function Flowsheet2DScene() {
-  const containerRef = useRef<HTMLDivElement>(null)
+  useSignals()
+  const { project } = useApp()
+  const file = project?.executingFileEntry.value
+  const fileName = file?.name
+  const filePath = file?.path
+
+   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const [viewport, setViewport] = useState<Viewport>(initialViewport)
   const viewportRef = useRef<Viewport>(initialViewport)
