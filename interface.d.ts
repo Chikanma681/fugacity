@@ -5,6 +5,7 @@ import type path from 'path'
 import type { dialog, shell } from 'electron'
 import type { WebContentSendPayload } from 'menu/channels'
 import type { ZooLabel } from 'menu/roles'
+import type { DatabaseAPI } from '@src/lib/store/database'
 
 // Extend the interface with additional custom properties
 declare module 'electron' {
@@ -99,6 +100,7 @@ export interface IElectronAPI {
     projectDir: string,
     projectName: string
   ) => Promise<{ path: string }>
+  flowsheetDb: DatabaseAPI
   thermo: {
     listCompounds: () => Promise<
       Array<{ id: string; name: string; formula: string; category: string }>
