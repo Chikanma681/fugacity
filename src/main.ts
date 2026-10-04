@@ -1,11 +1,13 @@
 import os from 'node:os'
 import { execFile } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import path from 'path'
 // Some of the following was taken from bits and pieces of the vite-typescript
 // template that ElectronJS provides.
 // @ts-ignore: TS1343
 import * as packageJSON from '@root/package.json'
 import dotenv from 'dotenv'
+import type { WebContents } from 'electron'
 import {
   BrowserWindow,
   Menu,
@@ -35,10 +37,15 @@ import {
 } from '@src/lib/constants'
 import { registerFileProtocolCsp } from '@src/lib/csp'
 import getCurrentProjectFile from '@src/lib/getCurrentProjectFile'
+import { open as openSqlite } from '@src/lib/store/sqlite'
 import { reportRejection } from '@src/lib/trap'
 let mainWindow: BrowserWindow | null = null
 let isInstallingUpdate = false
 const thermoAPIRoot = app.isPackaged ? process.resourcesPath : process.cwd()
+const databaseConnections = new Map<
+  number,
+  Map<string, ReturnType<typeof openSqlite>>
+>()
 /** All Electron windows will share this WASM module */
 const initPromise = initialiseWasmNode()
 
@@ -71,28 +78,7 @@ process.env.VITE_ZOO_BASE_DOMAIN ??= viteEnv.VITE_ZOO_BASE_DOMAIN
 console.log('Environment vars', process.env)
 console.log('Parsed CLI args', args)
 
-/// Register our application to handle all "zoo-studio:" protocols.
-const singleInstanceLock = app.requestSingleInstanceLock()
-if (process.defaultApp) {
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient(ZOO_STUDIO_PROTOCOL, process.execPath, [
-      path.resolve(process.argv[1]),
-    ])
-  }
-} else {
-  app.setAsDefaultProtocolClient(ZOO_STUDIO_PROTOCOL)
-}
-
-// Global app listeners
-// Must be done before ready event.
-// Checking against this lock is needed for Windows and Linux, see
-// electronjs dot org/docs/latest/tutorial/launch-app-from-url-in-another-app#windows-and-linux-code
-if (!singleInstanceLock && process.env.NODE_ENV !== 'test') {
-  app.quit()
-} else {
-  registerStartupListeners()
-}
-
+// Window and startup helpers.
 const createWindow = (pathToOpen?: string): BrowserWindow => {
   let newWindow: BrowserWindow | null = null
 
@@ -295,6 +281,348 @@ const isBoundsVisible = (bounds: Electron.Rectangle): boolean => {
   })
 }
 
+const getProjectPathAtStartup = async (
+  initPromise: Promise<ModuleType>,
+  filePath?: string
+): Promise<string | null> => {
+  // Make sure we have WASM, because we're about to use it indirectly.
+  const wasmInstance = await initPromise
+  // If we are in development mode, we don't want to load a project at
+  // startup.
+  // Since the args passed are always '.'
+  // aka Forge for npm run tron:start live dev or playwright tests, but not dev packaged apps
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL || process.env.NODE_ENV === 'test') {
+    return null
+  }
+
+  let projectPath: string | null = filePath || null
+  if (projectPath === null) {
+    // macOS: open-file events that were received before the app is ready
+    const macOpenFiles: string[] = (global as any).macOpenFiles
+    if (macOpenFiles && macOpenFiles && macOpenFiles.length > 0) {
+      projectPath = macOpenFiles[0] // We only do one project at a time
+    }
+    // Reset this so we don't accidentally use it again.
+    const macOpenFilesEmpty: string[] = []
+    // @ts-ignore
+    global['macOpenFiles'] = macOpenFilesEmpty
+
+    // macOS: open-url events that were received before the app is ready
+    const getOpenUrls: string[] = (global as any).getOpenUrls
+    if (getOpenUrls && getOpenUrls.length > 0) {
+      projectPath = getOpenUrls[0] // We only do one project at a
+    }
+    // Reset this so we don't accidentally use it again.
+    // @ts-ignore
+    global['getOpenUrls'] = []
+
+    // Check if we have a project path in the command line arguments
+    // If we do, we will load the project at that path
+    if (args._.length > 1) {
+      if (args._[1].length > 0) {
+        projectPath = args._[1]
+        // Reset all this value so we don't accidentally use it again.
+        args._[1] = ''
+      }
+    }
+  }
+
+  if (projectPath) {
+    // We have a project path, load the project information.
+    console.log(`Loading project at startup: ${projectPath}`)
+    const currentFile = await getCurrentProjectFile(projectPath, wasmInstance)
+
+    if (currentFile instanceof Error) {
+      console.error(currentFile)
+      return null
+    }
+
+    console.log(`Project loaded: ${currentFile}`)
+    return currentFile
+  }
+
+  return null
+}
+
+function intersectRect(
+  a: Electron.Rectangle,
+  b: Electron.Rectangle
+): Electron.Rectangle | null {
+  const x1 = Math.max(a.x, b.x)
+  const y1 = Math.max(a.y, b.y)
+  const x2 = Math.min(a.x + a.width, b.x + b.width)
+  const y2 = Math.min(a.y + a.height, b.y + b.height)
+
+  const width = x2 - x1
+  const height = y2 - y1
+
+  if (width <= 0 || height <= 0) {
+    return null
+  }
+
+  return { x: x1, y: y1, width, height }
+}
+
+function registerStartupListeners() {
+  // Linux and Windows from electronjs dot org/docs/latest/tutorial/launch-app-from-url-in-another-app
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Deep Link: second instance for Windows and Linux
+    // Likely convenient to keep for debugging
+    console.log(
+      'Parsed CLI args from second instance',
+      parseCLIArgs(commandLine)
+    )
+    const pathOrUrl = getPathOrUrlFromArgs(parseCLIArgs(commandLine))
+    console.log('Retrieved path or deep link from second-instance', pathOrUrl)
+    createWindow(pathOrUrl)
+  })
+
+  /**
+   * macOS: when someone drops a file to the not-yet running VSCode, the open-file event fires even before
+   * the app-ready event. We listen very early for open-file and remember this upon startup as path to open.
+   */
+  const macOpenFiles: string[] = []
+  // @ts-ignore
+  global['macOpenFiles'] = macOpenFiles
+  app.on('open-file', function (event, path) {
+    event.preventDefault()
+
+    // If we have a mainWindow, lets open another window.
+    if (mainWindow) {
+      createWindow(path)
+    } else {
+      macOpenFiles.push(path)
+    }
+  })
+
+  /**
+   * macOS: react to open-url requests (including Deep Link on second instances)
+   */
+  const openUrls: string[] = []
+  // @ts-ignore
+  global['openUrls'] = openUrls
+  const onOpenUrl = function (
+    event: { preventDefault: () => void },
+    url: string
+  ) {
+    event.preventDefault()
+
+    // If we have a mainWindow, lets open another window.
+    if (mainWindow) {
+      createWindow(url)
+    } else {
+      openUrls.push(url)
+    }
+  }
+
+  app.on('will-finish-launching', function () {
+    app.on('open-url', onOpenUrl)
+  })
+}
+
+// Flowsheet database helpers.
+function closeDatabaseConnections(ownerId: number) {
+  const owned = databaseConnections.get(ownerId)
+  if (!owned) {
+    return
+  }
+  for (const database of owned.values()) {
+    database.close()
+  }
+  owned.clear()
+}
+
+function openFlowsheetDatabase(owner: WebContents, filePath: string) {
+  if (
+    typeof filePath !== 'string' ||
+    !path.isAbsolute(filePath) ||
+    path.extname(filePath).toLowerCase() !== '.fgc'
+  ) {
+    return Promise.reject(new Error('An absolute .fgc file path is required'))
+  }
+
+  const database = openSqlite(filePath)
+  const ownerId = owner.id
+  let owned = databaseConnections.get(ownerId)
+  if (!owned) {
+    owned = new Map()
+    databaseConnections.set(ownerId, owned)
+    owner.once('destroyed', () => {
+      closeDatabaseConnections(ownerId)
+      databaseConnections.delete(ownerId)
+    })
+    owner.on('render-process-gone', () => closeDatabaseConnections(ownerId))
+    owner.on('did-start-navigation', (details) => {
+      if (details.isMainFrame && !details.isSameDocument) {
+        closeDatabaseConnections(ownerId)
+      }
+    })
+  }
+
+  const id = randomUUID()
+  owned.set(id, database)
+  return id
+}
+
+function closeFlowsheetDatabase(ownerId: number, connectionId: string) {
+  const owned = databaseConnections.get(ownerId)
+  const database = owned?.get(connectionId)
+  if (database) {
+    database.close()
+    owned?.delete(connectionId)
+  }
+}
+
+const createFlowsheetDatabase = async (dbPath: string) => {
+  const flowsheetDbRoot = path.join(thermoAPIRoot, 'flowsheetDb')
+  const flowsheetDbMigrations = path.join(flowsheetDbRoot, 'migrations')
+  const executable = app.isPackaged
+    ? path.join(
+        flowsheetDbRoot,
+        process.platform === 'win32' ? 'flowsheet-db.exe' : 'flowsheet-db'
+      )
+    : 'go'
+  const args = app.isPackaged
+    ? ['-path', dbPath, '-migrations', flowsheetDbMigrations]
+    : ['run', '.', '-path', dbPath, '-migrations', flowsheetDbMigrations]
+
+  return new Promise<void>((resolve, reject) => {
+    execFile(
+      executable,
+      args,
+      {
+        cwd: flowsheetDbRoot,
+        env: {
+          ...process.env,
+          FUGACITY_APP_ROOT: thermoAPIRoot,
+        },
+      },
+      (error, _stdout, stderr) => {
+        if (error) {
+          reject(new Error(stderr || error.message))
+          return
+        }
+
+        resolve()
+      }
+    )
+  })
+}
+
+// Thermodynamics and update helpers.
+const invokeThermoCommand = async (command: string, payload?: unknown) => {
+  const thermoExecutable = process.env.FUGACITY_THERMO_API
+  const executable = thermoExecutable || 'go'
+  const args = thermoExecutable
+    ? [command]
+    : ['run', './thermo/cmd/thermo-api', command]
+  const defaultDWSIMWorker = path.join(
+    thermoAPIRoot,
+    'workers',
+    'DWSIMWorkerMono',
+    'DWSIMWorkerMono'
+  )
+  const dwsimWorker =
+    process.env.FUGACITY_DWSIM_WORKER ||
+    (fs.existsSync(defaultDWSIMWorker) ? defaultDWSIMWorker : undefined)
+
+  return new Promise((resolve, reject) => {
+    const child = execFile(
+      executable,
+      args,
+      {
+        cwd: thermoAPIRoot,
+        env: {
+          ...process.env,
+          FUGACITY_APP_ROOT: thermoAPIRoot,
+          ...(dwsimWorker ? { FUGACITY_DWSIM_WORKER: dwsimWorker } : {}),
+        },
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          try {
+            const thermoError = JSON.parse(stderr)
+            reject(new Error(thermoError.message || stderr || error.message))
+          } catch {
+            reject(new Error(stderr || error.message))
+          }
+          return
+        }
+
+        try {
+          resolve(JSON.parse(stdout))
+        } catch {
+          reject(new Error(`Invalid thermodynamics response for ${command}`))
+        }
+      }
+    )
+
+    if (payload !== undefined) {
+      child.stdin?.end(JSON.stringify(payload))
+    }
+  })
+}
+
+// Based on https://github.com/electron-userland/electron-builder/issues/8997#issuecomment-2846114257
+const prepareMacUpdateInstall = () => {
+  const beforeQuitListeners = app.listeners('before-quit')
+  app.removeAllListeners('before-quit')
+  for (const browserWindow of BrowserWindow.getAllWindows()) {
+    browserWindow.removeAllListeners('close')
+  }
+
+  autoUpdater.once('before-quit-for-update', () => {
+    // Do any before-quit cleanup here
+    for (const listener of beforeQuitListeners) {
+      try {
+        listener.call(app, {
+          preventDefault: () => {
+            // `preventDefault` during update install causes quit+install to hang.
+          },
+        })
+      } catch (error) {
+        console.error(
+          'Failed to run before-quit listener during update install',
+          error
+        )
+      }
+    }
+
+    // Force app to exit
+    app.exit()
+  })
+}
+
+// Startup and app lifecycle registrations.
+/// Register our application to handle all "zoo-studio:" protocols.
+const singleInstanceLock = app.requestSingleInstanceLock()
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(ZOO_STUDIO_PROTOCOL, process.execPath, [
+      path.resolve(process.argv[1]),
+    ])
+  }
+} else {
+  app.setAsDefaultProtocolClient(ZOO_STUDIO_PROTOCOL)
+}
+
+// Global app listeners
+// Must be done before ready event.
+// Checking against this lock is needed for Windows and Linux, see
+// electronjs dot org/docs/latest/tutorial/launch-app-from-url-in-another-app#windows-and-linux-code
+if (!singleInstanceLock && process.env.NODE_ENV !== 'test') {
+  app.quit()
+} else {
+  registerStartupListeners()
+}
+
+app.on('will-quit', () => {
+  for (const ownerId of databaseConnections.keys()) {
+    closeDatabaseConnections(ownerId)
+  }
+  databaseConnections.clear()
+})
+
 // Quit when all windows are closed, even on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q, but it is a really weird behavior with our app.
@@ -335,6 +663,7 @@ app.resizeWindow = async (width: number, height: number) => {
 // @ts-ignore can't declaration merge with App
 app.testProperty = {}
 
+// IPC registrations. Shared helpers are defined above.
 ipcMain.handle('app.testProperty', (event, propertyName) => {
   // @ts-ignore can't declaration merge with App
   return app.testProperty[propertyName]
@@ -409,41 +738,13 @@ ipcMain.handle('argv.parser', (event, data) => {
   return argvFromYargs
 })
 
-const createFlowsheetDatabase = async (dbPath: string) => {
-  const flowsheetDbRoot = path.join(thermoAPIRoot, 'flowsheetDb')
-  const flowsheetDbMigrations = path.join(flowsheetDbRoot, 'migrations')
-  const executable = app.isPackaged
-    ? path.join(
-        flowsheetDbRoot,
-        process.platform === 'win32' ? 'flowsheet-db.exe' : 'flowsheet-db'
-      )
-    : 'go'
-  const args = app.isPackaged
-    ? ['-path', dbPath, '-migrations', flowsheetDbMigrations]
-    : ['run', '.', '-path', dbPath, '-migrations', flowsheetDbMigrations]
+ipcMain.handle('flowsheetDb.open', (event, filePath: string) =>
+  openFlowsheetDatabase(event.sender, filePath)
+)
 
-  return new Promise<void>((resolve, reject) => {
-    execFile(
-      executable,
-      args,
-      {
-        cwd: flowsheetDbRoot,
-        env: {
-          ...process.env,
-          FUGACITY_APP_ROOT: thermoAPIRoot,
-        },
-      },
-      (error, _stdout, stderr) => {
-        if (error) {
-          reject(new Error(stderr || error.message))
-          return
-        }
-
-        resolve()
-      }
-    )
-  })
-}
+ipcMain.handle('flowsheetDb.close', (event, connectionId: string) =>
+  closeFlowsheetDatabase(event.sender.id, connectionId)
+)
 
 ipcMain.handle(
   'flowsheetDb.create',
@@ -477,59 +778,6 @@ ipcMain.handle(
     return { path: flowsheetPath }
   }
 )
-
-const invokeThermoCommand = async (command: string, payload?: unknown) => {
-  const thermoExecutable = process.env.FUGACITY_THERMO_API
-  const executable = thermoExecutable || 'go'
-  const args = thermoExecutable
-    ? [command]
-    : ['run', './thermo/cmd/thermo-api', command]
-  const defaultDWSIMWorker = path.join(
-    thermoAPIRoot,
-    'workers',
-    'DWSIMWorkerMono',
-    'DWSIMWorkerMono'
-  )
-  const dwsimWorker =
-    process.env.FUGACITY_DWSIM_WORKER ||
-    (fs.existsSync(defaultDWSIMWorker) ? defaultDWSIMWorker : undefined)
-
-  return new Promise((resolve, reject) => {
-    const child = execFile(
-      executable,
-      args,
-      {
-        cwd: thermoAPIRoot,
-        env: {
-          ...process.env,
-          FUGACITY_APP_ROOT: thermoAPIRoot,
-          ...(dwsimWorker ? { FUGACITY_DWSIM_WORKER: dwsimWorker } : {}),
-        },
-      },
-      (error, stdout, stderr) => {
-        if (error) {
-          try {
-            const thermoError = JSON.parse(stderr)
-            reject(new Error(thermoError.message || stderr || error.message))
-          } catch {
-            reject(new Error(stderr || error.message))
-          }
-          return
-        }
-
-        try {
-          resolve(JSON.parse(stdout))
-        } catch {
-          reject(new Error(`Invalid thermodynamics response for ${command}`))
-        }
-      }
-    )
-
-    if (payload !== undefined) {
-      child.stdin?.end(JSON.stringify(payload))
-    }
-  })
-}
 
 ipcMain.handle('thermo.listCompounds', () =>
   invokeThermoCommand('ListCompounds')
@@ -704,36 +952,7 @@ app.on('ready', () => {
     })
   })
 
-  // Based on https://github.com/electron-userland/electron-builder/issues/8997#issuecomment-2846114257
-  const prepareMacUpdateInstall = () => {
-    const beforeQuitListeners = app.listeners('before-quit')
-    app.removeAllListeners('before-quit')
-    for (const browserWindow of BrowserWindow.getAllWindows()) {
-      browserWindow.removeAllListeners('close')
-    }
-
-    autoUpdater.once('before-quit-for-update', () => {
-      // Do any before-quit cleanup here
-      for (const listener of beforeQuitListeners) {
-        try {
-          listener.call(app, {
-            preventDefault: () => {
-              // `preventDefault` during update install causes quit+install to hang.
-            },
-          })
-        } catch (error) {
-          console.error(
-            'Failed to run before-quit listener during update install',
-            error
-          )
-        }
-      }
-
-      // Force app to exit
-      app.exit()
-    })
-  }
-
+  // Updater IPC handlers stay readiness-scoped and only exist on versioned builds.
   ipcMain.handle('app.restart', () => {
     if (isInstallingUpdate) {
       return
@@ -756,142 +975,3 @@ app.on('ready', () => {
     return appUpdater.checkForUpdates()
   })
 })
-
-const getProjectPathAtStartup = async (
-  initPromise: Promise<ModuleType>,
-  filePath?: string
-): Promise<string | null> => {
-  // Make sure we have WASM, because we're about to use it indirectly.
-  const wasmInstance = await initPromise
-  // If we are in development mode, we don't want to load a project at
-  // startup.
-  // Since the args passed are always '.'
-  // aka Forge for npm run tron:start live dev or playwright tests, but not dev packaged apps
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL || process.env.NODE_ENV === 'test') {
-    return null
-  }
-
-  let projectPath: string | null = filePath || null
-  if (projectPath === null) {
-    // macOS: open-file events that were received before the app is ready
-    const macOpenFiles: string[] = (global as any).macOpenFiles
-    if (macOpenFiles && macOpenFiles && macOpenFiles.length > 0) {
-      projectPath = macOpenFiles[0] // We only do one project at a time
-    }
-    // Reset this so we don't accidentally use it again.
-    const macOpenFilesEmpty: string[] = []
-    // @ts-ignore
-    global['macOpenFiles'] = macOpenFilesEmpty
-
-    // macOS: open-url events that were received before the app is ready
-    const getOpenUrls: string[] = (global as any).getOpenUrls
-    if (getOpenUrls && getOpenUrls.length > 0) {
-      projectPath = getOpenUrls[0] // We only do one project at a
-    }
-    // Reset this so we don't accidentally use it again.
-    // @ts-ignore
-    global['getOpenUrls'] = []
-
-    // Check if we have a project path in the command line arguments
-    // If we do, we will load the project at that path
-    if (args._.length > 1) {
-      if (args._[1].length > 0) {
-        projectPath = args._[1]
-        // Reset all this value so we don't accidentally use it again.
-        args._[1] = ''
-      }
-    }
-  }
-
-  if (projectPath) {
-    // We have a project path, load the project information.
-    console.log(`Loading project at startup: ${projectPath}`)
-    const currentFile = await getCurrentProjectFile(projectPath, wasmInstance)
-
-    if (currentFile instanceof Error) {
-      console.error(currentFile)
-      return null
-    }
-
-    console.log(`Project loaded: ${currentFile}`)
-    return currentFile
-  }
-
-  return null
-}
-
-function registerStartupListeners() {
-  // Linux and Windows from electronjs dot org/docs/latest/tutorial/launch-app-from-url-in-another-app
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
-    // Deep Link: second instance for Windows and Linux
-    // Likely convenient to keep for debugging
-    console.log(
-      'Parsed CLI args from second instance',
-      parseCLIArgs(commandLine)
-    )
-    const pathOrUrl = getPathOrUrlFromArgs(parseCLIArgs(commandLine))
-    console.log('Retrieved path or deep link from second-instance', pathOrUrl)
-    createWindow(pathOrUrl)
-  })
-
-  /**
-   * macOS: when someone drops a file to the not-yet running VSCode, the open-file event fires even before
-   * the app-ready event. We listen very early for open-file and remember this upon startup as path to open.
-   */
-  const macOpenFiles: string[] = []
-  // @ts-ignore
-  global['macOpenFiles'] = macOpenFiles
-  app.on('open-file', function (event, path) {
-    event.preventDefault()
-
-    // If we have a mainWindow, lets open another window.
-    if (mainWindow) {
-      createWindow(path)
-    } else {
-      macOpenFiles.push(path)
-    }
-  })
-
-  /**
-   * macOS: react to open-url requests (including Deep Link on second instances)
-   */
-  const openUrls: string[] = []
-  // @ts-ignore
-  global['openUrls'] = openUrls
-  const onOpenUrl = function (
-    event: { preventDefault: () => void },
-    url: string
-  ) {
-    event.preventDefault()
-
-    // If we have a mainWindow, lets open another window.
-    if (mainWindow) {
-      createWindow(url)
-    } else {
-      openUrls.push(url)
-    }
-  }
-
-  app.on('will-finish-launching', function () {
-    app.on('open-url', onOpenUrl)
-  })
-}
-
-function intersectRect(
-  a: Electron.Rectangle,
-  b: Electron.Rectangle
-): Electron.Rectangle | null {
-  const x1 = Math.max(a.x, b.x)
-  const y1 = Math.max(a.y, b.y)
-  const x2 = Math.min(a.x + a.width, b.x + b.width)
-  const y2 = Math.min(a.y + a.height, b.y + b.height)
-
-  const width = x2 - x1
-  const height = y2 - y1
-
-  if (width <= 0 || height <= 0) {
-    return null
-  }
-
-  return { x: x1, y: y1, width, height }
-}

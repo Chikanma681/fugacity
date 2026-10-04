@@ -7,6 +7,7 @@ import type { IpcRendererEvent } from 'electron'
 import { contextBridge, ipcRenderer } from 'electron'
 
 import type { Channel } from '@src/channels'
+import type { DatabaseAPI } from '@src/lib/store/database'
 import type { WebContentSendPayload } from '@src/menu/channels'
 
 const typeSafeIpcRendererOn = (
@@ -58,6 +59,11 @@ const createFlowsheetDatabase = (
   projectName: string
 ): Promise<{ path: string }> =>
   ipcRenderer.invoke('flowsheetDb.create', { projectDir, projectName })
+const flowsheetDb: DatabaseAPI = {
+  open: (filePath) => ipcRenderer.invoke('flowsheetDb.open', filePath),
+  close: (connectionId) =>
+    ipcRenderer.invoke('flowsheetDb.close', connectionId),
+}
 const thermo = {
   listCompounds: () => ipcRenderer.invoke('thermo.listCompounds'),
   listPropertyPackages: () => ipcRenderer.invoke('thermo.listPropertyPackages'),
@@ -319,6 +325,7 @@ contextBridge.exposeInMainWorld('electron', {
   // INTENDED ONLY TO BE USED FOR TESTS.
   getAppTestProperty,
   createFlowsheetDatabase,
+  flowsheetDb,
   thermo,
   process: {
     // These are read-only over the boundary.

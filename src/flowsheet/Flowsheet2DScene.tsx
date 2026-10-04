@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSignals } from '@preact/signals-react/runtime'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { createFlowObject } from '@src/flowsheet/factory'
 import { FlowNodeGraphic } from '@src/flowsheet/renderers'
@@ -10,6 +10,11 @@ import {
 } from '@src/flowsheet/streamPalette'
 import type { FlowEdge, FlowNode, PortId, Viewport } from '@src/flowsheet/types'
 import { useApp } from '@src/lib/boot'
+import {
+  type DatabaseConnection,
+  getFlowsheetFilePath,
+  openDB,
+} from '@src/lib/store/database'
 
 type DragState =
   | { type: 'none' }
@@ -55,8 +60,45 @@ export function Flowsheet2DScene() {
   useSignals()
   const { project } = useApp()
   const file = project?.executingFileEntry.value
-  const fileName = file?.name
-  const filePath = file?.path
+  const filePath = getFlowsheetFilePath(file?.path)
+  const fileName = filePath?.split(/[\\/]/).at(-1)
+  const [databaseError, setDatabaseError] = useState<string | null>(null)
+
+  console.log('FILE', fileName)
+  useEffect(() => {
+    setDatabaseError(null)
+    if (!filePath || !filePath.toLowerCase().endsWith('.fgc')) {
+      return
+    }
+
+    let disposed = false
+    let connection: DatabaseConnection | undefined
+
+    openDB(filePath)
+      .then(async (opened) => {
+        if (disposed) {
+          await opened.close()
+          return
+        }
+        connection = opened
+      })
+      .catch((error: unknown) => {
+        if (!disposed) {
+          setDatabaseError(
+            error instanceof Error ? error.message : String(error)
+          )
+        }
+      })
+
+    return () => {
+      disposed = true
+      if (connection) {
+        connection.close().catch((error: unknown) => {
+          console.error('Failed to close flowsheet database', error)
+        })
+      }
+    }
+  }, [filePath])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -354,6 +396,14 @@ export function Flowsheet2DScene() {
           ))}
         </g>
       </svg>
+      {databaseError && (
+        <div
+          role="alert"
+          className="absolute bottom-4 left-4 rounded bg-chalkboard-10 p-2 text-sm dark:bg-chalkboard-100"
+        >
+          Could not open {fileName}: {databaseError}
+        </div>
+      )}
     </div>
   )
 }
