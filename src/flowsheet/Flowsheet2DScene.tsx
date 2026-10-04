@@ -64,7 +64,6 @@ export function Flowsheet2DScene() {
   const fileName = filePath?.split(/[\\/]/).at(-1)
   const [databaseError, setDatabaseError] = useState<string | null>(null)
 
-  console.log('FILE', fileName)
   useEffect(() => {
     setDatabaseError(null)
     if (!filePath || !filePath.toLowerCase().endsWith('.fgc')) {

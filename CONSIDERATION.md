@@ -1,0 +1,4 @@
+- You see how for the compounds we use the electronIPC to call compounds from dwsim to fugacity
+- this is potentially problematic cos remember we also want to support the web
+- even the current way of opening sqlite databases is currently problematic
+- we are also handling/producting .kcl -> eventually we need to get rid of those and when we get rid of those we really need make sure reflect in flowsheet2dscene get rid of the getFlowsheetPath function1	` 
