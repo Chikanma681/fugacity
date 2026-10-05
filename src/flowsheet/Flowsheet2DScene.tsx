@@ -8,13 +8,10 @@ import {
   type StreamKind,
   streamPalette,
 } from '@src/flowsheet/streamPalette'
-import type { FlowEdge, FlowNode, PortId, Viewport } from '@src/flowsheet/types'
+import type { FlowNode, PortId, Viewport } from '@src/flowsheet/types'
+import { useFlowsheetState } from '@src/flowsheet/useFlowsheetState'
 import { useApp } from '@src/lib/boot'
-import {
-  type DatabaseConnection,
-  getFlowsheetFilePath,
-  openDB,
-} from '@src/lib/store/database'
+import { getFlowsheetFilePath } from '@src/lib/store/database'
 
 type DragState =
   | { type: 'none' }
@@ -32,8 +29,6 @@ type DragState =
       startX: number
       startY: number
     }
-
-const initialViewport: Viewport = { x: 0, y: 0, scale: 1 }
 
 function getPortPosition(
   node: FlowNode,
@@ -62,50 +57,27 @@ export function Flowsheet2DScene() {
   const file = project?.executingFileEntry.value
   const filePath = getFlowsheetFilePath(file?.path)
   const fileName = filePath?.split(/[\\/]/).at(-1)
-  const [databaseError, setDatabaseError] = useState<string | null>(null)
-
-  useEffect(() => {
-    setDatabaseError(null)
-    if (!filePath || !filePath.toLowerCase().endsWith('.fgc')) {
-      return
-    }
-
-    let disposed = false
-    let connection: DatabaseConnection | undefined
-
-    openDB(filePath)
-      .then(async (opened) => {
-        if (disposed) {
-          await opened.close()
-          return
-        }
-        connection = opened
-      })
-      .catch((error: unknown) => {
-        if (!disposed) {
-          setDatabaseError(
-            error instanceof Error ? error.message : String(error)
-          )
-        }
-      })
-
-    return () => {
-      disposed = true
-      if (connection) {
-        connection.close().catch((error: unknown) => {
-          console.error('Failed to close flowsheet database', error)
-        })
-      }
-    }
-  }, [filePath])
+  const {
+    viewport,
+    nodes,
+    edges,
+    setViewport,
+    setNodes,
+    setEdges,
+    ready,
+    databaseError,
+    resetVersion,
+  } = useFlowsheetState(filePath)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const [viewport, setViewport] = useState<Viewport>(initialViewport)
-  const viewportRef = useRef<Viewport>(initialViewport)
-  const [nodes, setNodes] = useState<FlowNode[]>([])
-  const [edges, setEdges] = useState<FlowEdge[]>([])
+  const viewportRef = useRef<Viewport>(viewport)
   const [drag, setDrag] = useState<DragState>({ type: 'none' })
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: File loads and rollbacks cancel active pointer gestures.
+  useEffect(() => {
+    setDrag({ type: 'none' })
+  }, [filePath, resetVersion])
 
   const nodeMap = useMemo(() => {
     const map = new Map<string, FlowNode>()
@@ -134,12 +106,15 @@ export function Flowsheet2DScene() {
     viewportRef.current = viewport
   }, [viewport])
 
-  const createNode = useCallback((kind: StreamKind, x: number, y: number) => {
-    setNodes((prev) => [
-      ...prev,
-      createFlowObject({ unitType: kind, x, y, nodes: prev }),
-    ])
-  }, [])
+  const createNode = useCallback(
+    (kind: StreamKind, x: number, y: number) => {
+      setNodes((prev) => [
+        ...prev,
+        createFlowObject({ unitType: kind, x, y, nodes: prev }),
+      ])
+    },
+    [setNodes]
+  )
 
   // Convert a pointer position from browser screen pixels into flowsheet coordinates.
   // For example, this lets a dropped node land under the pointer after panning or
@@ -175,6 +150,9 @@ export function Flowsheet2DScene() {
   ) => {
     event.stopPropagation()
     event.preventDefault()
+    if (!ready) {
+      return
+    }
     setDrag({
       type: 'edge',
       from: { nodeId: node.id, portId },
@@ -186,12 +164,14 @@ export function Flowsheet2DScene() {
     event.preventDefault()
     const delta = -event.deltaY
     const scaleFactor = delta > 0 ? 1.08 : 0.92
-    const nextScale = Math.min(2.2, Math.max(0.5, viewport.scale * scaleFactor))
-    setViewport((prev) => ({ ...prev, scale: nextScale }))
+    setViewport((prev) => ({
+      ...prev,
+      scale: Math.min(2.2, Math.max(0.5, prev.scale * scaleFactor)),
+    }))
   }
 
   const startPan = (event: React.PointerEvent) => {
-    if (event.button !== 0) {
+    if (!ready || event.button !== 0) {
       return
     }
     if ((event.target as Element).closest('[data-node-id]')) {
@@ -207,6 +187,9 @@ export function Flowsheet2DScene() {
 
   const startNodeDrag = (event: React.PointerEvent, node: FlowNode) => {
     event.stopPropagation()
+    if (!ready) {
+      return
+    }
     setDrag({
       type: 'node',
       nodeId: node.id,
@@ -223,6 +206,9 @@ export function Flowsheet2DScene() {
     backgroundSize: '24px 24px',
   }
   useEffect(() => {
+    if (!ready) {
+      return
+    }
     const onPointerMove = (event: PointerEvent) => {
       if (drag.type === 'pan') {
         const dx = event.clientX - drag.originX
@@ -277,24 +263,34 @@ export function Flowsheet2DScene() {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
     }
-  }, [drag, getPortTarget, screenToWorld, viewport.scale])
+  }, [
+    drag,
+    getPortTarget,
+    ready,
+    screenToWorld,
+    setEdges,
+    setNodes,
+    setViewport,
+    viewport.scale,
+  ])
 
   return (
     <div
       ref={containerRef}
       data-testid="flowsheet-2d"
+      aria-busy={!ready && !databaseError}
       className="absolute inset-0 h-full w-full bg-chalkboard-10 dark:bg-chalkboard-100"
       style={backgroundStyle}
       onPointerDown={startPan}
       onWheel={handleWheel}
       onDragOver={(event) => {
-        if (event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
+        if (ready && event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
           event.preventDefault()
           event.dataTransfer.dropEffect = 'copy'
         }
       }}
       onDrop={(event) => {
-        if (!event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
+        if (!ready || !event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
           return
         }
         event.preventDefault()
@@ -400,8 +396,13 @@ export function Flowsheet2DScene() {
           role="alert"
           className="absolute bottom-4 left-4 rounded bg-chalkboard-10 p-2 text-sm dark:bg-chalkboard-100"
         >
-          Could not open {fileName}: {databaseError}
+          {fileName}: {databaseError}
         </div>
+      )}
+      {!ready && !databaseError && (
+        <output className="absolute bottom-4 left-4 rounded bg-chalkboard-10 p-2 text-sm dark:bg-chalkboard-100">
+          Loading {fileName}…
+        </output>
       )}
     </div>
   )

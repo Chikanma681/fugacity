@@ -24,16 +24,19 @@ const (
 type options struct {
 	dbPath        string
 	migrationsDir string
+	existing      bool
 }
 
 func parseOptions() options {
 	dbPath := flag.String("path", defaultDBPath, "path to the .fgc flowsheet database")
 	migrationsDir := flag.String("migrations", defaultMigrationsDir, "path to goose migrations")
+	existing := flag.Bool("existing", false, "migrate an existing .fgc database")
 	flag.Parse()
 
 	return options{
 		dbPath:        *dbPath,
 		migrationsDir: *migrationsDir,
+		existing:      *existing,
 	}
 }
 
@@ -82,36 +85,44 @@ func ensureApplicationID(db *sql.DB) error {
 	return nil
 }
 
-func main() {
-	options := parseOptions()
-
+func initializeDatabase(options options) error {
 	if err := ensureDatabaseDir(options.dbPath); err != nil {
-		log.Fatal(err)
+		return err
 	}
-	if err := createDatabaseFile(options.dbPath); err != nil {
-		log.Fatal(err)
+	if options.existing {
+		if _, err := os.Stat(options.dbPath); err != nil {
+			return err
+		}
+	} else {
+		if err := createDatabaseFile(options.dbPath); err != nil {
+			return err
+		}
 	}
 
 	// connect
 	db, err := sql.Open("sqlite", "file:"+options.dbPath+"?_pragma=foreign_keys(1)")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer db.Close()
 
 	if err := ensureApplicationID(db); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if err := goose.SetDialect("sqlite3"); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	if err := goose.Up(db, options.migrationsDir); err != nil {
+	return goose.Up(db, options.migrationsDir)
+}
+
+func main() {
+	if err := initializeDatabase(parseOptions()); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -1,6 +1,6 @@
-import os from 'node:os'
 import { execFile } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
+import os from 'node:os'
 import path from 'path'
 // Some of the following was taken from bits and pieces of the vite-typescript
 // template that ElectronJS provides.
@@ -30,6 +30,7 @@ import {
   getPathOrUrlFromArgs,
   parseCLIArgs,
 } from '@src/commandLineArgs'
+import type { FlowsheetState } from '@src/flowsheet/types'
 import { initialiseWasmNode } from '@src/lang/wasmUtilsNode'
 import {
   OAUTH2_DEVICE_CLIENT_ID,
@@ -37,15 +38,13 @@ import {
 } from '@src/lib/constants'
 import { registerFileProtocolCsp } from '@src/lib/csp'
 import getCurrentProjectFile from '@src/lib/getCurrentProjectFile'
+import { FlowsheetStore } from '@src/lib/store/flowsheetStore'
 import { open as openSqlite } from '@src/lib/store/sqlite'
 import { reportRejection } from '@src/lib/trap'
 let mainWindow: BrowserWindow | null = null
 let isInstallingUpdate = false
 const thermoAPIRoot = app.isPackaged ? process.resourcesPath : process.cwd()
-const databaseConnections = new Map<
-  number,
-  Map<string, ReturnType<typeof openSqlite>>
->()
+const databaseConnections = new Map<number, Map<string, FlowsheetStore>>()
 /** All Electron windows will share this WASM module */
 const initPromise = initialiseWasmNode()
 
@@ -432,48 +431,10 @@ function closeDatabaseConnections(ownerId: number) {
   owned.clear()
 }
 
-function openFlowsheetDatabase(owner: WebContents, filePath: string) {
-  if (
-    typeof filePath !== 'string' ||
-    !path.isAbsolute(filePath) ||
-    path.extname(filePath).toLowerCase() !== '.fgc'
-  ) {
-    return Promise.reject(new Error('An absolute .fgc file path is required'))
-  }
-
-  const database = openSqlite(filePath)
-  const ownerId = owner.id
-  let owned = databaseConnections.get(ownerId)
-  if (!owned) {
-    owned = new Map()
-    databaseConnections.set(ownerId, owned)
-    owner.once('destroyed', () => {
-      closeDatabaseConnections(ownerId)
-      databaseConnections.delete(ownerId)
-    })
-    owner.on('render-process-gone', () => closeDatabaseConnections(ownerId))
-    owner.on('did-start-navigation', (details) => {
-      if (details.isMainFrame && !details.isSameDocument) {
-        closeDatabaseConnections(ownerId)
-      }
-    })
-  }
-
-  const id = randomUUID()
-  owned.set(id, database)
-  return id
-}
-
-function closeFlowsheetDatabase(ownerId: number, connectionId: string) {
-  const owned = databaseConnections.get(ownerId)
-  const database = owned?.get(connectionId)
-  if (database) {
-    database.close()
-    owned?.delete(connectionId)
-  }
-}
-
-const createFlowsheetDatabase = async (dbPath: string) => {
+const initializeFlowsheetDatabase = async (
+  dbPath: string,
+  existing = false
+) => {
   const flowsheetDbRoot = path.join(thermoAPIRoot, 'flowsheetDb')
   const flowsheetDbMigrations = path.join(flowsheetDbRoot, 'migrations')
   const executable = app.isPackaged
@@ -485,6 +446,9 @@ const createFlowsheetDatabase = async (dbPath: string) => {
   const args = app.isPackaged
     ? ['-path', dbPath, '-migrations', flowsheetDbMigrations]
     : ['run', '.', '-path', dbPath, '-migrations', flowsheetDbMigrations]
+  if (existing) {
+    args.push('-existing')
+  }
 
   return new Promise<void>((resolve, reject) => {
     execFile(
@@ -507,6 +471,67 @@ const createFlowsheetDatabase = async (dbPath: string) => {
       }
     )
   })
+}
+
+async function openFlowsheetDatabase(owner: WebContents, filePath: string) {
+  if (
+    typeof filePath !== 'string' ||
+    !path.isAbsolute(filePath) ||
+    path.extname(filePath).toLowerCase() !== '.fgc'
+  ) {
+    return Promise.reject(new Error('An absolute .fgc file path is required'))
+  }
+
+  await initializeFlowsheetDatabase(filePath, true)
+  if (owner.isDestroyed()) {
+    return Promise.reject(new Error('The flowsheet window has closed'))
+  }
+  const database = openSqlite(filePath)
+  let store: FlowsheetStore
+  try {
+    store = new FlowsheetStore(database, path.basename(filePath, '.fgc'))
+  } catch (error) {
+    database.close()
+    return Promise.reject(error)
+  }
+  const ownerId = owner.id
+  let owned = databaseConnections.get(ownerId)
+  if (!owned) {
+    owned = new Map()
+    databaseConnections.set(ownerId, owned)
+    owner.once('destroyed', () => {
+      closeDatabaseConnections(ownerId)
+      databaseConnections.delete(ownerId)
+    })
+    owner.on('render-process-gone', () => closeDatabaseConnections(ownerId))
+    owner.on('did-start-navigation', (details) => {
+      if (details.isMainFrame && !details.isSameDocument) {
+        closeDatabaseConnections(ownerId)
+      }
+    })
+  }
+
+  const id = randomUUID()
+  owned.set(id, store)
+  return id
+}
+
+function closeFlowsheetDatabase(ownerId: number, connectionId: string) {
+  const owned = databaseConnections.get(ownerId)
+  const database = owned?.get(connectionId)
+  if (database) {
+    database.close()
+    owned?.delete(connectionId)
+  }
+}
+
+function getFlowsheetStore(ownerId: number, connectionId: string) {
+  const store = databaseConnections.get(ownerId)?.get(connectionId)
+  if (!store) {
+    // eslint-disable-next-line suggest-no-throw/suggest-no-throw -- IPC reports unavailable or unowned connections to the renderer.
+    throw new Error('The flowsheet database connection is no longer available')
+  }
+  return store
 }
 
 // Thermodynamics and update helpers.
@@ -746,6 +771,16 @@ ipcMain.handle('flowsheetDb.close', (event, connectionId: string) =>
   closeFlowsheetDatabase(event.sender.id, connectionId)
 )
 
+ipcMain.handle('flowsheetDb.read', (event, connectionId: string) =>
+  getFlowsheetStore(event.sender.id, connectionId).read()
+)
+
+ipcMain.handle(
+  'flowsheetDb.save',
+  (event, connectionId: string, state: FlowsheetState) =>
+    getFlowsheetStore(event.sender.id, connectionId).save(state)
+)
+
 ipcMain.handle(
   'flowsheetDb.create',
   async (_event, data: { projectDir: string; projectName: string }) => {
@@ -774,7 +809,7 @@ ipcMain.handle(
       )
     }
 
-    await createFlowsheetDatabase(flowsheetPath)
+    await initializeFlowsheetDatabase(flowsheetPath)
     return { path: flowsheetPath }
   }
 )

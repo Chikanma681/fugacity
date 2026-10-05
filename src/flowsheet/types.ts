@@ -62,3 +62,9 @@ export type Viewport = {
   y: number
   scale: number
 }
+
+export type FlowsheetState = {
+  viewport: Viewport
+  nodes: FlowNode[]
+  edges: FlowEdge[]
+}

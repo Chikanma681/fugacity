@@ -86,7 +86,7 @@ Avoid maintaining an independent Go-side `ConstantProperties` parser as the simu
 Throughout, the code very important, we try to DEFINE methods, function or classes in the same file before we call them for example. let say in a .cs file, we call a GetAvailableCompounds method but define it 300 lines later. while the code still works 
 it makes review it difficult. it is not MUST to do this but at the same time we should always do this when possible
 
-
+- i love simple code, i believe with good function/classes name there is almost no need for comments so please do not flood my codebase with comments
 
 
  

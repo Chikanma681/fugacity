@@ -1,6 +1,6 @@
-import path from 'path'
 import fs from 'node:fs/promises'
 import os from 'node:os'
+import path from 'path'
 import packageJson from '@root/package.json'
 import chokidar from 'chokidar'
 import type { IpcRendererEvent } from 'electron'
@@ -63,6 +63,9 @@ const flowsheetDb: DatabaseAPI = {
   open: (filePath) => ipcRenderer.invoke('flowsheetDb.open', filePath),
   close: (connectionId) =>
     ipcRenderer.invoke('flowsheetDb.close', connectionId),
+  read: (connectionId) => ipcRenderer.invoke('flowsheetDb.read', connectionId),
+  save: (connectionId, state) =>
+    ipcRenderer.invoke('flowsheetDb.save', connectionId, state),
 }
 const thermo = {
   listCompounds: () => ipcRenderer.invoke('thermo.listCompounds'),

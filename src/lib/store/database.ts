@@ -1,18 +1,27 @@
+import type { FlowsheetState } from '@src/flowsheet/types'
+
 /** Runtime-neutral preload contract; SQLite connections stay in Electron main. */
 export type DatabaseAPI = {
   open: (filePath: string) => Promise<string>
   close: (connectionId: string) => Promise<void>
+  read: (connectionId: string) => Promise<FlowsheetState | null>
+  save: (connectionId: string, state: FlowsheetState) => Promise<void>
 }
 
 export type DatabaseConnection = {
   id: string
   close: () => Promise<void>
+  read: () => Promise<FlowsheetState | null>
+  save: (state: FlowsheetState) => Promise<void>
 }
 
 /** Use the parent folder's name while preserving POSIX/Windows path separators. */
 export function getFlowsheetFilePath(filePath?: string): string | undefined {
   if (!filePath) {
     return
+  }
+  if (filePath.toLowerCase().endsWith('.fgc')) {
+    return filePath
   }
   const parts = filePath.split(/[\\/]/)
   const folderName = parts.at(-2)
@@ -32,5 +41,10 @@ export async function openDB(filePath: string): Promise<DatabaseConnection> {
   }
 
   const id = await api.open(filePath)
-  return { id, close: () => api.close(id) }
+  return {
+    id,
+    close: () => api.close(id),
+    read: () => api.read(id),
+    save: (state) => api.save(id, state),
+  }
 }
