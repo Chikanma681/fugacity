@@ -1,6 +1,7 @@
 import { useSignals } from '@preact/signals-react/runtime'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { FlowsheetNodeDialog } from '@src/flowsheet/FlowsheetNodeDialog'
 import { createFlowObject } from '@src/flowsheet/factory'
 import { FlowNodeGraphic } from '@src/flowsheet/renderers'
 import {
@@ -72,11 +73,16 @@ export function Flowsheet2DScene() {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const viewportRef = useRef<Viewport>(viewport)
+  const nodeDragMovedRef = useRef(false)
   const [drag, setDrag] = useState<DragState>({ type: 'none' })
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
+  const [nodeDialogOpen, setNodeDialogOpen] = useState(false)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: File loads and rollbacks cancel active pointer gestures.
   useEffect(() => {
     setDrag({ type: 'none' })
+    setSelectedNodeId(null)
+    setNodeDialogOpen(false)
   }, [filePath, resetVersion])
 
   const nodeMap = useMemo(() => {
@@ -86,6 +92,8 @@ export function Flowsheet2DScene() {
     }
     return map
   }, [nodes])
+
+  const selectedNode = selectedNodeId ? nodeMap.get(selectedNodeId) : undefined
 
   useEffect(() => {
     const container = containerRef.current
@@ -187,9 +195,10 @@ export function Flowsheet2DScene() {
 
   const startNodeDrag = (event: React.PointerEvent, node: FlowNode) => {
     event.stopPropagation()
-    if (!ready) {
+    if (!ready || event.button !== 0) {
       return
     }
+    nodeDragMovedRef.current = false
     setDrag({
       type: 'node',
       nodeId: node.id,
@@ -220,6 +229,16 @@ export function Flowsheet2DScene() {
         })
       }
       if (drag.type === 'node') {
+        if (
+          !nodeDragMovedRef.current &&
+          Math.hypot(
+            event.clientX - drag.originX,
+            event.clientY - drag.originY
+          ) <= 5
+        ) {
+          return
+        }
+        nodeDragMovedRef.current = true
         const dx = (event.clientX - drag.originX) / viewport.scale
         const dy = (event.clientY - drag.originY) / viewport.scale
         setNodes((prev) =>
@@ -239,6 +258,21 @@ export function Flowsheet2DScene() {
     }
 
     const onPointerUp = (event: PointerEvent) => {
+      if (
+        drag.type === 'node' &&
+        !nodeDragMovedRef.current &&
+        Math.hypot(
+          event.clientX - drag.originX,
+          event.clientY - drag.originY
+        ) <= 5 &&
+        (event.target as Element | null)
+          ?.closest('[data-node-id]')
+          ?.getAttribute('data-node-id') === drag.nodeId &&
+        !getPortTarget(event.target)
+      ) {
+        setSelectedNodeId(drag.nodeId)
+        setNodeDialogOpen(true)
+      }
       if (drag.type === 'edge') {
         const target = getPortTarget(event.target)
         if (target && target.nodeId !== drag.from.nodeId) {
@@ -257,11 +291,15 @@ export function Flowsheet2DScene() {
       setDrag({ type: 'none' })
     }
 
+    const onPointerCancel = () => setDrag({ type: 'none' })
+
     window.addEventListener('pointermove', onPointerMove)
     window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerCancel)
     return () => {
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerCancel)
     }
   }, [
     drag,
@@ -275,135 +313,148 @@ export function Flowsheet2DScene() {
   ])
 
   return (
-    <div
-      ref={containerRef}
-      data-testid="flowsheet-2d"
-      aria-busy={!ready && !databaseError}
-      className="absolute inset-0 h-full w-full bg-chalkboard-10 dark:bg-chalkboard-100"
-      style={backgroundStyle}
-      onPointerDown={startPan}
-      onWheel={handleWheel}
-      onDragOver={(event) => {
-        if (ready && event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
+    <>
+      <div
+        ref={containerRef}
+        data-testid="flowsheet-2d"
+        aria-busy={!ready && !databaseError}
+        className="absolute inset-0 h-full w-full bg-chalkboard-10 dark:bg-chalkboard-100"
+        style={backgroundStyle}
+        onPointerDown={startPan}
+        onWheel={handleWheel}
+        onDragOver={(event) => {
+          if (ready && event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
+            event.preventDefault()
+            event.dataTransfer.dropEffect = 'copy'
+          }
+        }}
+        onDrop={(event) => {
+          if (!ready || !event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
+            return
+          }
           event.preventDefault()
-          event.dataTransfer.dropEffect = 'copy'
-        }
-      }}
-      onDrop={(event) => {
-        if (!ready || !event.dataTransfer.types.includes(STREAM_DRAG_TYPE)) {
-          return
-        }
-        event.preventDefault()
-        const payload = event.dataTransfer.getData(STREAM_DRAG_TYPE)
-        if (!payload) {
-          return
-        }
-        const parsed = JSON.parse(payload) as { kind?: StreamKind }
-        if (!parsed.kind) {
-          return
-        }
-        const paletteItem = streamPalette.find(
-          (item) => item.kind === parsed.kind
-        )
-        if (!paletteItem) {
-          return
-        }
-        const worldPoint = screenToWorld(event.clientX, event.clientY)
-        createNode(
-          parsed.kind,
-          worldPoint.x - paletteItem.width / 2,
-          worldPoint.y - paletteItem.height / 2
-        )
-      }}
-    >
-      <svg
-        ref={svgRef}
-        className="absolute inset-0 h-full w-full"
-        role="img"
-        aria-label="2D flowsheet canvas"
+          const payload = event.dataTransfer.getData(STREAM_DRAG_TYPE)
+          if (!payload) {
+            return
+          }
+          const parsed = JSON.parse(payload) as { kind?: StreamKind }
+          if (!parsed.kind) {
+            return
+          }
+          const paletteItem = streamPalette.find(
+            (item) => item.kind === parsed.kind
+          )
+          if (!paletteItem) {
+            return
+          }
+          const worldPoint = screenToWorld(event.clientX, event.clientY)
+          createNode(
+            parsed.kind,
+            worldPoint.x - paletteItem.width / 2,
+            worldPoint.y - paletteItem.height / 2
+          )
+        }}
       >
-        <g
-          transform={`translate(${viewport.x} ${viewport.y}) scale(${viewport.scale})`}
+        <svg
+          ref={svgRef}
+          className="absolute inset-0 h-full w-full"
+          role="img"
+          aria-label="2D flowsheet canvas"
         >
-          {edges.map((edge) => {
-            const from = nodeMap.get(edge.from)
-            const to = nodeMap.get(edge.to)
-            if (!from || !to) {
-              return null
-            }
-            const start = getPortPosition(from, edge.fromPort, 'from')
-            const end = getPortPosition(to, edge.toPort, 'to')
-            const startX = start.x
-            const startY = start.y
-            const endX = end.x
-            const endY = end.y
-            const midX = (startX + endX) / 2
-            const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`
-            return (
-              <g key={edge.id}>
-                <path
-                  d={path}
-                  stroke="url(#pipeGlow)"
-                  strokeWidth={6}
-                  fill="none"
-                  filter="url(#softGlow)"
-                  opacity={0.6}
-                />
-                <path d={path} stroke="#1F3D4D" strokeWidth={2} fill="none" />
-              </g>
-            )
-          })}
-          {drag.type === 'edge' &&
-            (() => {
-              const fromNode = nodeMap.get(drag.from.nodeId)
-              if (!fromNode) {
+          <g
+            transform={`translate(${viewport.x} ${viewport.y}) scale(${viewport.scale})`}
+          >
+            {edges.map((edge) => {
+              const from = nodeMap.get(edge.from)
+              const to = nodeMap.get(edge.to)
+              if (!from || !to) {
                 return null
               }
-              const start = getPortPosition(fromNode, drag.from.portId, 'from')
-              const midX = (start.x + drag.current.x) / 2
+              const start = getPortPosition(from, edge.fromPort, 'from')
+              const end = getPortPosition(to, edge.toPort, 'to')
+              const startX = start.x
+              const startY = start.y
+              const endX = end.x
+              const endY = end.y
+              const midX = (startX + endX) / 2
+              const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`
               return (
-                <path
-                  d={`M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${drag.current.y}, ${drag.current.x} ${drag.current.y}`}
-                  stroke="#1F3D4D"
-                  strokeWidth={2}
-                  strokeDasharray="6 4"
-                  fill="none"
-                  pointerEvents="none"
-                />
+                <g key={edge.id}>
+                  <path
+                    d={path}
+                    stroke="url(#pipeGlow)"
+                    strokeWidth={6}
+                    fill="none"
+                    filter="url(#softGlow)"
+                    opacity={0.6}
+                  />
+                  <path d={path} stroke="#1F3D4D" strokeWidth={2} fill="none" />
+                </g>
               )
-            })()}
-          {nodes.map((node) => (
-            <g
-              key={node.id}
-              data-node-id={node.id}
-              transform={`translate(${node.x} ${node.y})`}
-              onPointerDown={(event) => {
-                const port = getPortTarget(event.target)
-                if (port) {
-                  startEdgeDrag(event, node, port.portId)
-                } else {
-                  startNodeDrag(event, node)
+            })}
+            {drag.type === 'edge' &&
+              (() => {
+                const fromNode = nodeMap.get(drag.from.nodeId)
+                if (!fromNode) {
+                  return null
                 }
-              }}
-            >
-              <FlowNodeGraphic node={node} />
-            </g>
-          ))}
-        </g>
-      </svg>
-      {databaseError && (
-        <div
-          role="alert"
-          className="absolute bottom-4 left-4 rounded bg-chalkboard-10 p-2 text-sm dark:bg-chalkboard-100"
-        >
-          {fileName}: {databaseError}
-        </div>
+                const start = getPortPosition(
+                  fromNode,
+                  drag.from.portId,
+                  'from'
+                )
+                const midX = (start.x + drag.current.x) / 2
+                return (
+                  <path
+                    d={`M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${drag.current.y}, ${drag.current.x} ${drag.current.y}`}
+                    stroke="#1F3D4D"
+                    strokeWidth={2}
+                    strokeDasharray="6 4"
+                    fill="none"
+                    pointerEvents="none"
+                  />
+                )
+              })()}
+            {nodes.map((node) => (
+              <g
+                key={node.id}
+                data-node-id={node.id}
+                transform={`translate(${node.x} ${node.y})`}
+                onPointerDown={(event) => {
+                  const port = getPortTarget(event.target)
+                  if (port) {
+                    startEdgeDrag(event, node, port.portId)
+                  } else {
+                    startNodeDrag(event, node)
+                  }
+                }}
+              >
+                <FlowNodeGraphic node={node} />
+              </g>
+            ))}
+          </g>
+        </svg>
+        {databaseError && (
+          <div
+            role="alert"
+            className="absolute bottom-4 left-4 rounded bg-chalkboard-10 p-2 text-sm dark:bg-chalkboard-100"
+          >
+            {fileName}: {databaseError}
+          </div>
+        )}
+        {!ready && !databaseError && (
+          <output className="absolute bottom-4 left-4 rounded bg-chalkboard-10 p-2 text-sm dark:bg-chalkboard-100">
+            Loading {fileName}…
+          </output>
+        )}
+      </div>
+      {selectedNode && ready && (
+        <FlowsheetNodeDialog
+          node={selectedNode}
+          open={nodeDialogOpen}
+          onClose={() => setNodeDialogOpen(false)}
+        />
       )}
-      {!ready && !databaseError && (
-        <output className="absolute bottom-4 left-4 rounded bg-chalkboard-10 p-2 text-sm dark:bg-chalkboard-100">
-          Loading {fileName}…
-        </output>
-      )}
-    </div>
+    </>
   )
 }
