@@ -21,6 +21,15 @@ export const cstrPorts: Port[] = [
     index: 1,
   },
   {
+    id: 'utilityFluidInlet',
+    label: 'Utility Fluid Inlet (Optional)',
+    type: 'in',
+    direction: 'right',
+    x: 0.875,
+    y: 0.7,
+    index: 2,
+  },
+  {
     id: 'liquidOutlet',
     label: 'Liquid Outlet',
     type: 'out',
@@ -37,6 +46,15 @@ export const cstrPorts: Port[] = [
     x: 0.5,
     y: 0,
     index: 1,
+  },
+  {
+    id: 'utilityFluidOutlet',
+    label: 'Utility Fluid Outlet (Optional)',
+    type: 'out',
+    direction: 'right',
+    x: 0.875,
+    y: 0.9,
+    index: 2,
   },
 ]
 

@@ -29,6 +29,15 @@ export const coolerPorts: Port[] = [
     y: 0.5,
     index: 0,
   },
+  {
+    id: 'energyOutPrimary',
+    label: 'Energy Stream (Primary)',
+    type: 'energy',
+    direction: 'down',
+    x: 0.5,
+    y: 1,
+    index: 0,
+  },
 ]
 
 export const coolerUnitDefinition: UnitDefinition = {

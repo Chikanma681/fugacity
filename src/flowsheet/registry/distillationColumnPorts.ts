@@ -12,7 +12,7 @@ export const distillationColumnPorts: Port[] = [
     index,
   })),
   {
-    id: 'reboilerDuty',
+    id: 'reboilerDutyIn',
     label: 'Reboiler Duty',
     type: 'energy',
     direction: 'left',
@@ -42,7 +42,7 @@ export const distillationColumnPorts: Port[] = [
     id: `sideDraw${index + 1}`,
     label: `Side Draw #${index + 1}`,
     type: 'out' as const,
-    direction: 'left' as const,
+    direction: 'right' as const,
     x: 0.3125,
     y: 0.2 + ((index + 3) / 11) * 0.6,
     index: index + 2,

@@ -1,5 +1,4 @@
 import type { UnitType } from '@src/flowsheet/types'
-import type { UnitDefinition } from './types'
 import { absorptionColumnUnitDefinition } from './absorptionColumnPorts'
 import { compressorUnitDefinition } from './compressorPorts'
 import { conversionReactorUnitDefinition } from './conversionReactorPorts'
@@ -20,6 +19,7 @@ import {
 import { separatorVesselUnitDefinition } from './separatorVesselPorts'
 import { heaterUnitDefinition, pfrUnitDefinition } from './sideEnergyPorts'
 import { splitterUnitDefinition } from './splitterPorts'
+import type { UnitDefinition } from './types'
 
 export type { UnitDefinition } from './types'
 export * from './materialPorts'

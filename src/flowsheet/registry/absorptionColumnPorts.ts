@@ -34,7 +34,7 @@ export const absorptionColumnPorts: Port[] = [
     label: `Side Draw #${index + 1}`,
     type: 'out' as const,
     direction: 'left' as const,
-    x: 0.3125,
+    x: 0.8125,
     y: 0.2 + ((index + 3) / 10) * 0.6,
     index: index + 2,
   })),

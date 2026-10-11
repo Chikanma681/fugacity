@@ -15,7 +15,7 @@ export const pumpPorts: Port[] = [
     id: 'energyIn',
     label: 'Energy Stream',
     type: 'energy',
-    direction: 'up',
+    direction: 'right',
     x: 0.5,
     y: 1,
     index: 1,

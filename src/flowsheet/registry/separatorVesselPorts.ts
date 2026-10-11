@@ -13,11 +13,11 @@ export const separatorVesselPorts: Port[] = [
   })),
   {
     id: 'energyIn',
-    label: 'Energy Stream',
+    label: 'Heat In',
     type: 'energy',
     direction: 'right',
     x: 0.25,
-    y: 1,
+    y: 0.5,
     index: 6,
   },
   {
@@ -55,6 +55,15 @@ export const separatorVesselPorts: Port[] = [
     x: 0.65,
     y: 0.045,
     index: 3,
+  },
+  {
+    id: 'energyOut',
+    label: 'Heat Out',
+    type: 'energy',
+    direction: 'right',
+    x: 0.75,
+    y: 0.5,
+    index: 4,
   },
 ]
 

@@ -1,9 +1,13 @@
 import type { Port } from '@src/flowsheet/types'
-import type { UnitDefinition } from './types'
 import { reactorPorts } from './reactorPorts'
+import type { UnitDefinition } from './types'
 
 export const conversionReactorPorts: Port[] = [
-  ...reactorPorts,
+  ...reactorPorts.map((port) =>
+    port.id === 'energyIn'
+      ? { ...port, direction: 'up' as const, x: 0.25, y: 1 }
+      : port
+  ),
   {
     id: 'energyOut',
     label: 'Energy Stream',

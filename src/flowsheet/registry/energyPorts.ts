@@ -4,7 +4,7 @@ import type { UnitDefinition } from './types'
 export const energyPorts: Port[] = [
   {
     id: 'inlet',
-    label: 'Inlet',
+    label: 'In',
     type: 'in',
     direction: 'right',
     x: 0,
@@ -13,7 +13,7 @@ export const energyPorts: Port[] = [
   },
   {
     id: 'outlet',
-    label: 'Outlet',
+    label: 'Out',
     type: 'out',
     direction: 'right',
     x: 1,

@@ -15,7 +15,7 @@ export const reactorPorts: Port[] = [
     id: 'energyIn',
     label: 'Energy Stream',
     type: 'energy',
-    direction: 'up',
+    direction: 'right',
     x: 0.11,
     y: 0.7,
     index: 1,
