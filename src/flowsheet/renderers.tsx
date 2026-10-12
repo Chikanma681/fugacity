@@ -224,32 +224,16 @@ function SplitterGraphic({ node }: { node: FlowNode }) {
 }
 
 function RecycleGraphic({ node }: { node: FlowNode }) {
-  const gradientId = `${node.id}-recycle-fill`
-
   return (
     <>
-      <defs>
-        <radialGradient id={gradientId} cx="32%" cy="28%" r="75%">
-          <stop offset="0%" stopColor="#D2F5D2" />
-          <stop offset="100%" stopColor="#288237" />
-        </radialGradient>
-      </defs>
       <ellipse
         cx={node.width / 2}
         cy={node.height / 2}
         rx={node.width / 2}
         ry={node.height / 2}
-        fill={`url(#${gradientId})`}
-        stroke="#195A28"
+        fill={fillColor}
+        stroke={lineColor}
         strokeWidth={2}
-      />
-      <ellipse
-        cx={node.width * 0.455}
-        cy={node.height * 0.24}
-        rx={node.width * 0.275}
-        ry={node.height * 0.14}
-        fill="white"
-        opacity={0.25}
       />
       <text
         x={node.width / 2}
@@ -259,7 +243,7 @@ function RecycleGraphic({ node }: { node: FlowNode }) {
         fontFamily="'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace"
         fontSize={Math.min(node.width, node.height) * 0.55}
         fontWeight={700}
-        fill="#195A28"
+        fill={lineColor}
       >
         R
       </text>
