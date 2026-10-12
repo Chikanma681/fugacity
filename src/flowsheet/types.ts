@@ -7,6 +7,7 @@ export type UnitType =
   | 'Pump'
   | 'Mixer'
   | 'Splitter'
+  | 'Recycle'
   | 'Cooler'
   | 'HeatExchanger'
   | 'Heater'

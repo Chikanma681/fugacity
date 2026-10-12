@@ -16,6 +16,7 @@ import {
   equilibriumReactorUnitDefinition,
   gibbsReactorUnitDefinition,
 } from './reactorPorts'
+import { recycleUnitDefinition } from './recyclePorts'
 import { separatorVesselUnitDefinition } from './separatorVesselPorts'
 import { heaterUnitDefinition, pfrUnitDefinition } from './sideEnergyPorts'
 import { splitterUnitDefinition } from './splitterPorts'
@@ -31,6 +32,7 @@ export * from './heatExchangerPorts'
 export * from './sideEnergyPorts'
 export * from './separatorVesselPorts'
 export * from './reactorPorts'
+export * from './recyclePorts'
 export * from './mixerPorts'
 export * from './splitterPorts'
 export * from './coolerPorts'
@@ -49,6 +51,7 @@ export const unitRegistry: Record<UnitType, UnitDefinition> = {
   Pump: pumpUnitDefinition,
   Mixer: mixerUnitDefinition,
   Splitter: splitterUnitDefinition,
+  Recycle: recycleUnitDefinition,
   Cooler: coolerUnitDefinition,
   HeatExchanger: heatExchangerUnitDefinition,
   Heater: heaterUnitDefinition,

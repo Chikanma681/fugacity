@@ -72,6 +72,13 @@ export const streamPalette: StreamPaletteItem[] = [
     icon: 'revolve',
   },
   {
+    kind: 'Recycle',
+    label: unitRegistry.Recycle.label,
+    width: unitRegistry.Recycle.width,
+    height: unitRegistry.Recycle.height,
+    icon: 'refresh',
+  },
+  {
     kind: 'Cooler',
     label: unitRegistry.Cooler.label,
     width: unitRegistry.Cooler.width,

@@ -1,4 +1,4 @@
-import type { Port, FlowNode } from '@src/flowsheet/types'
+import type { FlowNode, Port } from '@src/flowsheet/types'
 
 const lineColor = '#1F3D4D'
 const fillColor = '#D0D7DA'
@@ -217,6 +217,52 @@ function SplitterGraphic({ node }: { node: FlowNode }) {
   return (
     <>
       <path d={path} fill={fillColor} stroke={lineColor} strokeWidth={2} />
+      <Ports node={node} />
+      <UnitLabel node={node} />
+    </>
+  )
+}
+
+function RecycleGraphic({ node }: { node: FlowNode }) {
+  const gradientId = `${node.id}-recycle-fill`
+
+  return (
+    <>
+      <defs>
+        <radialGradient id={gradientId} cx="32%" cy="28%" r="75%">
+          <stop offset="0%" stopColor="#D2F5D2" />
+          <stop offset="100%" stopColor="#288237" />
+        </radialGradient>
+      </defs>
+      <ellipse
+        cx={node.width / 2}
+        cy={node.height / 2}
+        rx={node.width / 2}
+        ry={node.height / 2}
+        fill={`url(#${gradientId})`}
+        stroke="#195A28"
+        strokeWidth={2}
+      />
+      <ellipse
+        cx={node.width * 0.455}
+        cy={node.height * 0.24}
+        rx={node.width * 0.275}
+        ry={node.height * 0.14}
+        fill="white"
+        opacity={0.25}
+      />
+      <text
+        x={node.width / 2}
+        y={node.height / 2}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontFamily="'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace"
+        fontSize={Math.min(node.width, node.height) * 0.55}
+        fontWeight={700}
+        fill="#195A28"
+      >
+        R
+      </text>
       <Ports node={node} />
       <UnitLabel node={node} />
     </>
@@ -523,7 +569,7 @@ function PFRGraphic({ node }: { node: FlowNode }) {
         const x = node.width * (0.15 + index * 0.075)
         return (
           <path
-            key={index}
+            key={x}
             d={`M ${x} 0 A ${node.width * 0.1} ${
               node.height * 0.5
             } 0 0 1 ${x} ${node.height}`}
@@ -557,6 +603,8 @@ export function FlowNodeGraphic({ node }: { node: FlowNode }) {
       return <MixerGraphic node={node} />
     case 'Splitter':
       return <SplitterGraphic node={node} />
+    case 'Recycle':
+      return <RecycleGraphic node={node} />
     case 'Cooler':
       return <HeaterCoolerGraphic node={node} label="C" />
     case 'HeatExchanger':
