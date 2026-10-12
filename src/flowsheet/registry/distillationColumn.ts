@@ -1,4 +1,6 @@
 import type { Port } from '@src/flowsheet/types'
+import { createColumnPanels } from './columnPanels'
+import { generalPanels } from './generalPanels'
 import type { UnitDefinition } from './types'
 
 export const distillationColumnPorts: Port[] = [
@@ -75,4 +77,5 @@ export const distillationColumnUnitDefinition: UnitDefinition = {
   width: 96,
   height: 128,
   ports: distillationColumnPorts,
+  panels: [...generalPanels, ...createColumnPanels(true)],
 }

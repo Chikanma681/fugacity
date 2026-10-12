@@ -1,4 +1,5 @@
 import type { Port } from '@src/flowsheet/types'
+import { generalPanels } from './generalPanels'
 import type { UnitDefinition } from './types'
 
 export const energyPorts: Port[] = [
@@ -30,4 +31,14 @@ export const energyUnitDefinition: UnitDefinition = {
   width: 96,
   height: 32,
   ports: energyPorts,
+  panels: [
+    ...generalPanels,
+    {
+      type: 'textbox',
+      label: 'Heat Flow',
+      property: 'EnergyFlow',
+      format: 'nf',
+      unit: 'heatflow',
+    },
+  ],
 }

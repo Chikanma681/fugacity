@@ -1,4 +1,5 @@
 import type { Port } from '@src/flowsheet/types'
+import { generalPanels } from './generalPanels'
 import type { UnitDefinition } from './types'
 
 export const materialPorts: Port[] = [
@@ -30,4 +31,12 @@ export const materialUnitDefinition: UnitDefinition = {
   width: 96,
   height: 32,
   ports: materialPorts,
+  panels: [
+    ...generalPanels,
+    {
+      type: 'description',
+      label:
+        'Full property editor for this object type is available in the Classic UI.',
+    },
+  ],
 }

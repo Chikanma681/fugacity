@@ -1,4 +1,5 @@
 import type { Port } from '@src/flowsheet/types'
+import { generalPanels } from './generalPanels'
 import type { UnitDefinition } from './types'
 
 export const separatorVesselPorts: Port[] = [
@@ -75,4 +76,50 @@ export const separatorVesselUnitDefinition: UnitDefinition = {
   width: 72,
   height: 96,
   ports: separatorVesselPorts,
+  panels: [
+    ...generalPanels,
+    {
+      type: 'dropdown',
+      label: 'Calculation Mode',
+      property: 'CalculationMode',
+      enumType: 'Vessel.CalculationModes',
+      options: [
+        { label: 'Adiabatic', value: 0 },
+        { label: 'Legacy', value: 1 },
+        { label: 'Heating/Cooling Isothermic', value: 2 },
+        { label: 'Heating/Cooling Isobaric', value: 3 },
+      ],
+    },
+    {
+      type: 'checkbox',
+      label: 'Override Separation Pressure',
+      property: 'OverrideP',
+    },
+    {
+      type: 'textbox',
+      label: 'Separation Pressure',
+      property: 'FlashPressure',
+      format: 'nf',
+      unit: 'pressure',
+    },
+    {
+      type: 'checkbox',
+      label: 'Override Separation Temperature',
+      property: 'OverrideT',
+    },
+    {
+      type: 'textbox',
+      label: 'Separation Temperature',
+      property: 'FlashTemperature',
+      format: 'nf',
+      unit: 'temperature',
+    },
+    {
+      type: 'textbox',
+      label: 'Heating/Cooling Amount',
+      property: 'HeatingCoolingAmount',
+      format: 'nf',
+      unit: 'heatflow',
+    },
+  ],
 }

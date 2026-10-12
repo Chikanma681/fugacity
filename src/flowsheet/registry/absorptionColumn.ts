@@ -1,4 +1,6 @@
 import type { Port } from '@src/flowsheet/types'
+import { createColumnPanels } from './columnPanels'
+import { generalPanels } from './generalPanels'
 import type { UnitDefinition } from './types'
 
 export const absorptionColumnPorts: Port[] = [
@@ -48,4 +50,18 @@ export const absorptionColumnUnitDefinition: UnitDefinition = {
   width: 88,
   height: 128,
   ports: absorptionColumnPorts,
+  panels: [
+    ...generalPanels,
+    {
+      type: 'dropdown',
+      label: 'Operating Mode',
+      property: '_opmode',
+      enumType: 'AbsorptionColumn.OpMode',
+      options: [
+        { label: 'Absorber', value: 0 },
+        { label: 'Liquid-Liquid Extraction', value: 1 },
+      ],
+    },
+    ...createColumnPanels(false),
+  ],
 }
