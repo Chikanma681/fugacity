@@ -1,6 +1,7 @@
 import { useSignals } from '@preact/signals-react/runtime'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { ContextMenu, ContextMenuItem } from '@src/components/ContextMenu'
 import { FlowsheetNodeDialog } from '@src/flowsheet/FlowsheetNodeDialog'
 import { createFlowObject } from '@src/flowsheet/factory'
 import { FlowNodeGraphic } from '@src/flowsheet/renderers'
@@ -65,6 +66,7 @@ export function Flowsheet2DScene() {
     setViewport,
     setNodes,
     setEdges,
+    deleteNode,
     ready,
     databaseError,
     resetVersion,
@@ -77,12 +79,14 @@ export function Flowsheet2DScene() {
   const [drag, setDrag] = useState<DragState>({ type: 'none' })
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [nodeDialogOpen, setNodeDialogOpen] = useState(false)
+  const [contextNodeId, setContextNodeId] = useState<string | null>(null)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: File loads and rollbacks cancel active pointer gestures.
   useEffect(() => {
     setDrag({ type: 'none' })
     setSelectedNodeId(null)
     setNodeDialogOpen(false)
+    setContextNodeId(null)
   }, [filePath, resetVersion])
 
   const nodeMap = useMemo(() => {
@@ -94,6 +98,30 @@ export function Flowsheet2DScene() {
   }, [nodes])
 
   const selectedNode = selectedNodeId ? nodeMap.get(selectedNodeId) : undefined
+
+  const handleNodeContextMenu = useCallback((event: MouseEvent) => {
+    const nodeId = (event.target as Element | null)
+      ?.closest('[data-node-id]')
+      ?.getAttribute('data-node-id')
+    if (!nodeId) {
+      return
+    }
+    setDrag({ type: 'none' })
+    setContextNodeId(nodeId)
+  }, [])
+
+  const handleDeleteNode = () => {
+    if (!ready || !contextNodeId) {
+      return
+    }
+    deleteNode(contextNodeId)
+    setDrag({ type: 'none' })
+    if (selectedNodeId === contextNodeId) {
+      setSelectedNodeId(null)
+      setNodeDialogOpen(false)
+    }
+    setContextNodeId(null)
+  }
 
   useEffect(() => {
     const container = containerRef.current
@@ -157,10 +185,10 @@ export function Flowsheet2DScene() {
     portId: PortId
   ) => {
     event.stopPropagation()
-    event.preventDefault()
-    if (!ready) {
+    if (!ready || event.button !== 0) {
       return
     }
+    event.preventDefault()
     setDrag({
       type: 'edge',
       from: { nodeId: node.id, portId },
@@ -448,6 +476,26 @@ export function Flowsheet2DScene() {
           </output>
         )}
       </div>
+      {ready && (
+        <ContextMenu
+          key={`${filePath}-${resetVersion}`}
+          menuTargetElement={containerRef}
+          callback={handleNodeContextMenu}
+          guard={(event) =>
+            Boolean((event.target as Element | null)?.closest('[data-node-id]'))
+          }
+          items={[
+            <ContextMenuItem
+              key="delete"
+              data-testid="flowsheet-node-delete"
+              disabled={!contextNodeId || !nodeMap.has(contextNodeId)}
+              onClick={handleDeleteNode}
+            >
+              Delete
+            </ContextMenuItem>,
+          ]}
+        />
+      )}
       {selectedNode && ready && (
         <FlowsheetNodeDialog
           node={selectedNode}

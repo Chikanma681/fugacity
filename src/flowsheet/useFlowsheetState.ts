@@ -88,23 +88,33 @@ export function useFlowsheetState(filePath: string | undefined) {
     }
   }, [filePath])
 
-  const update = useCallback(
-    <Key extends keyof FlowsheetState>(
-      key: Key,
-      change: StateUpdate<FlowsheetState[Key]>
-    ) => {
+  const updateState = useCallback(
+    (change: StateUpdate<FlowsheetState>) => {
       const current = stateRef.current
       if (current.filePath !== filePath || !current.ready) {
         return
       }
       const value =
-        typeof change === 'function' ? change(current.value[key]) : change
-      const next = { ...current, value: { ...current.value, [key]: value } }
+        typeof change === 'function' ? change(current.value) : change
+      const next = { ...current, value }
       stateRef.current = next
       setState(next)
       sessionRef.current?.enqueue(next.value)
     },
     [filePath]
+  )
+
+  const update = useCallback(
+    <Key extends keyof FlowsheetState>(
+      key: Key,
+      change: StateUpdate<FlowsheetState[Key]>
+    ) => {
+      updateState((previous) => ({
+        ...previous,
+        [key]: typeof change === 'function' ? change(previous[key]) : change,
+      }))
+    },
+    [updateState]
   )
 
   const setViewport = useCallback(
@@ -119,6 +129,18 @@ export function useFlowsheetState(filePath: string | undefined) {
   const setEdges = useCallback(
     (change: StateUpdate<FlowsheetState['edges']>) => update('edges', change),
     [update]
+  )
+  const deleteNode = useCallback(
+    (nodeId: string) => {
+      updateState((previous) => ({
+        ...previous,
+        nodes: previous.nodes.filter((node) => node.id !== nodeId),
+        edges: previous.edges.filter(
+          (edge) => edge.from !== nodeId && edge.to !== nodeId
+        ),
+      }))
+    },
+    [updateState]
   )
   const current =
     state.filePath === filePath
@@ -138,5 +160,6 @@ export function useFlowsheetState(filePath: string | undefined) {
     setViewport,
     setNodes,
     setEdges,
+    deleteNode,
   }
 }
