@@ -2,6 +2,7 @@ import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 
 import { CustomIcon } from '@src/components/CustomIcon'
+import { FlowsheetNodePanels } from '@src/flowsheet/FlowsheetNodePanels'
 import type { FlowNode } from '@src/flowsheet/types'
 
 export function FlowsheetNodeDialog({
@@ -60,12 +61,7 @@ export function FlowsheetNodeDialog({
               </button>
             </div>
             <div className="px-5 pb-5 overflow-y-auto">
-              <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-sm">
-                <dt className="font-semibold">Tag</dt>
-                <dd>{node.tag}</dd>
-                <dt className="font-semibold">Type</dt>
-                <dd>{node.label}</dd>
-              </dl>
+              <FlowsheetNodePanels key={node.id} node={node} />
             </div>
           </Dialog.Panel>
         </Transition.Child>
