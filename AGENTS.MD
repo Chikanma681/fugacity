@@ -3,6 +3,10 @@
 Zoo is an opensource CAD software that is agentic in nature however i want to build Fugacity which  a process simulator agentic software for chemical engineering like DWSIM, and HYSYS in fact the thermodynamics of this software will be built upon DWSIM which opensource with a GPL 2.0 license
 so take this into account when building this software
 
+
+
+### STOP ADDING FUCKING SPEC.TS FILES UNLESS I ASK YOU STOP
+
 ### Desktop and Web Runtime Pattern
 
 Fugacity is being migrated from Zoo CAD, which supports both Electron desktop and web runtimes from mostly shared React code.
