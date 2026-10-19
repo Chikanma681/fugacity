@@ -12,6 +12,7 @@ export function SettingsDialog({
   children,
   testId = 'settings',
   closeLabel = 'Close settings',
+  closeDisabled = false,
 }: {
   title: string
   open?: boolean
@@ -21,6 +22,7 @@ export function SettingsDialog({
   children: ReactNode
   testId?: string
   closeLabel?: string
+  closeDisabled?: boolean
 }) {
   return (
     <Transition appear show={open} as={Fragment}>
@@ -61,6 +63,7 @@ export function SettingsDialog({
                 {headerActions}
                 <button
                   type="button"
+                  disabled={closeDisabled}
                   onClick={onClose}
                   aria-label={closeLabel}
                   className="p-0 m-0 focus:ring-0 focus:outline-none border-none hover:bg-destroy-10 focus:bg-destroy-10 dark:hover:bg-destroy-80/50 dark:focus:bg-destroy-80/50"

@@ -11,8 +11,14 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error)
 }
 
+type PendingSave = {
+  state: FlowsheetState
+  resolve: () => void
+  reject: (error: Error) => void
+}
+
 export class FlowsheetSession {
-  private pending: FlowsheetState[] = []
+  private pending: PendingSave[] = []
   private draining: Promise<void> | undefined
   private closing = false
   private ready = false
@@ -52,9 +58,11 @@ export class FlowsheetSession {
         continue
       }
       try {
-        await this.connection.save(next)
-        this.persisted = next
+        await this.connection.save(next.state)
+        this.persisted = next.state
+        next.resolve()
       } catch (error) {
+        const failed = [next, ...this.pending]
         this.pending = []
         this.ready = false
         const message = `Could not save after 3 attempts. Unsaved changes were reverted: ${errorMessage(error)}`
@@ -78,6 +86,10 @@ export class FlowsheetSession {
             ready: false,
             error: `${message}. Could not reload the database: ${errorMessage(readError)}`,
           })
+        } finally {
+          for (const save of failed) {
+            save.reject(new Error(message))
+          }
         }
         return
       }
@@ -93,14 +105,18 @@ export class FlowsheetSession {
     })
   }
 
-  enqueue(state: FlowsheetState) {
+  enqueue(state: FlowsheetState): Promise<void> {
     if (this.closing || !this.ready) {
-      return
+      return Promise.reject(
+        new Error('The flowsheet database is not ready to save.')
+      )
     }
-    this.pending.push(state)
-    if (!this.draining) {
-      this.startDrain()
-    }
+    return new Promise((resolve, reject) => {
+      this.pending.push({ state, resolve, reject })
+      if (!this.draining) {
+        this.startDrain()
+      }
+    })
   }
 
   async close() {

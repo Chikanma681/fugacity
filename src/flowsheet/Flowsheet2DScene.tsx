@@ -92,10 +92,14 @@ export function Flowsheet2DScene() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: File loads and rollbacks cancel active pointer gestures.
   useEffect(() => {
     setDrag({ type: 'none' })
-    setSelectedNodeId(null)
-    setNodeDialogOpen(false)
     setContextNodeId(null)
   }, [filePath, resetVersion])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Only switching files discards the open node draft.
+  useEffect(() => {
+    setSelectedNodeId(null)
+    setNodeDialogOpen(false)
+  }, [filePath])
 
   const nodeMap = useMemo(() => {
     const map = new Map<string, FlowNode>()
@@ -152,7 +156,7 @@ export function Flowsheet2DScene() {
 
   const createNode = useCallback(
     (kind: StreamKind, x: number, y: number) => {
-      setNodes((prev) => [
+      void setNodes((prev) => [
         ...prev,
         createFlowObject({ unitType: kind, x, y, nodes: prev }),
       ])
@@ -208,7 +212,7 @@ export function Flowsheet2DScene() {
     event.preventDefault()
     const delta = -event.deltaY
     const scaleFactor = delta > 0 ? 1.08 : 0.92
-    setViewport((prev) => ({
+    void setViewport((prev) => ({
       ...prev,
       scale: Math.min(2.2, Math.max(0.5, prev.scale * scaleFactor)),
     }))
@@ -258,7 +262,7 @@ export function Flowsheet2DScene() {
       if (drag.type === 'pan') {
         const dx = event.clientX - drag.originX
         const dy = event.clientY - drag.originY
-        setViewport({
+        void setViewport({
           ...drag.start,
           x: drag.start.x + dx,
           y: drag.start.y + dy,
@@ -277,7 +281,7 @@ export function Flowsheet2DScene() {
         nodeDragMovedRef.current = true
         const dx = (event.clientX - drag.originX) / viewport.scale
         const dy = (event.clientY - drag.originY) / viewport.scale
-        setNodes((prev) =>
+        void setNodes((prev) =>
           prev.map((node) =>
             node.id === drag.nodeId
               ? { ...node, x: drag.startX + dx, y: drag.startY + dy }
@@ -312,7 +316,7 @@ export function Flowsheet2DScene() {
       if (drag.type === 'edge') {
         const target = getPortTarget(event.target)
         if (target && target.nodeId !== drag.from.nodeId) {
-          setEdges((prev) => [
+          void setEdges((prev) => [
             ...prev,
             {
               id: crypto.randomUUID(),
@@ -498,11 +502,36 @@ export function Flowsheet2DScene() {
           ]}
         />
       )}
-      {selectedNode && ready && (
+      {selectedNode && (
         <FlowsheetNodeDialog
+          key={`${filePath}-${selectedNode.id}`}
           node={selectedNode}
           open={nodeDialogOpen}
           onClose={() => setNodeDialogOpen(false)}
+          onSave={async (changes) => {
+            if (
+              nodes.some(
+                (node) =>
+                  node.id !== selectedNode.id && node.tag === changes.tag
+              )
+            ) {
+              return Promise.reject(
+                new Error(`A node named "${changes.tag}" already exists.`)
+              )
+            }
+            const saving = setNodes((previous) =>
+              previous.map((node) =>
+                node.id === selectedNode.id ? { ...node, ...changes } : node
+              )
+            )
+            if (!saving) {
+              return Promise.reject(
+                new Error('The flowsheet database is not ready to save.')
+              )
+            }
+            await saving
+          }}
+          canSave={ready && Boolean(filePath)}
         />
       )}
     </>

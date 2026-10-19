@@ -36,6 +36,17 @@ export type Port = {
   index: number
 }
 
+export type NodeParameters = {
+  schemaVersion: 1
+  inputs: Record<string, string | number | boolean>
+  displayUnits: Record<string, string>
+}
+
+export type FlowNodeChanges = {
+  tag: string
+  parameters: NodeParameters
+}
+
 export type FlowNode = {
   id: string
   name: string
@@ -48,6 +59,7 @@ export type FlowNode = {
   unitType: UnitType
   dwsimObjectType: UnitType
   ports: Port[]
+  parameters?: NodeParameters
 }
 
 export type FlowEdge = {

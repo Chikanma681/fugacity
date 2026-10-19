@@ -10,6 +10,7 @@ type NodeRow = {
   tag: string
   node_type: string
   unit_operation: UnitType | null
+  parameters_json: string
   layout_json: string
 }
 
@@ -54,6 +55,7 @@ export class FlowsheetStore {
       throw new Error(`Unsupported unit operation for node ${row.tag}`)
     }
     const layout = JSON.parse(row.layout_json) as Partial<FlowNode>
+    const parameters = JSON.parse(row.parameters_json) as FlowNode['parameters']
     const savedPorts = layout.ports ?? definition.ports
     const portRows = this.database
       .prepare(
@@ -96,6 +98,7 @@ export class FlowsheetStore {
       unitType,
       dwsimObjectType: unitType,
       ports,
+      ...(parameters && Object.keys(parameters).length ? { parameters } : {}),
     }
   }
 
@@ -109,7 +112,7 @@ export class FlowsheetStore {
       }
       const rows = this.database
         .prepare(
-          'SELECT id, tag, node_type, unit_operation, layout_json FROM nodes WHERE flowsheet_id = ? ORDER BY rowid'
+          'SELECT id, tag, node_type, unit_operation, parameters_json, layout_json FROM nodes WHERE flowsheet_id = ? ORDER BY rowid'
         )
         .all(this.flowsheetId) as NodeRow[]
       const edges = this.database
@@ -166,9 +169,10 @@ export class FlowsheetStore {
         this.database
           .prepare(`
           INSERT INTO nodes (id, flowsheet_id, tag, node_type, unit_operation, parameters_json, layout_json)
-          VALUES (?, ?, ?, ?, ?, '{}', ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(id) DO UPDATE SET tag = excluded.tag, node_type = excluded.node_type,
-            unit_operation = excluded.unit_operation, layout_json = excluded.layout_json, updated_at = CURRENT_TIMESTAMP
+            unit_operation = excluded.unit_operation, parameters_json = excluded.parameters_json,
+            layout_json = excluded.layout_json, updated_at = CURRENT_TIMESTAMP
         `)
           .run(
             node.id,
@@ -176,6 +180,7 @@ export class FlowsheetStore {
             node.tag,
             nodeType,
             nodeType === 'unit_operation' ? node.unitType : null,
+            JSON.stringify(node.parameters ?? {}),
             JSON.stringify({ x, y, width, height, name, label, ports })
           )
         const portNames = new Set(ports.map((port) => port.id))

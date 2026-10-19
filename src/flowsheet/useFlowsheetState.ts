@@ -96,10 +96,12 @@ export function useFlowsheetState(filePath: string | undefined) {
       }
       const value =
         typeof change === 'function' ? change(current.value) : change
-      const next = { ...current, value }
+      const next = { ...current, value, error: null }
       stateRef.current = next
       setState(next)
-      sessionRef.current?.enqueue(next.value)
+      const saving = sessionRef.current?.enqueue(next.value)
+      void saving?.catch(() => undefined)
+      return saving
     },
     [filePath]
   )
@@ -109,7 +111,7 @@ export function useFlowsheetState(filePath: string | undefined) {
       key: Key,
       change: StateUpdate<FlowsheetState[Key]>
     ) => {
-      updateState((previous) => ({
+      return updateState((previous) => ({
         ...previous,
         [key]: typeof change === 'function' ? change(previous[key]) : change,
       }))
@@ -132,7 +134,7 @@ export function useFlowsheetState(filePath: string | undefined) {
   )
   const deleteNode = useCallback(
     (nodeId: string) => {
-      updateState((previous) => ({
+      void updateState((previous) => ({
         ...previous,
         nodes: previous.nodes.filter((node) => node.id !== nodeId),
         edges: previous.edges.filter(

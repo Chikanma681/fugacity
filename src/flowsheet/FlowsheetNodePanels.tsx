@@ -10,7 +10,7 @@ import {
   type PanelValue,
   getUnitDefinition,
 } from '@src/flowsheet/registry'
-import type { FlowNode } from '@src/flowsheet/types'
+import type { FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
 import { fromSI, panelUnits, toSI } from '@src/flowsheet/units'
 import { isArray } from '@src/lib/utils'
 
@@ -25,15 +25,31 @@ const sourceLabels: Record<PanelOptionSource['source'], string> = {
 
 type PanelValues = Record<string, PanelValue>
 
-function getInitialValues(rows: PanelRow[], node: FlowNode): PanelValues {
-  const values: PanelValues = {
-    'GetDisplayName()': getUnitDefinition(node.unitType).label,
-    'GraphicObject.Tag': node.tag,
-  }
-  for (const row of rows) {
+type EditableRow = Extract<
+  PanelRow,
+  { type: 'string' | 'textbox' | 'numeric' | 'checkbox' | 'dropdown' }
+>
+
+function getEditableRows(rows: PanelRow[]): EditableRow[] {
+  return rows.flatMap((row): EditableRow[] => {
     if (row.type === 'group') {
-      Object.assign(values, getInitialValues(row.rows, node))
-    } else if (
+      return getEditableRows(row.rows)
+    }
+    return row.type === 'string' ||
+      row.type === 'textbox' ||
+      row.type === 'numeric' ||
+      row.type === 'checkbox' ||
+      row.type === 'dropdown'
+      ? [row]
+      : []
+  })
+}
+
+function getInitialValues(rows: PanelRow[], node: FlowNode): PanelValues {
+  const values: PanelValues = { ...node.parameters?.inputs }
+  for (const row of getEditableRows(rows)) {
+    if (
+      values[row.property] === undefined &&
       row.type === 'dropdown' &&
       isArray(row.options) &&
       row.fallbackIndex !== undefined
@@ -44,7 +60,61 @@ function getInitialValues(rows: PanelRow[], node: FlowNode): PanelValues {
       }
     }
   }
-  return values
+  return {
+    ...values,
+    'GetDisplayName()': getUnitDefinition(node.unitType).label,
+    'GraphicObject.Tag': node.tag,
+  }
+}
+
+function getNodeChanges(
+  node: FlowNode,
+  rows: PanelRow[],
+  values: PanelValues,
+  displayUnits: Record<string, string>
+): FlowNodeChanges | string {
+  const tag = String(values['GraphicObject.Tag'] ?? '').trim()
+  if (!tag) {
+    return 'The node name cannot be empty.'
+  }
+  const inputs = { ...node.parameters?.inputs }
+  for (const row of getEditableRows(rows)) {
+    if (row.property === 'GraphicObject.Tag') {
+      continue
+    }
+    const value = values[row.property]
+    if (value === undefined || (value === '' && row.type !== 'string')) {
+      delete inputs[row.property]
+      continue
+    }
+    if (row.type === 'textbox' || row.type === 'numeric') {
+      const number = Number(value)
+      if (
+        !Number.isFinite(number) ||
+        typeof value === 'boolean' ||
+        (row.valueType === 'integer' && !Number.isInteger(number)) ||
+        (row.min !== undefined &&
+          (number < row.min ||
+            ('exclusiveMin' in row &&
+              row.exclusiveMin &&
+              number === row.min))) ||
+        (row.max !== undefined && number > row.max)
+      ) {
+        return `Enter a valid value for ${row.label.trim()}.`
+      }
+      inputs[row.property] = number
+      if (row.type === 'textbox') {
+        for (const change of row.onChange ?? []) {
+          if (values[change.property] !== undefined) {
+            inputs[change.property] = values[change.property]
+          }
+        }
+      }
+    } else {
+      inputs[row.property] = value
+    }
+  }
+  return { tag, parameters: { schemaVersion: 1, inputs, displayUnits } }
 }
 
 function matchesCondition(condition: PanelCondition, values: PanelValues) {
@@ -108,6 +178,8 @@ function PanelControl({
   unit,
   values,
   onChange,
+  displayUnits,
+  onUnitChange,
 }: {
   row: Exclude<PanelRow, { type: 'label' | 'description' | 'group' }>
   id: string
@@ -115,20 +187,28 @@ function PanelControl({
   unit?: string
   values: PanelValues
   onChange: (property: string, value: PanelValue) => void
+  displayUnits: Record<string, string>
+  onUnitChange: (property: string, unit: string) => void
 }) {
-  const [unitIndex, setUnitIndex] = useState(0)
   const units =
     !unit && 'unit' in row && row.unit ? (panelUnits[row.unit] ?? []) : []
-  const selectedUnit = units[unitIndex] ?? units[0]
+  const selectedUnit =
+    units.find(
+      ([symbol]) => 'property' in row && symbol === displayUnits[row.property]
+    ) ?? units[0]
   const unitSelector = selectedUnit && (
     <select
       className="p-1 bg-transparent border rounded-sm border-chalkboard-30"
       aria-label={`${label} unit`}
-      value={unitIndex}
-      onChange={(event) => setUnitIndex(Number(event.target.value))}
+      value={selectedUnit[0]}
+      onChange={(event) => {
+        if ('property' in row) {
+          onUnitChange(row.property, event.target.value)
+        }
+      }}
     >
-      {units.map(([symbol], index) => (
-        <option key={symbol} value={index}>
+      {units.map(([symbol]) => (
+        <option key={symbol} value={symbol}>
           {symbol}
         </option>
       ))}
@@ -230,6 +310,7 @@ function PanelControl({
         id={id}
         className={`${inputClassName} min-w-0`}
         type={numeric ? 'number' : 'text'}
+        required={row.property === 'GraphicObject.Tag'}
         value={displayValue}
         min={
           numeric && row.min !== undefined
@@ -298,10 +379,14 @@ function PanelField({
   row,
   values,
   onChange,
+  displayUnits,
+  onUnitChange,
 }: {
   row: PanelRow
   values: PanelValues
   onChange: (property: string, value: PanelValue) => void
+  displayUnits: Record<string, string>
+  onUnitChange: (property: string, unit: string) => void
 }) {
   const id = useId()
   const label = displayLabel(row.label)
@@ -334,6 +419,8 @@ function PanelField({
             row={child}
             values={values}
             onChange={onChange}
+            displayUnits={displayUnits}
+            onUnitChange={onUnitChange}
           />
         ))}
       </fieldset>
@@ -349,12 +436,26 @@ function PanelField({
         unit={unit}
         values={values}
         onChange={onChange}
+        displayUnits={displayUnits}
+        onUnitChange={onUnitChange}
       />
     </SettingsSection>
   )
 }
 
-export function FlowsheetNodePanels({ node }: { node: FlowNode }) {
+export function FlowsheetNodePanels({
+  node,
+  onSave,
+  onCancel,
+  saving = false,
+  canSave = true,
+}: {
+  node: FlowNode
+  onSave?: (changes: FlowNodeChanges) => Promise<void>
+  onCancel?: () => void
+  saving?: boolean
+  canSave?: boolean
+}) {
   const definition = getUnitDefinition(node.unitType)
   const sections = getPanelSections(definition.panels)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -362,64 +463,136 @@ export function FlowsheetNodePanels({ node }: { node: FlowNode }) {
   const [values, setValues] = useState(() =>
     getInitialValues(definition.panels, node)
   )
+  const [displayUnits, setDisplayUnits] = useState<Record<string, string>>(
+    () => ({ ...node.parameters?.displayUnits })
+  )
+  const [error, setError] = useState<string | null>(null)
   const onChange = (property: string, value: PanelValue) => {
     setValues((previous) => ({ ...previous, [property]: value }))
   }
+  const onUnitChange = (property: string, unit: string) => {
+    setDisplayUnits((previous) => ({ ...previous, [property]: unit }))
+  }
+  const save = async (form: HTMLFormElement) => {
+    if (saving || !canSave || !onSave || !form.reportValidity()) {
+      return
+    }
+    const changes = getNodeChanges(
+      node,
+      definition.panels,
+      values,
+      displayUnits
+    )
+    if (typeof changes === 'string') {
+      setError(changes)
+      return
+    }
+    setError(null)
+    try {
+      await onSave(changes)
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error ? saveError.message : String(saveError)
+      )
+    }
+  }
 
   return (
-    <div
-      className="flex-1 grid items-stretch pl-4 pr-5 pb-5 gap-2 overflow-hidden"
-      style={{ gridTemplateColumns: 'auto 1fr', gridTemplateRows: '1fr' }}
+    <form
+      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      aria-busy={saving}
+      onSubmit={(event) => {
+        event.preventDefault()
+        void save(event.currentTarget)
+      }}
     >
-      <nav
-        aria-label="Node property sections"
-        className="flex w-32 flex-col gap-3 pr-2 py-1 border-0 border-r border-r-chalkboard-20 dark:border-r-chalkboard-90"
-      >
-        {sections.map((section, index) => (
-          <button
-            key={section.key}
-            type="button"
-            aria-controls={`${id}-section-${index}`}
-            className="capitalize text-left border-none px-1"
-            onClick={() =>
-              scrollRef.current
-                ?.querySelector(`[id="${id}-section-${index}"]`)
-                ?.scrollIntoView({
-                  block: 'center',
-                  behavior: 'smooth',
-                })
-            }
+      <fieldset disabled={saving} className="contents">
+        <div
+          className="flex-1 grid items-stretch pl-4 pr-5 pb-5 gap-2 overflow-hidden"
+          style={{ gridTemplateColumns: 'auto 1fr', gridTemplateRows: '1fr' }}
+        >
+          <nav
+            aria-label="Node property sections"
+            className="flex w-32 flex-col gap-3 pr-2 py-1 border-0 border-r border-r-chalkboard-20 dark:border-r-chalkboard-90"
           >
-            {section.label}
-          </button>
-        ))}
-      </nav>
-      <div className="relative overflow-y-auto">
-        <div ref={scrollRef} className="flex flex-col gap-4 px-2">
-          <p className="text-xs text-chalkboard-80 dark:text-chalkboard-30">
-            Preview only. Edits are not saved or sent to the simulator. Values
-            use the selected units.
-          </p>
-          {sections.map((section, index) => (
-            <Fragment key={section.key}>
-              <h2
-                id={`${id}-section-${index}`}
-                className="text-xl mt-6 first-of-type:mt-0 capitalize font-bold"
+            {sections.map((section, index) => (
+              <button
+                key={section.key}
+                type="button"
+                aria-controls={`${id}-section-${index}`}
+                className="capitalize text-left border-none px-1"
+                onClick={() =>
+                  scrollRef.current
+                    ?.querySelector(`[id="${id}-section-${index}"]`)
+                    ?.scrollIntoView({
+                      block: 'center',
+                      behavior: 'smooth',
+                    })
+                }
               >
                 {section.label}
-              </h2>
-              {section.rows.map((row) => (
-                <PanelField
-                  key={getRowKey(row)}
-                  row={row}
-                  values={values}
-                  onChange={onChange}
-                />
+              </button>
+            ))}
+          </nav>
+          <div className="relative overflow-y-auto">
+            <div ref={scrollRef} className="flex flex-col gap-4 px-2">
+              <p className="text-xs text-chalkboard-80 dark:text-chalkboard-30">
+                Edits are not saved until you select Save. Saving does not run a
+                simulation.
+              </p>
+              {sections.map((section, index) => (
+                <Fragment key={section.key}>
+                  <h2
+                    id={`${id}-section-${index}`}
+                    className="text-xl mt-6 first-of-type:mt-0 capitalize font-bold"
+                  >
+                    {section.label}
+                  </h2>
+                  {section.rows.map((row) => (
+                    <PanelField
+                      key={getRowKey(row)}
+                      row={row}
+                      values={values}
+                      onChange={onChange}
+                      displayUnits={displayUnits}
+                      onUnitChange={onUnitChange}
+                    />
+                  ))}
+                </Fragment>
               ))}
-            </Fragment>
-          ))}
+            </div>
+          </div>
+        </div>
+      </fieldset>
+      <div className="border-t border-chalkboard-20 px-5 py-4 dark:border-chalkboard-80">
+        {error && (
+          <p
+            role="alert"
+            className="mb-3 text-sm text-destroy-70 dark:text-destroy-20"
+          >
+            {error}
+          </p>
+        )}
+        <div className="flex justify-end gap-2">
+          <ActionButton
+            Element="button"
+            type="button"
+            tabIndex={0}
+            onClick={onCancel}
+            disabled={saving}
+          >
+            Cancel
+          </ActionButton>
+          <ActionButton
+            Element="button"
+            type="submit"
+            tabIndex={0}
+            disabled={saving || !canSave || !onSave}
+          >
+            {saving ? 'Saving…' : 'Save'}
+          </ActionButton>
         </div>
       </div>
-    </div>
+    </form>
   )
 }
