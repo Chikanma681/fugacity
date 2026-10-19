@@ -578,6 +578,8 @@ export function FlowsheetNodePanels({
             Element="button"
             type="button"
             tabIndex={0}
+            aria-label="Cancel"
+            iconStart={{ icon: 'close', size: 'sm', className: 'p-1' }}
             onClick={onCancel}
             disabled={saving}
           >
@@ -587,6 +589,8 @@ export function FlowsheetNodePanels({
             Element="button"
             type="submit"
             tabIndex={0}
+            aria-label={saving ? 'Saving…' : 'Save'}
+            iconStart={{ icon: 'checkmark', size: 'sm', className: 'p-1' }}
             disabled={saving || !canSave || !onSave}
           >
             {saving ? 'Saving…' : 'Save'}
