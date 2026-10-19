@@ -2,7 +2,6 @@ import type { MouseEventHandler } from 'react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Flowsheet2DScene } from '@src/flowsheet/Flowsheet2DScene'
 import { useApp, useSingletons } from '@src/lib/boot'
-import { ViewControlContextMenu } from '@src/components/ViewControlMenu'
 import { btnName } from '@src/lib/cameraControls'
 import { err, reportRejection } from '@src/lib/trap'
 import Loading from '@src/components/Loading'
@@ -441,11 +440,6 @@ export const ConnectionStream = (props: {
         No canvas support
       </canvas>
       <Flowsheet2DScene />
-      <ViewControlContextMenu
-        event="mouseup"
-        guard={viewControlContextMenuGuard}
-        menuTargetElement={videoWrapperRef}
-      />
       {!flowsheetOnly && (!isSceneReady || showManualConnect) && (
         <Loading
           isRetrying={false}
