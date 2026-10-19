@@ -53,6 +53,14 @@ function getPortPosition(
   }
 }
 
+function getOrthogonalEdgePath(
+  start: { x: number; y: number },
+  end: { x: number; y: number }
+) {
+  const midX = (start.x + end.x) / 2
+  return `M ${start.x} ${start.y} H ${midX} V ${end.y} H ${end.x}`
+}
+
 export function Flowsheet2DScene() {
   useSignals()
   const { project } = useApp()
@@ -400,12 +408,7 @@ export function Flowsheet2DScene() {
               }
               const start = getPortPosition(from, edge.fromPort, 'from')
               const end = getPortPosition(to, edge.toPort, 'to')
-              const startX = start.x
-              const startY = start.y
-              const endX = end.x
-              const endY = end.y
-              const midX = (startX + endX) / 2
-              const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`
+              const path = getOrthogonalEdgePath(start, end)
               return (
                 <g key={edge.id}>
                   <path
@@ -431,10 +434,9 @@ export function Flowsheet2DScene() {
                   drag.from.portId,
                   'from'
                 )
-                const midX = (start.x + drag.current.x) / 2
                 return (
                   <path
-                    d={`M ${start.x} ${start.y} C ${midX} ${start.y}, ${midX} ${drag.current.y}, ${drag.current.x} ${drag.current.y}`}
+                    d={getOrthogonalEdgePath(start, drag.current)}
                     stroke="#1F3D4D"
                     strokeWidth={2}
                     strokeDasharray="6 4"
