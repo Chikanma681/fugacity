@@ -110,5 +110,21 @@ export const useToolbarConfig = ({
         'Select the compounds available to the current process simulation.',
       links: [],
     },
+ {
+      id: 'Run Simulation',
+      onClick: () => openCompoundsDialog(),
+      icon: 'play',
+      status: thermoUnavailableReason ? 'unavailable' : 'available',
+      disabled: !!thermoUnavailableReason,
+      disabledReason: thermoUnavailableReason || undefined,
+      title: ({ simulationState }) =>
+        simulationState.context.selectedCompoundIds.length > 0
+          ? `Run Simulation`
+          : 'Run Simulation',
+      showTitle: true,
+      description:
+        'Run the process simulation to get the results',
+      links: [],
+    },
   ],
 })
