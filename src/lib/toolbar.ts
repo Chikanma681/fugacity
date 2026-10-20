@@ -110,7 +110,7 @@ export const useToolbarConfig = ({
         'Select the compounds available to the current process simulation.',
       links: [],
     },
- {
+    {
       id: 'Run Simulation',
       onClick: () => openCompoundsDialog(),
       icon: 'play',
@@ -122,8 +122,7 @@ export const useToolbarConfig = ({
           ? `Run Simulation`
           : 'Run Simulation',
       showTitle: true,
-      description:
-        'Run the process simulation to get the results',
+      description: 'Run the process simulation to get the results',
       links: [],
     },
   ],
