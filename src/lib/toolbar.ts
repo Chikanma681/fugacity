@@ -125,7 +125,7 @@ export const useToolbarConfig = ({
       description: 'Run the process simulation to get the results',
       links: [],
     },
-{
+    {
       id: 'Pause Simulation',
       onClick: () => openCompoundsDialog(),
       icon: 'rectangle',
@@ -140,6 +140,5 @@ export const useToolbarConfig = ({
       description: 'Run the process simulation to get the results',
       links: [],
     },
-
   ],
 })
