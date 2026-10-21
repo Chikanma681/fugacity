@@ -1,3 +1,4 @@
+import type { CustomIconName } from '@src/components/CustomIcon'
 import type { Port, UnitType } from '@src/flowsheet/types'
 
 export type PanelValue = string | number | boolean
@@ -45,7 +46,7 @@ export type PanelRow = {
   label: string
   visibleWhen?: PanelCondition
 } & (
-  | { type: 'label'; level?: 2 }
+  | { type: 'label'; level?: 2; icon?: CustomIconName }
   | { type: 'description' }
   | {
       type: 'readonly'

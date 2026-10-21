@@ -33,10 +33,10 @@ export const materialUnitDefinition: UnitDefinition = {
   ports: materialPorts,
   panelLayout: 'radio',
   panels: [
-    { type: 'label', label: 'Information' },
+    { type: 'label', label: 'Information', icon: 'file' },
     { type: 'group', label: 'Object Details', rows: objectDetailRows },
     propertyPackagePanel,
-    { type: 'label', label: 'Connections' },
+    { type: 'label', label: 'Connections', icon: 'link' },
     {
       type: 'group',
       label: 'Connections',
@@ -48,7 +48,7 @@ export const materialUnitDefinition: UnitDefinition = {
         },
       ],
     },
-    { type: 'label', label: 'Input Data' },
+    { type: 'label', label: 'Input Data', icon: 'clipboard' },
     {
       type: 'group',
       label: 'Stream Conditions',
