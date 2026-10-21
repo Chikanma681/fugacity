@@ -3,7 +3,7 @@ import { CustomIcon } from '@src/components/CustomIcon'
 
 interface SettingsTabButtonProps {
   checked: boolean
-  icon: CustomIconName
+  icon?: CustomIconName
   text: string
 }
 
@@ -17,12 +17,12 @@ export function SettingsTabButton(props: SettingsTabButtonProps) {
           : 'border-chalkboard-20 dark:border-chalkboard-30 hover:bg-primary/20 dark:hover:bg-primary/50'
       }`}
     >
-      <CustomIcon
-        name={icon}
-        className={
-          'w-5 h-5 ' + (checked ? 'bg-primary !text-chalkboard-10' : '')
-        }
-      />
+      {icon && (
+        <CustomIcon
+          name={icon}
+          className={`w-5 h-5 ${checked ? 'bg-primary !text-chalkboard-10' : ''}`}
+        />
+      )}
       <span>{text}</span>
     </div>
   )

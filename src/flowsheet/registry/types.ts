@@ -101,11 +101,6 @@ export type PanelRow = {
     }
 )
 
-export type PanelGroup = {
-  label: PanelRadioGroup
-  panels: PanelRow[]
-}
-
 export type UnitDefinition = {
   unitType: UnitType
   label: string
@@ -115,5 +110,5 @@ export type UnitDefinition = {
   height: number
   ports: Port[]
   panels: PanelRow[]
-  groups?: PanelGroup[]
+  panelLayout?: 'sections' | 'radio'
 }

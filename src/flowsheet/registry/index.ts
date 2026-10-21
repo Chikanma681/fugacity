@@ -24,7 +24,6 @@ import type { UnitDefinition } from './types'
 
 export type {
   PanelCondition,
-  PanelGroup,
   PanelOption,
   PanelOptionSource,
   PanelRadioGroup,

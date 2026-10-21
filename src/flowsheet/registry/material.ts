@@ -1,6 +1,6 @@
 import type { Port } from '@src/flowsheet/types'
-import { generalPanels } from './generalPanels'
-import type { PanelGroup, UnitDefinition } from './types'
+import { objectDetailRows, propertyPackagePanel } from './generalPanels'
+import type { UnitDefinition } from './types'
 
 export const materialPorts: Port[] = [
   {
@@ -23,39 +23,6 @@ export const materialPorts: Port[] = [
   },
 ]
 
-const materialPanelGroups: PanelGroup[] = [
-  {
-    label: 'Information',
-    panels: generalPanels,
-  },
-  {
-    label: 'Connections',
-    panels: [
-      { type: 'label', label: 'Connections' },
-      {
-        type: 'description',
-        label:
-          'Connection editing is not available here yet. Connect streams on the flowsheet.',
-      },
-    ],
-  },
-  {
-    label: 'Input Data',
-    panels: [
-      { type: 'label', label: 'Stream Conditions' },
-      {
-        type: 'description',
-        label: 'Stream condition inputs are not implemented yet.',
-      },
-      { type: 'label', label: 'Compound Amounts' },
-      {
-        type: 'description',
-        label: 'Compound amount inputs are not implemented yet.',
-      },
-    ],
-  },
-]
-
 export const materialUnitDefinition: UnitDefinition = {
   unitType: 'MaterialStream',
   label: 'Material Stream',
@@ -64,6 +31,43 @@ export const materialUnitDefinition: UnitDefinition = {
   width: 96,
   height: 32,
   ports: materialPorts,
-  panels: materialPanelGroups.flatMap((group) => group.panels),
-  groups: materialPanelGroups,
+  panelLayout: 'radio',
+  panels: [
+    { type: 'label', label: 'Information' },
+    { type: 'group', label: 'Object Details', rows: objectDetailRows },
+    propertyPackagePanel,
+    { type: 'label', label: 'Connections' },
+    {
+      type: 'group',
+      label: 'Connections',
+      rows: [
+        {
+          type: 'description',
+          label:
+            'Connection editing is not available here yet. Connect streams on the flowsheet.',
+        },
+      ],
+    },
+    { type: 'label', label: 'Input Data' },
+    {
+      type: 'group',
+      label: 'Stream Conditions',
+      rows: [
+        {
+          type: 'description',
+          label: 'Stream condition inputs are not implemented yet.',
+        },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Compound Amounts',
+      rows: [
+        {
+          type: 'description',
+          label: 'Compound amount inputs are not implemented yet.',
+        },
+      ],
+    },
+  ],
 }
