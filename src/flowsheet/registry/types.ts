@@ -90,6 +90,7 @@ export type PanelRow = {
     }
   | { type: 'button'; action: string }
   | { type: 'group'; rows: PanelRow[]; level?: 2 }
+  | { type: 'tabs'; tabs: { label: string; rows: PanelRow[] }[] }
   | {
       type: 'collection'
       property: string

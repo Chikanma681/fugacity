@@ -2,7 +2,6 @@ import { RadioGroup } from '@headlessui/react'
 import { Fragment, useId, useRef, useState } from 'react'
 
 import { ActionButton } from '@src/components/ActionButton'
-import type { CustomIconName } from '@src/components/CustomIcon'
 import { SettingsSection } from '@src/components/Settings/SettingsSection'
 import { SettingsTabButton } from '@src/components/Settings/SettingsTabButton'
 import { Toggle } from '@src/components/Toggle/Toggle'
@@ -153,7 +152,6 @@ function getRowKey(row: PanelRow) {
 type PanelSection = {
   key: string
   label: string
-  icon?: CustomIconName
   rows: PanelRow[]
   visibleWhen?: PanelCondition
 }
@@ -178,7 +176,6 @@ function getPanelSections(
       sections.push({
         key: getRowKey(row),
         label: row.label,
-        icon: row.type === 'label' ? row.icon : undefined,
         rows: row.type === 'group' ? row.rows : [],
         visibleWhen: row.visibleWhen,
       })
@@ -558,15 +555,10 @@ export function FlowsheetNodePanels({
               <RadioGroup.Option
                 key={panel.key}
                 value={panel.key}
-                aria-label={panel.label}
                 className="whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
               >
                 {({ checked }) => (
-                  <SettingsTabButton
-                    checked={checked}
-                    icon={panel.icon}
-                    text={panel.label}
-                  />
+                  <SettingsTabButton checked={checked} text={panel.label} />
                 )}
               </RadioGroup.Option>
             ))}

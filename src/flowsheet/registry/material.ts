@@ -69,5 +69,62 @@ export const materialUnitDefinition: UnitDefinition = {
         },
       ],
     },
+    { type: 'label', label: 'Results', icon: 'clipboardCheckmark' },
+    {
+      type: 'group',
+      label: 'Compounds',
+      rows: [
+        {
+          type: 'tabs',
+          label: 'Compound results',
+          tabs: [
+            {
+              label: 'Amounts',
+              rows: [
+                {
+                  type: 'description',
+                  label: 'No calculated compound amounts are available.',
+                },
+              ],
+            },
+            {
+              label: 'Properties',
+              rows: [
+                {
+                  type: 'description',
+                  label: 'No calculated compound properties are available.',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'group',
+      label: 'Phase Properties',
+      rows: [
+        {
+          type: 'tabs',
+          label: 'Phase property results',
+          tabs: [
+            'Mixture',
+            'Vapor',
+            'Overall Liquid',
+            'Liquid 1',
+            'Liquid 2',
+            'Solid',
+          ].map((phase) => ({
+            label: phase,
+            rows: [
+              {
+                type: 'description',
+                label: `No calculated ${phase.toLowerCase()} properties are available.`,
+              },
+            ],
+          })),
+        },
+      ],
+    },
   ],
 }
