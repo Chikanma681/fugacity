@@ -1,3 +1,4 @@
+import { RadioGroup } from '@headlessui/react'
 import { Fragment, useId, useRef, useState } from 'react'
 
 import { ActionButton } from '@src/components/ActionButton'
@@ -6,6 +7,7 @@ import { Toggle } from '@src/components/Toggle/Toggle'
 import {
   type PanelCondition,
   type PanelOptionSource,
+  type PanelRadioGroup,
   type PanelRow,
   type PanelValue,
   getUnitDefinition,
@@ -457,7 +459,13 @@ export function FlowsheetNodePanels({
   canSave?: boolean
 }) {
   const definition = getUnitDefinition(node.unitType)
-  const sections = getPanelSections(definition.panels)
+  const [selectedGroup, setSelectedGroup] = useState<
+    PanelRadioGroup | undefined
+  >(definition.groups?.[0]?.label)
+  const activeGroup =
+    definition.groups?.find((group) => group.label === selectedGroup) ??
+    definition.groups?.[0]
+  const sections = getPanelSections(activeGroup?.panels ?? definition.panels)
   const scrollRef = useRef<HTMLDivElement>(null)
   const id = useId()
   const [values, setValues] = useState(() =>
@@ -507,6 +515,36 @@ export function FlowsheetNodePanels({
       }}
     >
       <fieldset disabled={saving} className="contents">
+        {definition.groups && definition.groups.length > 0 && (
+          <RadioGroup
+            aria-label="Node property groups"
+            aria-orientation="horizontal"
+            disabled={saving}
+            value={activeGroup?.label}
+            onChange={(value: PanelRadioGroup) => setSelectedGroup(value)}
+            className="flex shrink-0 justify-start overflow-x-auto pl-4 pr-5 mb-4 gap-5 border-0 border-b border-b-chalkboard-20 dark:border-b-chalkboard-90"
+          >
+            {definition.groups.map((group) => (
+              <RadioGroup.Option
+                key={group.label}
+                value={group.label}
+                className="rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                {({ checked }) => (
+                  <div
+                    className={`cursor-pointer select-none whitespace-nowrap p-1 pr-2 -mb-[1px] border-0 border-b ${
+                      checked
+                        ? 'border-primary'
+                        : 'border-chalkboard-20 dark:border-chalkboard-30 hover:bg-primary/20 dark:hover:bg-primary/50'
+                    }`}
+                  >
+                    {group.label}
+                  </div>
+                )}
+              </RadioGroup.Option>
+            ))}
+          </RadioGroup>
+        )}
         <div
           className="flex-1 grid items-stretch pl-4 pr-5 pb-5 gap-2 overflow-hidden"
           style={{ gridTemplateColumns: 'auto 1fr', gridTemplateRows: '1fr' }}
@@ -534,7 +572,7 @@ export function FlowsheetNodePanels({
               </button>
             ))}
           </nav>
-          <div className="relative overflow-y-auto">
+          <div key={activeGroup?.label} className="relative overflow-y-auto">
             <div ref={scrollRef} className="flex flex-col gap-4 px-2">
               <p className="text-xs text-chalkboard-80 dark:text-chalkboard-30">
                 Edits are not saved until you select Save. Saving does not run a

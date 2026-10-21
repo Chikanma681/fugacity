@@ -2,6 +2,15 @@ import type { Port, UnitType } from '@src/flowsheet/types'
 
 export type PanelValue = string | number | boolean
 
+export type PanelRadioGroup =
+  | 'Information'
+  | 'Connections'
+  | 'Input Data'
+  | 'Results'
+  | 'Annotations'
+  | 'Floating Tables'
+  | 'Utilities'
+
 export type PanelCondition = {
   property: string
   operator: 'equals' | 'exists' | 'notEmpty' | 'empty' | 'existsIn' | 'in'
@@ -92,6 +101,11 @@ export type PanelRow = {
     }
 )
 
+export type PanelGroup = {
+  label: PanelRadioGroup
+  panels: PanelRow[]
+}
+
 export type UnitDefinition = {
   unitType: UnitType
   label: string
@@ -101,4 +115,5 @@ export type UnitDefinition = {
   height: number
   ports: Port[]
   panels: PanelRow[]
+  groups?: PanelGroup[]
 }
