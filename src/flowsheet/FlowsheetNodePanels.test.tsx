@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { FlowsheetNodePanels } from '@src/flowsheet/FlowsheetNodePanels'
@@ -107,5 +113,123 @@ describe('FlowsheetNodePanels', () => {
     expect(
       screen.getByRole('group', { name: 'Heat Exchange (Utility Fluid)' })
     ).toBeInTheDocument()
+  })
+
+  it.each([
+    ['0', ['Temperature', 'Pressure']],
+    ['1', ['Temperature', 'Vapor Mole Frac (spec)']],
+    ['2', ['Pressure', 'Vapor Mole Frac (spec)']],
+    ['3', ['Pressure', 'Specific Enthalpy']],
+    ['4', ['Pressure', 'Specific Entropy']],
+  ])(
+    'enables the selected stream variables for option %s',
+    (option, enabled) => {
+      render(<FlowsheetNodePanels node={createNode('MaterialStream')} />)
+      fireEvent.click(screen.getByRole('radio', { name: 'Input Data' }))
+      fireEvent.change(
+        screen.getByRole('combobox', { name: 'Specified Variables' }),
+        {
+          target: { value: option },
+        }
+      )
+
+      for (const name of [
+        'Temperature',
+        'Pressure',
+        'Specific Enthalpy',
+        'Specific Entropy',
+        'Vapor Mole Frac (spec)',
+      ]) {
+        const input = screen.getByRole('spinbutton', { name })
+        if (enabled.includes(name)) {
+          expect(input).toBeEnabled()
+        } else {
+          expect(input).toBeDisabled()
+        }
+      }
+    }
+  )
+
+  it('saves stream conditions with SI values and DWSIM enum values', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    render(
+      <FlowsheetNodePanels
+        node={createNode('MaterialStream')}
+        onSave={onSave}
+      />
+    )
+    fireEvent.click(screen.getByRole('radio', { name: 'Input Data' }))
+    expect(
+      screen.getByRole('combobox', { name: 'Specified Variables' })
+    ).toHaveDisplayValue('Temperature/Pressure')
+    expect(
+      screen.getByRole('combobox', { name: 'Force Phase' })
+    ).toHaveDisplayValue('Global Definition')
+
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Specified Variables' }),
+      {
+        target: { value: '3' },
+      }
+    )
+    fireEvent.change(screen.getByRole('combobox', { name: 'Pressure unit' }), {
+      target: { value: 'bar' },
+    })
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Pressure' }), {
+      target: { value: '2' },
+    })
+    fireEvent.change(
+      screen.getByRole('spinbutton', { name: 'Specific Enthalpy' }),
+      {
+        target: { value: '-528.23347' },
+      }
+    )
+    fireEvent.change(screen.getByRole('combobox', { name: 'Force Phase' }), {
+      target: { value: '2' },
+    })
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Enable Phase Envelope Lookup' })
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith({
+        tag: expect.any(String),
+        parameters: {
+          schemaVersion: 1,
+          inputs: {
+            SpecType: 1,
+            'Phases[0].Properties.pressure': 200000,
+            'Phases[0].Properties.enthalpy': -528233.47,
+            ForcePhase: 2,
+            GeneratePhaseEnvelopeLookup: true,
+          },
+          displayUnits: { 'Phases[0].Properties.pressure': 'bar' },
+        },
+      })
+    )
+  })
+
+  it('restores the stream specification and bounds vapor fraction inputs', () => {
+    const node = createNode('MaterialStream')
+    node.parameters = {
+      schemaVersion: 1,
+      inputs: { SpecType: 4, 'Phases[2].Properties.molarfraction': 0.5 },
+      displayUnits: {},
+    }
+    render(<FlowsheetNodePanels node={node} />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Input Data' }))
+
+    expect(
+      screen.getByRole('combobox', { name: 'Specified Variables' })
+    ).toHaveDisplayValue('Temperature/Vapor Fraction')
+    const fraction = screen.getByRole('spinbutton', {
+      name: 'Vapor Mole Frac (spec)',
+    })
+    expect(fraction).toHaveValue(0.5)
+    fireEvent.change(fraction, { target: { value: '1.1' } })
+    expect(fraction).toBeInvalid()
+    fireEvent.change(fraction, { target: { value: '-0.1' } })
+    expect(fraction).toBeInvalid()
   })
 })

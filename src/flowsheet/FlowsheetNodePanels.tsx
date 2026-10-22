@@ -69,6 +69,28 @@ function getInitialValues(rows: PanelRow[], node: FlowNode): PanelValues {
   }
 }
 
+function matchesCondition(condition: PanelCondition, values: PanelValues) {
+  const value = values[condition.property]
+  if (value === undefined) {
+    return condition.operator !== 'notEmpty'
+  }
+
+  switch (condition.operator) {
+    case 'equals':
+      return value === condition.value
+    case 'in':
+      return isArray(condition.value) && condition.value.includes(value)
+    case 'exists':
+      return condition.value !== false
+    case 'empty':
+      return value === ''
+    case 'notEmpty':
+      return value !== ''
+    case 'existsIn':
+      return true
+  }
+}
+
 function getNodeChanges(
   node: FlowNode,
   rows: PanelRow[],
@@ -81,7 +103,10 @@ function getNodeChanges(
   }
   const inputs = { ...node.parameters?.inputs }
   for (const row of getEditableRows(rows)) {
-    if (row.property === 'GraphicObject.Tag') {
+    if (
+      row.property === 'GraphicObject.Tag' ||
+      (row.enabledWhen && !matchesCondition(row.enabledWhen, values))
+    ) {
       continue
     }
     const value = values[row.property]
@@ -117,28 +142,6 @@ function getNodeChanges(
     }
   }
   return { tag, parameters: { schemaVersion: 1, inputs, displayUnits } }
-}
-
-function matchesCondition(condition: PanelCondition, values: PanelValues) {
-  const value = values[condition.property]
-  if (value === undefined) {
-    return condition.operator !== 'notEmpty'
-  }
-
-  switch (condition.operator) {
-    case 'equals':
-      return value === condition.value
-    case 'in':
-      return isArray(condition.value) && condition.value.includes(value)
-    case 'exists':
-      return condition.value !== false
-    case 'empty':
-      return value === ''
-    case 'notEmpty':
-      return value !== ''
-    case 'existsIn':
-      return true
-  }
 }
 
 function displayLabel(label: string) {
@@ -450,16 +453,21 @@ function PanelField({
   const unit = 'fixedUnit' in row ? row.fixedUnit : undefined
   return (
     <SettingsSection title={label} htmlFor={id} description={unit}>
-      <PanelControl
-        row={row}
-        id={id}
-        label={label}
-        unit={unit}
-        values={values}
-        onChange={onChange}
-        displayUnits={displayUnits}
-        onUnitChange={onUnitChange}
-      />
+      <fieldset
+        className="min-w-0 disabled:opacity-50"
+        disabled={row.enabledWhen && !matchesCondition(row.enabledWhen, values)}
+      >
+        <PanelControl
+          row={row}
+          id={id}
+          label={label}
+          unit={unit}
+          values={values}
+          onChange={onChange}
+          displayUnits={displayUnits}
+          onUnitChange={onUnitChange}
+        />
+      </fieldset>
     </SettingsSection>
   )
 }
