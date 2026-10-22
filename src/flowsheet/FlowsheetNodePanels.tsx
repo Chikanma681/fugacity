@@ -32,6 +32,41 @@ type EditableRow = Extract<
   { type: 'string' | 'textbox' | 'numeric' | 'checkbox' | 'dropdown' }
 >
 
+function resolvePanelRows(
+  rows: PanelRow[],
+  selectedCompoundIds: string[]
+): PanelRow[] {
+  return rows.map((row) => {
+    if (row.type === 'group') {
+      return { ...row, rows: resolvePanelRows(row.rows, selectedCompoundIds) }
+    }
+    if (row.type !== 'collection' || row.source !== 'selectedCompounds') {
+      return row
+    }
+    if (selectedCompoundIds.length === 0) {
+      return {
+        type: 'description',
+        label:
+          'Select compounds in the toolbar to enter stream mole fractions.',
+      }
+    }
+    return {
+      type: 'group',
+      label: row.label,
+      level: 2,
+      rows: selectedCompoundIds.flatMap((id) =>
+        row.rows.map((child) => ({
+          ...child,
+          label: child.label.replace('{Name}', id),
+          ...('property' in child && {
+            property: `${row.property}[${JSON.stringify(id)}].${child.property}`,
+          }),
+        }))
+      ),
+    }
+  })
+}
+
 function getEditableRows(rows: PanelRow[]): EditableRow[] {
   return rows.flatMap((row): EditableRow[] => {
     if (row.type === 'group') {
@@ -478,26 +513,25 @@ export function FlowsheetNodePanels({
   onCancel,
   saving = false,
   canSave = true,
+  selectedCompoundIds = [],
 }: {
   node: FlowNode
   onSave?: (changes: FlowNodeChanges) => Promise<void>
   onCancel?: () => void
   saving?: boolean
   canSave?: boolean
+  selectedCompoundIds?: string[]
 }) {
   const definition = getUnitDefinition(node.unitType)
+  const panels = resolvePanelRows(definition.panels, selectedCompoundIds)
   const radioPanels =
-    definition.panelLayout === 'radio'
-      ? getPanelSections(definition.panels)
-      : []
+    definition.panelLayout === 'radio' ? getPanelSections(panels) : []
   const [selectedPanel, setSelectedPanel] = useState(radioPanels[0]?.key)
   const activePanel =
     radioPanels.find((panel) => panel.key === selectedPanel) ?? radioPanels[0]
   const scrollRef = useRef<HTMLDivElement>(null)
   const id = useId()
-  const [values, setValues] = useState(() =>
-    getInitialValues(definition.panels, node)
-  )
+  const [values, setValues] = useState(() => getInitialValues(panels, node))
   const [displayUnits, setDisplayUnits] = useState<Record<string, string>>(
     () => ({ ...node.parameters?.displayUnits })
   )
@@ -505,7 +539,7 @@ export function FlowsheetNodePanels({
   const sections = (
     activePanel
       ? getPanelSections(activePanel.rows, 'group')
-      : getPanelSections(definition.panels)
+      : getPanelSections(panels)
   ).filter(
     (section) =>
       !section.visibleWhen || matchesCondition(section.visibleWhen, values)
@@ -520,12 +554,7 @@ export function FlowsheetNodePanels({
     if (saving || !canSave || !onSave || !form.reportValidity()) {
       return
     }
-    const changes = getNodeChanges(
-      node,
-      definition.panels,
-      values,
-      displayUnits
-    )
+    const changes = getNodeChanges(node, panels, values, displayUnits)
     if (typeof changes === 'string') {
       setError(changes)
       return

@@ -149,8 +149,21 @@ export const materialUnitDefinition: UnitDefinition = {
       label: 'Compound Amounts',
       rows: [
         {
-          type: 'description',
-          label: 'Compound amount inputs are not implemented yet.',
+          type: 'collection',
+          label: 'Mole Fractions',
+          source: 'selectedCompounds',
+          property: 'Phases[0].Compounds',
+          itemLabel: 'Name',
+          rows: [
+            {
+              type: 'textbox',
+              label: '{Name}',
+              property: 'MoleFraction',
+              format: 'nff',
+              min: 0,
+              max: 1,
+            },
+          ],
         },
       ],
     },

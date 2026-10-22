@@ -94,6 +94,7 @@ export type PanelRow = {
   | { type: 'tabs'; tabs: { label: string; rows: PanelRow[] }[] }
   | {
       type: 'collection'
+      source?: 'selectedCompounds'
       property: string
       itemLabel: string
       itemLabelExpression?: string

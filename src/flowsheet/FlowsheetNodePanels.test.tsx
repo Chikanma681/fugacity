@@ -7,13 +7,38 @@ import {
 } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import {
+  SimulationProvider,
+  useSimulation,
+} from '@src/components/SimulationProvider'
 import { FlowsheetNodePanels } from '@src/flowsheet/FlowsheetNodePanels'
 import { createFlowObject } from '@src/flowsheet/factory'
 import { unitRegistry } from '@src/flowsheet/registry'
 import type { UnitType } from '@src/flowsheet/types'
+import { COMPOUNDS_STORAGE_KEY } from '@src/lib/compounds'
 
 function createNode(unitType: UnitType) {
   return createFlowObject({ unitType, x: 0, y: 0, nodes: [] })
+}
+
+function SimulationCompoundInputs() {
+  const { simulationState, simulationSend } = useSimulation()
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          simulationSend({ type: 'Save compounds', compoundIds: ['Methane'] })
+        }
+      >
+        Apply compounds
+      </button>
+      <FlowsheetNodePanels
+        node={createNode('MaterialStream')}
+        selectedCompoundIds={simulationState.context.selectedCompoundIds}
+      />
+    </>
+  )
 }
 
 describe('FlowsheetNodePanels', () => {
@@ -231,5 +256,110 @@ describe('FlowsheetNodePanels', () => {
     expect(fraction).toBeInvalid()
     fireEvent.change(fraction, { target: { value: '-0.1' } })
     expect(fraction).toBeInvalid()
+  })
+
+  it('prompts for toolbar compounds when none are selected', () => {
+    render(<FlowsheetNodePanels node={createNode('MaterialStream')} />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Input Data' }))
+
+    expect(
+      screen.getByText(
+        'Select compounds in the toolbar to enter stream mole fractions.'
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('saves mole fractions for only the selected compounds', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const node = createNode('MaterialStream')
+    render(
+      <FlowsheetNodePanels
+        node={node}
+        selectedCompoundIds={['Water', 'Carbon dioxide']}
+        onSave={onSave}
+      />
+    )
+    fireEvent.click(screen.getByRole('radio', { name: 'Input Data' }))
+    const composition = screen.getByRole('group', { name: 'Mole Fractions' })
+    expect(within(composition).getAllByRole('spinbutton')).toHaveLength(2)
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Water' }), {
+      target: { value: '0.75' },
+    })
+    fireEvent.change(
+      screen.getByRole('spinbutton', { name: 'Carbon dioxide' }),
+      {
+        target: { value: '0.25' },
+      }
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith({
+        tag: node.tag,
+        parameters: {
+          schemaVersion: 1,
+          inputs: {
+            SpecType: 0,
+            ForcePhase: 4,
+            'Phases[0].Compounds["Water"].MoleFraction': 0.75,
+            'Phases[0].Compounds["Carbon dioxide"].MoleFraction': 0.25,
+          },
+          displayUnits: {},
+        },
+      })
+    )
+  })
+
+  it('restores saved compound fractions and validates their bounds', () => {
+    const node = createNode('MaterialStream')
+    node.parameters = {
+      schemaVersion: 1,
+      inputs: { 'Phases[0].Compounds["Water"].MoleFraction': 0.75 },
+      displayUnits: {},
+    }
+    render(<FlowsheetNodePanels node={node} selectedCompoundIds={['Water']} />)
+    fireEvent.click(screen.getByRole('radio', { name: 'Input Data' }))
+    const fraction = screen.getByRole('spinbutton', { name: 'Water' })
+
+    expect(fraction).toHaveValue(0.75)
+    fireEvent.change(fraction, { target: { value: '1.1' } })
+    expect(fraction).toBeInvalid()
+    fireEvent.change(fraction, { target: { value: '-0.1' } })
+    expect(fraction).toBeInvalid()
+  })
+
+  it('shares persisted and updated toolbar selections with compound inputs', () => {
+    const storage = new Map([
+      [COMPOUNDS_STORAGE_KEY, JSON.stringify(['Water'])],
+    ])
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+    })
+    try {
+      render(
+        <SimulationProvider>
+          <SimulationCompoundInputs />
+        </SimulationProvider>
+      )
+      fireEvent.click(screen.getByRole('radio', { name: 'Input Data' }))
+      expect(
+        screen.getByRole('spinbutton', { name: 'Water' })
+      ).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Apply compounds' }))
+
+      expect(
+        screen.queryByRole('spinbutton', { name: 'Water' })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('spinbutton', { name: 'Methane' })
+      ).toBeInTheDocument()
+      expect(JSON.parse(storage.get(COMPOUNDS_STORAGE_KEY) ?? '[]')).toEqual([
+        'Methane',
+      ])
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 })

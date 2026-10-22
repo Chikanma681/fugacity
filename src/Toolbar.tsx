@@ -1,36 +1,27 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
-import { useMachine } from '@xstate/react'
 
 import { ActionButton } from '@src/components/ActionButton'
 import { ActionButtonDropdown } from '@src/components/ActionButtonDropdown'
 import { CompoundsDialog } from '@src/components/CompoundsDialog'
+import type { CompoundOption } from '@src/components/CompoundsDialog'
 import { CustomIcon } from '@src/components/CustomIcon'
+import { useSimulation } from '@src/components/SimulationProvider'
 import Tooltip from '@src/components/Tooltip'
 import { filterEscHotkey } from '@src/lib/hotkeyWrapper'
 import { isDesktop } from '@src/lib/isDesktop'
 import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
-import { isArray } from '@src/lib/utils'
+import {
+  type PropertyPackageOption,
+  listCompounds,
+  listPropertyPackages,
+} from '@src/lib/thermo'
 import type {
   ToolbarDropdown,
   ToolbarItem,
   ToolbarItemCallbackProps,
 } from '@src/lib/toolbar'
 import { useToolbarConfig } from '@src/lib/toolbar'
-import type { CompoundOption } from '@src/components/CompoundsDialog'
-import { COMPOUNDS_STORAGE_KEY } from '@src/lib/compounds'
-import {
-  DEFAULT_PROPERTY_PACKAGE_ID,
-  listCompounds,
-  listPropertyPackages,
-  type PropertyPackageOption,
-} from '@src/lib/thermo'
-import {
-  simulationMachine,
-  type SimulationPropertyPackageId,
-} from '@src/machines/simulationMachine'
-
-const PROPERTY_PACKAGE_STORAGE_KEY = 'fugacity-selected-property-package'
 
 type ResolvedToolbarItem = Omit<ToolbarItem, 'isActive' | 'title'> & {
   title: string
@@ -41,37 +32,6 @@ type ResolvedToolbarItem = Omit<ToolbarItem, 'isActive' | 'title'> & {
 type ResolvedToolbarDropdown = {
   id: string
   array: ResolvedToolbarItem[]
-}
-
-function getStoredCompoundIds(): string[] {
-  if (typeof window === 'undefined') {
-    return []
-  }
-
-  const rawValue = window.localStorage.getItem(COMPOUNDS_STORAGE_KEY)
-  if (!rawValue) {
-    return []
-  }
-
-  try {
-    const parsedValue = JSON.parse(rawValue)
-    return isArray(parsedValue)
-      ? parsedValue.filter(
-          (value): value is string => typeof value === 'string'
-        )
-      : []
-  } catch {
-    return []
-  }
-}
-
-function getStoredPropertyPackageId(): SimulationPropertyPackageId {
-  if (typeof window === 'undefined') {
-    return DEFAULT_PROPERTY_PACKAGE_ID
-  }
-
-  const rawValue = window.localStorage.getItem(PROPERTY_PACKAGE_STORAGE_KEY)
-  return rawValue || DEFAULT_PROPERTY_PACKAGE_ID
 }
 
 const Toolbar_ = memo(() => {
@@ -89,12 +49,7 @@ const Toolbar_ = memo(() => {
     PropertyPackageOption[]
   >([])
   const [thermoError, setThermoError] = useState<string | null>(null)
-  const [simulationState, simulationSend] = useMachine(simulationMachine, {
-    input: {
-      selectedCompoundIds: getStoredCompoundIds(),
-      selectedPropertyPackageId: getStoredPropertyPackageId(),
-    },
-  })
+  const { simulationState, simulationSend } = useSimulation()
   const openCompoundsDialog = useCallback(() => {
     simulationSend({ type: 'Open compounds dialog' })
   }, [simulationSend])
@@ -129,24 +84,6 @@ const Toolbar_ = memo(() => {
       cancelled = true
     }
   }, [])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    window.localStorage.setItem(
-      COMPOUNDS_STORAGE_KEY,
-      JSON.stringify(simulationState.context.selectedCompoundIds)
-    )
-    window.localStorage.setItem(
-      PROPERTY_PACKAGE_STORAGE_KEY,
-      simulationState.context.selectedPropertyPackageId
-    )
-  }, [
-    simulationState.context.selectedCompoundIds,
-    simulationState.context.selectedPropertyPackageId,
-  ])
 
   const toolbar = useToolbarConfig({
     openCompoundsDialog,
