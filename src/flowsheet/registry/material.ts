@@ -40,18 +40,18 @@ export const materialUnitDefinition: UnitDefinition = {
     { type: 'group', label: 'Object Details', rows: objectDetailRows },
     propertyPackagePanel,
     { type: 'label', label: 'Connections', icon: 'link' },
-    {
-      type: 'group',
-      label: 'Connections',
-      rows: [
-        {
-          type: 'description',
-          label:
-            'Connection editing is not available here yet. Connect streams on the flowsheet.',
-        },
-      ],
-    },
-    { type: 'label', label: 'Input Data', icon: 'clipboard' },
+    // {
+    //   type: 'group',
+    //   label: 'Connections',
+    //   rows: [
+    //     {
+    //       type: 'description',
+    //       label:
+    //         'Connection editing is not available here yet. Connect streams on the flowsheet.',
+    //     },
+    //   ],
+    // },
+    // { type: 'label', label: 'Input Data', icon: 'clipboard' },
     {
       type: 'group',
       label: 'Stream Conditions',
