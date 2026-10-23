@@ -125,20 +125,20 @@ export const useToolbarConfig = ({
       description: 'Run the process simulation to get the results',
       links: [],
     },
-    {
-      id: 'Pause Simulation',
-      onClick: () => openCompoundsDialog(),
-      icon: 'rectangle',
-      status: thermoUnavailableReason ? 'unavailable' : 'available',
-      disabled: !!thermoUnavailableReason,
-      disabledReason: thermoUnavailableReason || undefined,
-      title: ({ simulationState }) =>
-        simulationState.context.selectedCompoundIds.length > 0
-          ? `Stop Simulation`
-          : 'Stop Simulation',
-      showTitle: true,
-      description: 'Run the process simulation to get the results',
-      links: [],
-    },
+  //   {
+  //     id: 'Pause Simulation',
+  //     onClick: () => openCompoundsDialog(),
+  //     icon: 'rectangle',
+  //     status: thermoUnavailableReason ? 'unavailable' : 'available',
+  //     disabled: !!thermoUnavailableReason,
+  //     disabledReason: thermoUnavailableReason || undefined,
+  //     title: ({ simulationState }) =>
+  //       simulationState.context.selectedCompoundIds.length > 0
+  //         ? `Stop Simulation`
+  //         : 'Stop Simulation',
+  //     showTitle: true,
+  //     description: 'Run the process simulation to get the results',
+  //     links: [],
+  //   },
   ],
 })
