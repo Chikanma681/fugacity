@@ -675,9 +675,7 @@ export function FlowsheetNodePanels({
             aria-label="Cancel"
             iconStart={{
               icon: 'close',
-              size: 'sm',
-              className: 'p-1 text-chalkboard-10',
-              bgClassName: 'bg-destroy-70 dark:bg-destroy-70',
+              bgClassName: 'bg-destroy-70 text-white dark:bg-destroy-70',
             }}
             onClick={onCancel}
             disabled={saving}
