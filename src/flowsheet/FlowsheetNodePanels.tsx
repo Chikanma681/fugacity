@@ -1,5 +1,5 @@
 import { RadioGroup } from '@headlessui/react'
-import { Fragment, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 
 import { ActionButton } from '@src/components/ActionButton'
 import type { CustomIconName } from '@src/components/CustomIcon'
@@ -440,14 +440,12 @@ function PanelControl({
 function PanelField({
   row,
   values,
-  changedProperties,
   onChange,
   displayUnits,
   onUnitChange,
 }: {
   row: PanelRow
   values: PanelValues
-  changedProperties: Set<string>
   onChange: (property: string, value: PanelValue) => void
   displayUnits: Record<string, string>
   onUnitChange: (property: string, unit: string) => void
@@ -493,7 +491,6 @@ function PanelField({
             key={getRowKey(child)}
             row={child}
             values={values}
-            changedProperties={changedProperties}
             onChange={onChange}
             displayUnits={displayUnits}
             onUnitChange={onUnitChange}
@@ -532,7 +529,6 @@ function PanelField({
             key={getRowKey(child)}
             row={child}
             values={values}
-            changedProperties={changedProperties}
             onChange={onChange}
             displayUnits={displayUnits}
             onUnitChange={onUnitChange}
@@ -542,17 +538,21 @@ function PanelField({
     )
   }
   const unit = 'fixedUnit' in row ? row.fixedUnit : undefined
-  const enabled = !row.enabledWhen || matchesCondition(row.enabledWhen, values)
-  const changed =
-    enabled && 'property' in row && changedProperties.has(row.property)
+  const enabled =
+    (!row.enabledWhen || matchesCondition(row.enabledWhen, values)) &&
+    (row.type !== 'dropdown' || isArray(row.options))
+  const interactive =
+    enabled &&
+    row.type !== 'readonly' &&
+    row.type !== 'button' &&
+    row.type !== 'collection'
   return (
     <SettingsSection
       title={label}
       htmlFor={id}
       description={unit}
       headingClassName="text-lg font-normal tracking-wide"
-      settingHasChanged={changed}
-      className={`min-w-0 border-0 border-l-2 -ml-0.5 focus-within:border-primary ${changed ? '' : 'border-transparent'} ${enabled ? '' : 'opacity-50'}`}
+      className={`min-w-0 border-0 border-l-2 -ml-0.5 border-transparent ${interactive ? 'focus-within:border-primary' : ''} ${enabled ? '' : 'opacity-50'}`}
     >
       <fieldset className="min-w-0 text-base font-normal" disabled={!enabled}>
         <PanelControl
@@ -594,27 +594,11 @@ export function FlowsheetNodePanels({
     radioPanels.find((panel) => panel.key === selectedPanel) ?? radioPanels[0]
   const scrollRef = useRef<HTMLDivElement>(null)
   const id = useId()
-  const initialValues = getInitialValues(panels, node)
   const [values, setValues] = useState(() => getInitialValues(panels, node))
   const [displayUnits, setDisplayUnits] = useState<Record<string, string>>(
     () => ({ ...node.parameters?.displayUnits })
   )
   const [error, setError] = useState<string | null>(null)
-  const changedProperties = new Set(
-    getEditableRows(panels)
-      .filter((row) => {
-        const property = row.property
-        const defaultUnit =
-          'unit' in row && row.unit ? panelUnits[row.unit]?.[0]?.[0] : undefined
-        return (
-          String(values[property] ?? '') !==
-            String(initialValues[property] ?? '') ||
-          (displayUnits[property] ?? defaultUnit) !==
-            (node.parameters?.displayUnits?.[property] ?? defaultUnit)
-        )
-      })
-      .map((row) => row.property)
-  )
   const sections = (
     activePanel
       ? getPanelSections(activePanel.rows, 'group')
@@ -720,10 +704,14 @@ export function FlowsheetNodePanels({
                 simulation.
               </p>
               {sections.map((section, index) => (
-                <Fragment key={section.key}>
+                <section
+                  key={section.key}
+                  aria-labelledby={`${id}-section-${index}`}
+                  className="flex flex-col gap-4 mt-6 first-of-type:mt-0"
+                >
                   <h2
                     id={`${id}-section-${index}`}
-                    className="text-xl mt-6 first-of-type:mt-0 capitalize font-bold"
+                    className="text-xl capitalize font-bold"
                   >
                     {section.label}
                   </h2>
@@ -732,13 +720,12 @@ export function FlowsheetNodePanels({
                       key={getRowKey(row)}
                       row={row}
                       values={values}
-                      changedProperties={changedProperties}
                       onChange={onChange}
                       displayUnits={displayUnits}
                       onUnitChange={onUnitChange}
                     />
                   ))}
-                </Fragment>
+                </section>
               ))}
             </div>
           </div>
