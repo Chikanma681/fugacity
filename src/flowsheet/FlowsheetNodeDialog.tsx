@@ -1,4 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
+
 import { SettingsDialog } from '@src/components/Settings/SettingsDialog'
+import { useSimulation } from '@src/components/SimulationProvider'
 import { FlowsheetNodePanels } from '@src/flowsheet/FlowsheetNodePanels'
 import type { FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
 
@@ -15,6 +18,7 @@ export function FlowsheetNodeDialog({
   onSave: (changes: FlowNodeChanges) => Promise<void>
   canSave: boolean
 }) {
+  const { simulationState } = useSimulation()
   const [saving, setSaving] = useState(false)
   const savingRef = useRef(false)
   const activeRef = useRef(open)
@@ -58,6 +62,7 @@ export function FlowsheetNodeDialog({
       <FlowsheetNodePanels
         key={`${node.id}-${open}`}
         node={node}
+        selectedCompoundIds={simulationState.context.selectedCompoundIds}
         onSave={save}
         onCancel={close}
         saving={saving}
@@ -66,4 +71,3 @@ export function FlowsheetNodeDialog({
     </SettingsDialog>
   )
 }
-import { useEffect, useRef, useState } from 'react'

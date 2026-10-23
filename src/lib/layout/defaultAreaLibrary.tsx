@@ -1,6 +1,7 @@
 import { useSignals } from '@preact/signals-react/runtime'
 import { Toolbar } from '@src/Toolbar'
 import { ConnectionStream } from '@src/components/ConnectionStream'
+import { SimulationProvider } from '@src/components/SimulationProvider'
 import { BodiesPane } from '@src/components/layout/areas/BodiesPane'
 import { DebugPane } from '@src/components/layout/areas/DebugPane'
 import { KclEditorPane } from '@src/components/layout/areas/KclEditorPane'
@@ -22,10 +23,12 @@ function ModelingArea() {
   const { auth } = useApp()
   const authToken = auth.useToken()
   return (
-    <div className="relative z-0 min-w-64 flex flex-col flex-1 items-center overflow-hidden">
-      <Toolbar />
-      <ConnectionStream authToken={authToken} />
-    </div>
+    <SimulationProvider>
+      <div className="relative z-0 min-w-64 flex flex-col flex-1 items-center overflow-hidden">
+        <Toolbar />
+        <ConnectionStream authToken={authToken} />
+      </div>
+    </SimulationProvider>
   )
 }
 

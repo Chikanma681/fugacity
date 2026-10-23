@@ -31,6 +31,14 @@ export const panelUnits: Record<string, PanelUnit[]> = {
   ],
   pressure: pressureUnits,
   deltaP: pressureUnits,
+  enthalpy: [
+    ['kJ/kg', 1000],
+    ['J/kg', 1],
+  ],
+  entropy: [
+    ['kJ/(kg·K)', 1000],
+    ['J/(kg·K)', 1],
+  ],
   heatflow: [
     ['W', 1],
     ['kW', 1000],

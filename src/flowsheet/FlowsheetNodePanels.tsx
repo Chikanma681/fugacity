@@ -1,7 +1,10 @@
-import { Fragment, useId, useRef, useState } from 'react'
+import { RadioGroup } from '@headlessui/react'
+import { useId, useRef, useState } from 'react'
 
 import { ActionButton } from '@src/components/ActionButton'
+import type { CustomIconName } from '@src/components/CustomIcon'
 import { SettingsSection } from '@src/components/Settings/SettingsSection'
+import { SettingsTabButton } from '@src/components/Settings/SettingsTabButton'
 import { Toggle } from '@src/components/Toggle/Toggle'
 import {
   type PanelCondition,
@@ -29,6 +32,41 @@ type EditableRow = Extract<
   PanelRow,
   { type: 'string' | 'textbox' | 'numeric' | 'checkbox' | 'dropdown' }
 >
+
+function resolvePanelRows(
+  rows: PanelRow[],
+  selectedCompoundIds: string[]
+): PanelRow[] {
+  return rows.map((row) => {
+    if (row.type === 'group') {
+      return { ...row, rows: resolvePanelRows(row.rows, selectedCompoundIds) }
+    }
+    if (row.type !== 'collection' || row.source !== 'selectedCompounds') {
+      return row
+    }
+    if (selectedCompoundIds.length === 0) {
+      return {
+        type: 'description',
+        label:
+          'Select compounds in the toolbar to enter stream mole fractions.',
+      }
+    }
+    return {
+      type: 'group',
+      label: row.label,
+      level: 2,
+      rows: selectedCompoundIds.flatMap((id) =>
+        row.rows.map((child) => ({
+          ...child,
+          label: child.label.replace('{Name}', id),
+          ...('property' in child && {
+            property: `${row.property}[${JSON.stringify(id)}].${child.property}`,
+          }),
+        }))
+      ),
+    }
+  })
+}
 
 function getEditableRows(rows: PanelRow[]): EditableRow[] {
   return rows.flatMap((row): EditableRow[] => {
@@ -67,6 +105,28 @@ function getInitialValues(rows: PanelRow[], node: FlowNode): PanelValues {
   }
 }
 
+function matchesCondition(condition: PanelCondition, values: PanelValues) {
+  const value = values[condition.property]
+  if (value === undefined) {
+    return condition.operator !== 'notEmpty'
+  }
+
+  switch (condition.operator) {
+    case 'equals':
+      return value === condition.value
+    case 'in':
+      return isArray(condition.value) && condition.value.includes(value)
+    case 'exists':
+      return condition.value !== false
+    case 'empty':
+      return value === ''
+    case 'notEmpty':
+      return value !== ''
+    case 'existsIn':
+      return true
+  }
+}
+
 function getNodeChanges(
   node: FlowNode,
   rows: PanelRow[],
@@ -79,7 +139,10 @@ function getNodeChanges(
   }
   const inputs = { ...node.parameters?.inputs }
   for (const row of getEditableRows(rows)) {
-    if (row.property === 'GraphicObject.Tag') {
+    if (
+      row.property === 'GraphicObject.Tag' ||
+      (row.enabledWhen && !matchesCondition(row.enabledWhen, values))
+    ) {
       continue
     }
     const value = values[row.property]
@@ -117,28 +180,6 @@ function getNodeChanges(
   return { tag, parameters: { schemaVersion: 1, inputs, displayUnits } }
 }
 
-function matchesCondition(condition: PanelCondition, values: PanelValues) {
-  const value = values[condition.property]
-  if (value === undefined) {
-    return condition.operator !== 'notEmpty'
-  }
-
-  switch (condition.operator) {
-    case 'equals':
-      return value === condition.value
-    case 'in':
-      return isArray(condition.value) && condition.value.includes(value)
-    case 'exists':
-      return condition.value !== false
-    case 'empty':
-      return value === ''
-    case 'notEmpty':
-      return value !== ''
-    case 'existsIn':
-      return true
-  }
-}
-
 function displayLabel(label: string) {
   return label.replace(/\{[^}]+\}/g, '—')
 }
@@ -147,8 +188,19 @@ function getRowKey(row: PanelRow) {
   return `${row.type}-${'property' in row ? row.property : ''}-${row.label}`
 }
 
-function getPanelSections(rows: PanelRow[]) {
-  const sections: { key: string; label: string; rows: PanelRow[] }[] = []
+type PanelSection = {
+  key: string
+  label: string
+  icon?: CustomIconName
+  rows: PanelRow[]
+  visibleWhen?: PanelCondition
+}
+
+function getPanelSections(
+  rows: PanelRow[],
+  sectionType: 'label' | 'group' = 'label'
+) {
+  const sections: PanelSection[] = []
   for (const row of rows) {
     if (
       row.type === 'description' &&
@@ -156,8 +208,18 @@ function getPanelSections(rows: PanelRow[]) {
     ) {
       continue
     }
-    if (row.type === 'label' && row.level !== 2) {
-      sections.push({ key: getRowKey(row), label: row.label, rows: [] })
+    if (
+      (row.type === 'label' || row.type === 'group') &&
+      row.type === sectionType &&
+      row.level !== 2
+    ) {
+      sections.push({
+        key: getRowKey(row),
+        label: row.label,
+        icon: row.type === 'label' ? row.icon : undefined,
+        rows: row.type === 'group' ? row.rows : [],
+        visibleWhen: row.visibleWhen,
+      })
     } else {
       if (!sections.length) {
         sections.push({ key: 'general', label: 'General', rows: [] })
@@ -169,7 +231,7 @@ function getPanelSections(rows: PanelRow[]) {
 }
 
 const inputClassName =
-  'p-1 bg-transparent border rounded-sm border-chalkboard-30 w-full'
+  'p-1 bg-transparent border rounded-sm border-chalkboard-30 w-full text-base font-normal focus:border-primary focus:outline-primary'
 
 function PanelControl({
   row,
@@ -181,7 +243,7 @@ function PanelControl({
   displayUnits,
   onUnitChange,
 }: {
-  row: Exclude<PanelRow, { type: 'label' | 'description' | 'group' }>
+  row: Exclude<PanelRow, { type: 'label' | 'description' | 'group' | 'tabs' }>
   id: string
   label: string
   unit?: string
@@ -198,7 +260,7 @@ function PanelControl({
     ) ?? units[0]
   const unitSelector = selectedUnit && (
     <select
-      className="p-1 bg-transparent border rounded-sm border-chalkboard-30"
+      className={`${inputClassName} !w-auto shrink-0`}
       aria-label={`${label} unit`}
       value={selectedUnit[0]}
       onChange={(event) => {
@@ -389,12 +451,15 @@ function PanelField({
   onUnitChange: (property: string, unit: string) => void
 }) {
   const id = useId()
+  const [selectedTab, setSelectedTab] = useState(0)
   const label = displayLabel(row.label)
   if (row.visibleWhen && !matchesCondition(row.visibleWhen, values)) {
     return null
   }
   if (row.type === 'label') {
-    return (
+    return row.level === 2 ? (
+      <h3 className="text-lg mt-2 font-semibold">{label}</h3>
+    ) : (
       <h2 className="text-xl mt-6 first-of-type:mt-0 capitalize font-bold">
         {label}
       </h2>
@@ -409,9 +474,17 @@ function PanelField({
   }
   if (row.type === 'group') {
     return (
-      <fieldset className="flex flex-col gap-4">
+      <fieldset className="min-w-0 flex flex-col gap-4">
         {label && (
-          <legend className="text-xl mb-4 capitalize font-bold">{label}</legend>
+          <legend
+            className={
+              row.level === 2
+                ? 'text-lg mb-4 font-semibold'
+                : 'text-xl mb-4 capitalize font-bold'
+            }
+          >
+            {label}
+          </legend>
         )}
         {row.rows.map((child) => (
           <PanelField
@@ -426,19 +499,73 @@ function PanelField({
       </fieldset>
     )
   }
+  if (row.type === 'tabs') {
+    return (
+      <fieldset className="min-w-0 flex flex-col gap-4">
+        <legend className="sr-only">{label}</legend>
+        <RadioGroup
+          aria-label={label}
+          aria-orientation="horizontal"
+          value={selectedTab}
+          onChange={setSelectedTab}
+          className="flex gap-5 overflow-x-auto border-0 border-b border-chalkboard-20 dark:border-chalkboard-90"
+        >
+          {row.tabs.map((tab, index) => (
+            <RadioGroup.Option
+              key={tab.label}
+              value={index}
+              className={({ checked }) =>
+                `whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${checked ? 'text-primary' : ''}`
+              }
+            >
+              {({ checked }) => (
+                <SettingsTabButton checked={checked} text={tab.label} />
+              )}
+            </RadioGroup.Option>
+          ))}
+        </RadioGroup>
+        {row.tabs[selectedTab]?.rows.map((child) => (
+          <PanelField
+            key={getRowKey(child)}
+            row={child}
+            values={values}
+            onChange={onChange}
+            displayUnits={displayUnits}
+            onUnitChange={onUnitChange}
+          />
+        ))}
+      </fieldset>
+    )
+  }
   const unit = 'fixedUnit' in row ? row.fixedUnit : undefined
+  const enabled =
+    (!row.enabledWhen || matchesCondition(row.enabledWhen, values)) &&
+    (row.type !== 'dropdown' || isArray(row.options))
+  const interactive =
+    enabled &&
+    row.type !== 'readonly' &&
+    row.type !== 'button' &&
+    row.type !== 'collection'
   return (
-    <SettingsSection title={label} htmlFor={id} description={unit}>
-      <PanelControl
-        row={row}
-        id={id}
-        label={label}
-        unit={unit}
-        values={values}
-        onChange={onChange}
-        displayUnits={displayUnits}
-        onUnitChange={onUnitChange}
-      />
+    <SettingsSection
+      title={label}
+      htmlFor={id}
+      description={unit}
+      headingClassName="text-lg font-normal tracking-wide"
+      className={`min-w-0 border-0 border-l-2 -ml-0.5 border-transparent ${interactive ? 'focus-within:border-primary' : ''} ${enabled ? '' : 'opacity-50'}`}
+    >
+      <fieldset className="min-w-0 text-base font-normal" disabled={!enabled}>
+        <PanelControl
+          row={row}
+          id={id}
+          label={label}
+          unit={unit}
+          values={values}
+          onChange={onChange}
+          displayUnits={displayUnits}
+          onUnitChange={onUnitChange}
+        />
+      </fieldset>
     </SettingsSection>
   )
 }
@@ -449,24 +576,37 @@ export function FlowsheetNodePanels({
   onCancel,
   saving = false,
   canSave = true,
+  selectedCompoundIds = [],
 }: {
   node: FlowNode
   onSave?: (changes: FlowNodeChanges) => Promise<void>
   onCancel?: () => void
   saving?: boolean
   canSave?: boolean
+  selectedCompoundIds?: string[]
 }) {
   const definition = getUnitDefinition(node.unitType)
-  const sections = getPanelSections(definition.panels)
+  const panels = resolvePanelRows(definition.panels, selectedCompoundIds)
+  const radioPanels =
+    definition.panelLayout === 'radio' ? getPanelSections(panels) : []
+  const [selectedPanel, setSelectedPanel] = useState(radioPanels[0]?.key)
+  const activePanel =
+    radioPanels.find((panel) => panel.key === selectedPanel) ?? radioPanels[0]
   const scrollRef = useRef<HTMLDivElement>(null)
   const id = useId()
-  const [values, setValues] = useState(() =>
-    getInitialValues(definition.panels, node)
-  )
+  const [values, setValues] = useState(() => getInitialValues(panels, node))
   const [displayUnits, setDisplayUnits] = useState<Record<string, string>>(
     () => ({ ...node.parameters?.displayUnits })
   )
   const [error, setError] = useState<string | null>(null)
+  const sections = (
+    activePanel
+      ? getPanelSections(activePanel.rows, 'group')
+      : getPanelSections(panels)
+  ).filter(
+    (section) =>
+      !section.visibleWhen || matchesCondition(section.visibleWhen, values)
+  )
   const onChange = (property: string, value: PanelValue) => {
     setValues((previous) => ({ ...previous, [property]: value }))
   }
@@ -477,12 +617,7 @@ export function FlowsheetNodePanels({
     if (saving || !canSave || !onSave || !form.reportValidity()) {
       return
     }
-    const changes = getNodeChanges(
-      node,
-      definition.panels,
-      values,
-      displayUnits
-    )
+    const changes = getNodeChanges(node, panels, values, displayUnits)
     if (typeof changes === 'string') {
       setError(changes)
       return
@@ -499,7 +634,7 @@ export function FlowsheetNodePanels({
 
   return (
     <form
-      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden font-sans text-base font-normal"
       aria-busy={saving}
       onSubmit={(event) => {
         event.preventDefault()
@@ -507,6 +642,34 @@ export function FlowsheetNodePanels({
       }}
     >
       <fieldset disabled={saving} className="contents">
+        {radioPanels.length > 0 && (
+          <RadioGroup
+            aria-label="Node property panels"
+            aria-orientation="horizontal"
+            disabled={saving}
+            value={activePanel?.key}
+            onChange={(value: string) => setSelectedPanel(value)}
+            className="flex shrink-0 justify-start overflow-x-auto pl-4 pr-5 mb-4 gap-5 border-0 border-b border-b-chalkboard-20 dark:border-b-chalkboard-90"
+          >
+            {radioPanels.map((panel) => (
+              <RadioGroup.Option
+                key={panel.key}
+                value={panel.key}
+                className={({ checked }) =>
+                  `whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${checked ? 'text-primary' : ''}`
+                }
+              >
+                {({ checked }) => (
+                  <SettingsTabButton
+                    checked={checked}
+                    icon={panel.icon}
+                    text={panel.label}
+                  />
+                )}
+              </RadioGroup.Option>
+            ))}
+          </RadioGroup>
+        )}
         <div
           className="flex-1 grid items-stretch pl-4 pr-5 pb-5 gap-2 overflow-hidden"
           style={{ gridTemplateColumns: 'auto 1fr', gridTemplateRows: '1fr' }}
@@ -520,7 +683,7 @@ export function FlowsheetNodePanels({
                 key={section.key}
                 type="button"
                 aria-controls={`${id}-section-${index}`}
-                className="capitalize text-left border-none px-1"
+                className="capitalize text-left border-none px-1 hover:text-primary focus:text-primary focus-visible:outline-primary"
                 onClick={() =>
                   scrollRef.current
                     ?.querySelector(`[id="${id}-section-${index}"]`)
@@ -534,17 +697,21 @@ export function FlowsheetNodePanels({
               </button>
             ))}
           </nav>
-          <div className="relative overflow-y-auto">
+          <div key={activePanel?.key} className="relative overflow-y-auto">
             <div ref={scrollRef} className="flex flex-col gap-4 px-2">
               <p className="text-xs text-chalkboard-80 dark:text-chalkboard-30">
                 Edits are not saved until you select Save. Saving does not run a
                 simulation.
               </p>
               {sections.map((section, index) => (
-                <Fragment key={section.key}>
+                <section
+                  key={section.key}
+                  aria-labelledby={`${id}-section-${index}`}
+                  className="flex flex-col gap-4 mt-6 first-of-type:mt-0"
+                >
                   <h2
                     id={`${id}-section-${index}`}
-                    className="text-xl mt-6 first-of-type:mt-0 capitalize font-bold"
+                    className="text-xl capitalize font-bold"
                   >
                     {section.label}
                   </h2>
@@ -558,7 +725,7 @@ export function FlowsheetNodePanels({
                       onUnitChange={onUnitChange}
                     />
                   ))}
-                </Fragment>
+                </section>
               ))}
             </div>
           </div>
@@ -581,9 +748,7 @@ export function FlowsheetNodePanels({
             aria-label="Cancel"
             iconStart={{
               icon: 'close',
-              size: 'sm',
-              className: 'p-1 text-chalkboard-10',
-              bgClassName: 'bg-destroy-70 dark:bg-destroy-70',
+              bgClassName: 'bg-destroy-70 text-white dark:bg-destroy-70',
             }}
             onClick={onCancel}
             disabled={saving}
@@ -595,7 +760,7 @@ export function FlowsheetNodePanels({
             type="submit"
             tabIndex={0}
             aria-label={saving ? 'Saving…' : 'Save'}
-            iconStart={{ icon: 'checkmark', size: 'sm', className: 'p-1' }}
+            iconStart={{ icon: 'checkmark' }}
             disabled={saving || !canSave || !onSave}
           >
             {saving ? 'Saving…' : 'Save'}

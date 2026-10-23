@@ -40,7 +40,7 @@ const ProjectSidebarMenu = ({
   return (
     <div className={'!no-underline flex gap-2 ' + trafficLightsOffset}>
       <div className="relative group/home">
-        <AppLogoLink project={project} file={file} />
+        {/* <AppLogoLink project={project} file={file} /> */}
         {isDesktop() && <Tooltip position="bottom-left">Go home</Tooltip>}
       </div>
       {enableMenu ? (

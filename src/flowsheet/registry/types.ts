@@ -1,6 +1,16 @@
+import type { CustomIconName } from '@src/components/CustomIcon'
 import type { Port, UnitType } from '@src/flowsheet/types'
 
 export type PanelValue = string | number | boolean
+
+export type PanelRadioGroup =
+  | 'Information'
+  | 'Connections'
+  | 'Input Data'
+  | 'Results'
+  | 'Annotations'
+  | 'Floating Tables'
+  | 'Utilities'
 
 export type PanelCondition = {
   property: string
@@ -35,8 +45,9 @@ export type PanelOptionSource = {
 export type PanelRow = {
   label: string
   visibleWhen?: PanelCondition
+  enabledWhen?: PanelCondition
 } & (
-  | { type: 'label'; level?: 2 }
+  | { type: 'label'; level?: 2; icon?: CustomIconName }
   | { type: 'description' }
   | {
       type: 'readonly'
@@ -80,8 +91,10 @@ export type PanelRow = {
     }
   | { type: 'button'; action: string }
   | { type: 'group'; rows: PanelRow[]; level?: 2 }
+  | { type: 'tabs'; tabs: { label: string; rows: PanelRow[] }[] }
   | {
       type: 'collection'
+      source?: 'selectedCompounds'
       property: string
       itemLabel: string
       itemLabelExpression?: string
@@ -101,4 +114,5 @@ export type UnitDefinition = {
   height: number
   ports: Port[]
   panels: PanelRow[]
+  panelLayout?: 'sections' | 'radio'
 }

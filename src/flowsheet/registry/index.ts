@@ -26,6 +26,7 @@ export type {
   PanelCondition,
   PanelOption,
   PanelOptionSource,
+  PanelRadioGroup,
   PanelRow,
   PanelValue,
   UnitDefinition,

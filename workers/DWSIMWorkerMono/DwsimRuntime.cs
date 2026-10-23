@@ -60,16 +60,30 @@ public sealed class DwsimRuntime
     {
         var appRoot =
             Environment.GetEnvironmentVariable("FUGACITY_APP_ROOT") ?? AppContext.BaseDirectory;
-        var candidate = Path.Combine(appRoot, "dwsim-runtime", "DWSIM.Thermodynamics.dll");
-        if (File.Exists(candidate))
+        var directories = new[]
         {
-            return Path.GetFullPath(candidate);
+            Path.Combine(appRoot, "dwsim-runtime"),
+            Path.Combine(AppContext.BaseDirectory, "dwsim-runtime"),
+        };
+        var missingFiles = new List<string>();
+        foreach (var directory in directories.Distinct())
+        {
+            var requiredFiles = new[] { "DWSIM.Thermodynamics.dll", "DWSIM.Interfaces.dll" };
+            var missing = requiredFiles
+                .Where(name => !File.Exists(Path.Combine(directory, name)))
+                .ToArray();
+            if (missing.Length == 0)
+            {
+                return Path.GetFullPath(Path.Combine(directory, "DWSIM.Thermodynamics.dll"));
+            }
+
+            missingFiles.Add(directory + " (missing: " + string.Join(", ", missing) + ")");
         }
 
         throw new WorkerException(
             "dwsim_not_configured",
-            "DWSIM.Thermodynamics.dll was not found. Place it in a dwsim-runtime folder beside FUGACITY_APP_ROOT. Searched: "
-                + candidate
+            "DWSIM runtime was not found. Place the full DWSIM runtime bundle in dwsim-runtime under FUGACITY_APP_ROOT or beside the worker. Searched: "
+                + string.Join("; ", missingFiles)
         );
     }
 
