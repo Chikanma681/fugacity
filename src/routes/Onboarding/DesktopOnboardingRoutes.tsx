@@ -519,7 +519,7 @@ function PromptToEditResult() {
       <OnboardingCard className="col-start-3 col-span-2">
         <h1 className="text-xl font-bold">Result</h1>
         <p className="my-4">
-          This is an example of an edit that Zookeeper can make for you. We
+          This is an example of an edit that Gibbs can make for you. We
           skipped the real generation for this tutorial.
         </p>
         <p className="my-4">

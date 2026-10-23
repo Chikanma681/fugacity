@@ -457,7 +457,7 @@ export const MlEphantConversationInput = (
         </div>
       </div>
       <div className="text-3 text-xs">
-        Zookeeper can make mistakes. Always verify information.
+        Gibbs can make mistakes. Always verify information.
       </div>
     </div>
   )
