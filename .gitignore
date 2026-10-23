@@ -77,6 +77,7 @@ out/
 /workers/DWSIMWorkerMono/cavett-runtime/
 /workers/DWSIMWorkerMono/.venv/
 /workers/DWSIMWorkerMono/heater-output/
+/workers/DWSIMWorkerMono/separator-output/
 
 # python
 __pycache__/
