@@ -689,7 +689,7 @@ export function FlowsheetNodePanels({
             type="submit"
             tabIndex={0}
             aria-label={saving ? 'Saving…' : 'Save'}
-            iconStart={{ icon: 'checkmark', size: 'sm', className: 'p-1' }}
+            iconStart={{ icon: 'checkmark' }}
             disabled={saving || !canSave || !onSave}
           >
             {saving ? 'Saving…' : 'Save'}
