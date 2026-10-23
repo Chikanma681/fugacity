@@ -2,6 +2,7 @@ import { RadioGroup } from '@headlessui/react'
 import { Fragment, useId, useRef, useState } from 'react'
 
 import { ActionButton } from '@src/components/ActionButton'
+import type { CustomIconName } from '@src/components/CustomIcon'
 import { SettingsSection } from '@src/components/Settings/SettingsSection'
 import { SettingsTabButton } from '@src/components/Settings/SettingsTabButton'
 import { Toggle } from '@src/components/Toggle/Toggle'
@@ -190,6 +191,7 @@ function getRowKey(row: PanelRow) {
 type PanelSection = {
   key: string
   label: string
+  icon?: CustomIconName
   rows: PanelRow[]
   visibleWhen?: PanelCondition
 }
@@ -214,6 +216,7 @@ function getPanelSections(
       sections.push({
         key: getRowKey(row),
         label: row.label,
+        icon: row.type === 'label' ? row.icon : undefined,
         rows: row.type === 'group' ? row.rows : [],
         visibleWhen: row.visibleWhen,
       })
@@ -228,7 +231,7 @@ function getPanelSections(
 }
 
 const inputClassName =
-  'p-1 bg-transparent border rounded-sm border-chalkboard-30 w-full'
+  'p-1 bg-transparent border rounded-sm border-chalkboard-30 w-full text-base font-normal focus:border-primary focus:outline-primary'
 
 function PanelControl({
   row,
@@ -240,7 +243,7 @@ function PanelControl({
   displayUnits,
   onUnitChange,
 }: {
-  row: Exclude<PanelRow, { type: 'label' | 'description' | 'group' }>
+  row: Exclude<PanelRow, { type: 'label' | 'description' | 'group' | 'tabs' }>
   id: string
   label: string
   unit?: string
@@ -257,7 +260,7 @@ function PanelControl({
     ) ?? units[0]
   const unitSelector = selectedUnit && (
     <select
-      className="p-1 bg-transparent border rounded-sm border-chalkboard-30"
+      className={`${inputClassName} !w-auto shrink-0`}
       aria-label={`${label} unit`}
       value={selectedUnit[0]}
       onChange={(event) => {
@@ -437,23 +440,28 @@ function PanelControl({
 function PanelField({
   row,
   values,
+  changedProperties,
   onChange,
   displayUnits,
   onUnitChange,
 }: {
   row: PanelRow
   values: PanelValues
+  changedProperties: Set<string>
   onChange: (property: string, value: PanelValue) => void
   displayUnits: Record<string, string>
   onUnitChange: (property: string, unit: string) => void
 }) {
   const id = useId()
+  const [selectedTab, setSelectedTab] = useState(0)
   const label = displayLabel(row.label)
   if (row.visibleWhen && !matchesCondition(row.visibleWhen, values)) {
     return null
   }
   if (row.type === 'label') {
-    return (
+    return row.level === 2 ? (
+      <h3 className="text-lg mt-2 font-semibold">{label}</h3>
+    ) : (
       <h2 className="text-xl mt-6 first-of-type:mt-0 capitalize font-bold">
         {label}
       </h2>
@@ -468,15 +476,63 @@ function PanelField({
   }
   if (row.type === 'group') {
     return (
-      <fieldset className="flex flex-col gap-4">
+      <fieldset className="min-w-0 flex flex-col gap-4">
         {label && (
-          <legend className="text-xl mb-4 capitalize font-bold">{label}</legend>
+          <legend
+            className={
+              row.level === 2
+                ? 'text-lg mb-4 font-semibold'
+                : 'text-xl mb-4 capitalize font-bold'
+            }
+          >
+            {label}
+          </legend>
         )}
         {row.rows.map((child) => (
           <PanelField
             key={getRowKey(child)}
             row={child}
             values={values}
+            changedProperties={changedProperties}
+            onChange={onChange}
+            displayUnits={displayUnits}
+            onUnitChange={onUnitChange}
+          />
+        ))}
+      </fieldset>
+    )
+  }
+  if (row.type === 'tabs') {
+    return (
+      <fieldset className="min-w-0 flex flex-col gap-4">
+        <legend className="sr-only">{label}</legend>
+        <RadioGroup
+          aria-label={label}
+          aria-orientation="horizontal"
+          value={selectedTab}
+          onChange={setSelectedTab}
+          className="flex gap-5 overflow-x-auto border-0 border-b border-chalkboard-20 dark:border-chalkboard-90"
+        >
+          {row.tabs.map((tab, index) => (
+            <RadioGroup.Option
+              key={tab.label}
+              value={index}
+              className={({ checked }) =>
+                `whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${checked ? 'text-primary' : ''}`
+              }
+            >
+              {({ checked }) => (
+                <SettingsTabButton checked={checked} text={tab.label} />
+              )}
+            </RadioGroup.Option>
+          ))}
+        </RadioGroup>
+        {row.tabs[selectedTab]?.rows.map((child) => (
+          <PanelField
+            key={getRowKey(child)}
+            row={child}
+            values={values}
+            changedProperties={changedProperties}
             onChange={onChange}
             displayUnits={displayUnits}
             onUnitChange={onUnitChange}
@@ -486,12 +542,19 @@ function PanelField({
     )
   }
   const unit = 'fixedUnit' in row ? row.fixedUnit : undefined
+  const enabled = !row.enabledWhen || matchesCondition(row.enabledWhen, values)
+  const changed =
+    enabled && 'property' in row && changedProperties.has(row.property)
   return (
-    <SettingsSection title={label} htmlFor={id} description={unit}>
-      <fieldset
-        className="min-w-0 disabled:opacity-50"
-        disabled={row.enabledWhen && !matchesCondition(row.enabledWhen, values)}
-      >
+    <SettingsSection
+      title={label}
+      htmlFor={id}
+      description={unit}
+      headingClassName="text-lg font-normal tracking-wide"
+      settingHasChanged={changed}
+      className={`min-w-0 border-0 border-l-2 -ml-0.5 focus-within:border-primary ${changed ? '' : 'border-transparent'} ${enabled ? '' : 'opacity-50'}`}
+    >
+      <fieldset className="min-w-0 text-base font-normal" disabled={!enabled}>
         <PanelControl
           row={row}
           id={id}
@@ -531,11 +594,27 @@ export function FlowsheetNodePanels({
     radioPanels.find((panel) => panel.key === selectedPanel) ?? radioPanels[0]
   const scrollRef = useRef<HTMLDivElement>(null)
   const id = useId()
+  const initialValues = getInitialValues(panels, node)
   const [values, setValues] = useState(() => getInitialValues(panels, node))
   const [displayUnits, setDisplayUnits] = useState<Record<string, string>>(
     () => ({ ...node.parameters?.displayUnits })
   )
   const [error, setError] = useState<string | null>(null)
+  const changedProperties = new Set(
+    getEditableRows(panels)
+      .filter((row) => {
+        const property = row.property
+        const defaultUnit =
+          'unit' in row && row.unit ? panelUnits[row.unit]?.[0]?.[0] : undefined
+        return (
+          String(values[property] ?? '') !==
+            String(initialValues[property] ?? '') ||
+          (displayUnits[property] ?? defaultUnit) !==
+            (node.parameters?.displayUnits?.[property] ?? defaultUnit)
+        )
+      })
+      .map((row) => row.property)
+  )
   const sections = (
     activePanel
       ? getPanelSections(activePanel.rows, 'group')
@@ -571,7 +650,7 @@ export function FlowsheetNodePanels({
 
   return (
     <form
-      className="flex min-h-0 flex-1 flex-col overflow-hidden"
+      className="flex min-h-0 flex-1 flex-col overflow-hidden font-sans text-base font-normal"
       aria-busy={saving}
       onSubmit={(event) => {
         event.preventDefault()
@@ -592,10 +671,16 @@ export function FlowsheetNodePanels({
               <RadioGroup.Option
                 key={panel.key}
                 value={panel.key}
-                className="whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                className={({ checked }) =>
+                  `whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${checked ? 'text-primary' : ''}`
+                }
               >
                 {({ checked }) => (
-                  <SettingsTabButton checked={checked} text={panel.label} />
+                  <SettingsTabButton
+                    checked={checked}
+                    icon={panel.icon}
+                    text={panel.label}
+                  />
                 )}
               </RadioGroup.Option>
             ))}
@@ -614,7 +699,7 @@ export function FlowsheetNodePanels({
                 key={section.key}
                 type="button"
                 aria-controls={`${id}-section-${index}`}
-                className="capitalize text-left border-none px-1"
+                className="capitalize text-left border-none px-1 hover:text-primary focus:text-primary focus-visible:outline-primary"
                 onClick={() =>
                   scrollRef.current
                     ?.querySelector(`[id="${id}-section-${index}"]`)
@@ -647,6 +732,7 @@ export function FlowsheetNodePanels({
                       key={getRowKey(row)}
                       row={row}
                       values={values}
+                      changedProperties={changedProperties}
                       onChange={onChange}
                       displayUnits={displayUnits}
                       onUnitChange={onUnitChange}
