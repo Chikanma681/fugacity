@@ -91,7 +91,7 @@ export function CompoundsDialog({
                   Compounds
                 </Dialog.Title>
                 <p className="mt-1 text-sm text-chalkboard-70 dark:text-chalkboard-40">
-                  Select the DWSIM compounds available to the process
+                  Select the compounds available to the process
                   simulation.
                 </p>
               </div>
