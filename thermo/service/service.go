@@ -59,3 +59,23 @@ func (s *Service) CalculatePTFlash(request api.FlashRequest) (api.FlashResult, e
 	}
 	return result, nil
 }
+
+func (s *Service) SolveFlowsheet(request api.SolveFlowsheetRequest) (api.SolveFlowsheetResult, error) {
+	if request.PropertyPackageID == "" {
+		return api.SolveFlowsheetResult{}, api.ThermoError{Code: "missing_property_package", Message: "propertyPackageId is required"}
+	}
+	if len(request.CompoundIDs) == 0 {
+		return api.SolveFlowsheetResult{}, api.ThermoError{Code: "missing_compounds", Message: "at least one compound is required"}
+	}
+	if len(request.Objects) == 0 {
+		return api.SolveFlowsheetResult{}, api.ThermoError{Code: "empty_flowsheet", Message: "the flowsheet has no objects to solve"}
+	}
+	if request.Connections == nil {
+		request.Connections = []api.FlowsheetConnection{}
+	}
+	var result api.SolveFlowsheetResult
+	if err := s.client.Call(api.CommandSolveFlowsheet, request, &result); err != nil {
+		return api.SolveFlowsheetResult{}, err
+	}
+	return result, nil
+}

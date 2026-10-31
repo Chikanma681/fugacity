@@ -61,6 +61,16 @@ func main() {
 			exitError(err)
 		}
 		writeJSON(result)
+	case api.CommandSolveFlowsheet:
+		var request api.SolveFlowsheetRequest
+		if err := readRequest(&request); err != nil {
+			exitError(err)
+		}
+		result, err := svc.SolveFlowsheet(request)
+		if err != nil {
+			exitError(err)
+		}
+		writeJSON(result)
 	default:
 		exitError(api.ThermoError{Code: "unknown_command", Message: "unknown thermo command"})
 	}

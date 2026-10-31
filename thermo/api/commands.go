@@ -7,4 +7,5 @@ const (
 	CommandCalculatePTFlash          = "CalculatePTFlash"
 	CommandCalculatePHFlash          = "CalculatePHFlash"
 	CommandCalculateStreamProperties = "CalculateStreamProperties"
+	CommandSolveFlowsheet            = "SolveFlowsheet"
 )
