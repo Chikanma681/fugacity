@@ -36,7 +36,10 @@ export function parsePortReference(reference: string) {
     : { tag: reference.slice(0, index), portId: reference.slice(index + 1) }
 }
 
-export function getEdgePorts(state: FlowsheetState, edge: FlowEdge) {
+export function getEdgePorts(
+  state: Pick<FlowsheetState, 'nodes'>,
+  edge: FlowEdge
+) {
   const from = state.nodes.find((node) => node.id === edge.from)
   const to = state.nodes.find((node) => node.id === edge.to)
   return {

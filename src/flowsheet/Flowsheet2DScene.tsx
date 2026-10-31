@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { ContextMenu, ContextMenuItem } from '@src/components/ContextMenu'
 import { FlowsheetNodeDialog } from '@src/flowsheet/FlowsheetNodeDialog'
+import { getEdgePorts } from '@src/flowsheet/agent/document'
 import { createFlowObject } from '@src/flowsheet/factory'
 import { FlowNodeGraphic } from '@src/flowsheet/renderers'
 import {
@@ -10,7 +11,7 @@ import {
   type StreamKind,
   streamPalette,
 } from '@src/flowsheet/streamPalette'
-import type { FlowNode, PortId, Viewport } from '@src/flowsheet/types'
+import type { FlowEdge, FlowNode, PortId, Viewport } from '@src/flowsheet/types'
 import { useFlowsheetState } from '@src/flowsheet/useFlowsheetState'
 import { useApp } from '@src/lib/boot'
 import { getFlowsheetFilePath } from '@src/lib/store/database'
@@ -59,6 +60,21 @@ function getOrthogonalEdgePath(
 ) {
   const midX = (start.x + end.x) / 2
   return `M ${start.x} ${start.y} H ${midX} V ${end.y} H ${end.x}`
+}
+
+function isPortConnected(
+  nodes: FlowNode[],
+  edges: FlowEdge[],
+  nodeId: string,
+  portId: PortId
+) {
+  return edges.some((edge) => {
+    const ports = getEdgePorts({ nodes }, edge)
+    return (
+      (edge.from === nodeId && ports.fromPort === portId) ||
+      (edge.to === nodeId && ports.toPort === portId)
+    )
+  })
 }
 
 export function Flowsheet2DScene() {
@@ -316,16 +332,20 @@ export function Flowsheet2DScene() {
       if (drag.type === 'edge') {
         const target = getPortTarget(event.target)
         if (target && target.nodeId !== drag.from.nodeId) {
-          void setEdges((prev) => [
-            ...prev,
-            {
-              id: crypto.randomUUID(),
-              from: drag.from.nodeId,
-              fromPort: drag.from.portId,
-              to: target.nodeId,
-              toPort: target.portId,
-            },
-          ])
+          void setEdges((prev) =>
+            isPortConnected(nodes, prev, target.nodeId, target.portId)
+              ? prev
+              : [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    from: drag.from.nodeId,
+                    fromPort: drag.from.portId,
+                    to: target.nodeId,
+                    toPort: target.portId,
+                  },
+                ]
+          )
         }
       }
       setDrag({ type: 'none' })
@@ -344,6 +364,7 @@ export function Flowsheet2DScene() {
   }, [
     drag,
     getPortTarget,
+    nodes,
     ready,
     screenToWorld,
     setEdges,
@@ -456,7 +477,12 @@ export function Flowsheet2DScene() {
                 transform={`translate(${node.x} ${node.y})`}
                 onPointerDown={(event) => {
                   const port = getPortTarget(event.target)
-                  if (port) {
+                  if (
+                    port &&
+                    isPortConnected(nodes, edges, node.id, port.portId)
+                  ) {
+                    event.stopPropagation()
+                  } else if (port) {
                     startEdgeDrag(event, node, port.portId)
                   } else {
                     startNodeDrag(event, node)
