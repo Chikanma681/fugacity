@@ -263,7 +263,8 @@ function FeatureTreePane() {
       <OnboardingCard className="col-start-3 col-span-2">
         <h1 className="text-xl font-bold">CPU Fan Housing</h1>
         <p className="my-4">
-          This is an example of the generated CAD model using Zookeeper.         </p>
+          This is an example of the generated CAD model using Zookeeper.{' '}
+        </p>
         <p className="my-4">
           To the left are the panes. We have opened the feature tree pane for
           you. The feature tree pane displays all the CAD functions that were
