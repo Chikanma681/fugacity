@@ -13,9 +13,11 @@ public static class Program
         MaxJsonLength = int.MaxValue,
     };
     private static readonly DwsimRuntime Runtime = new DwsimRuntime();
+    private static readonly System.IO.TextWriter Output = Console.Out;
 
     public static void Main()
     {
+        Console.SetOut(Console.Error);
         string line;
         while ((line = Console.ReadLine()) != null)
         {
@@ -57,6 +59,9 @@ public static class Program
                     case "CalculatePTFlash":
                         result = Runtime.CalculatePTFlash(ParseFlashRequest(parameters));
                         break;
+                    case "SolveFlowsheet":
+                        result = AutomationRuntime.SolveFlowsheet(ParseSolveFlowsheetRequest(parameters));
+                        break;
                     default:
                         throw new WorkerException(
                             "unknown_method",
@@ -91,7 +96,7 @@ public static class Program
 
     private static void WriteResponse(string jsonrpc, object result, object error, int id)
     {
-        Console.WriteLine(
+        Output.WriteLine(
             Json.Serialize(
                 new Dictionary<string, object>
                 {
@@ -192,6 +197,69 @@ public static class Program
             PressurePa = RequiredDouble(parameters, "pressurePa"),
         };
     }
+
+    private static List<Dictionary<string, object>> RequiredObjectArray(
+        Dictionary<string, object> parameters,
+        string name
+    )
+    {
+        if (
+            parameters == null
+            || !parameters.ContainsKey(name)
+            || !(parameters[name] is ArrayList values)
+        )
+        {
+            throw new WorkerException("missing_param", "'" + name + "' is required.");
+        }
+
+        return values.Cast<object>().Select(value => value as Dictionary<string, object>).ToList();
+    }
+
+    private static FlowsheetObjectInput ParseFlowsheetObject(Dictionary<string, object> parameters)
+    {
+        return new FlowsheetObjectInput
+        {
+            Id = RequiredString(parameters, "id"),
+            Tag = RequiredString(parameters, "tag"),
+            UnitType = RequiredString(parameters, "unitType"),
+            X = RequiredDouble(parameters, "x"),
+            Y = RequiredDouble(parameters, "y"),
+            Properties = parameters.ContainsKey("properties")
+                ? parameters["properties"] as Dictionary<string, object>
+                    ?? new Dictionary<string, object>()
+                : new Dictionary<string, object>(),
+        };
+    }
+
+    private static FlowsheetConnectionInput ParseFlowsheetConnection(
+        Dictionary<string, object> parameters
+    )
+    {
+        return new FlowsheetConnectionInput
+        {
+            From = RequiredString(parameters, "from"),
+            FromPort = (int)RequiredDouble(parameters, "fromPort"),
+            To = RequiredString(parameters, "to"),
+            ToPort = (int)RequiredDouble(parameters, "toPort"),
+        };
+    }
+
+    private static SolveFlowsheetRequest ParseSolveFlowsheetRequest(
+        Dictionary<string, object> parameters
+    )
+    {
+        return new SolveFlowsheetRequest
+        {
+            PropertyPackageId = RequiredString(parameters, "propertyPackageId"),
+            CompoundIds = RequiredStringArray(parameters, "compoundIds"),
+            Objects = RequiredObjectArray(parameters, "objects")
+                .Select(ParseFlowsheetObject)
+                .ToList(),
+            Connections = RequiredObjectArray(parameters, "connections")
+                .Select(ParseFlowsheetConnection)
+                .ToList(),
+        };
+    }
 }
 
 public class ThermoSelection
@@ -205,6 +273,30 @@ public sealed class FlashRequest : ThermoSelection
     public double[] MoleFractions;
     public double TemperatureK;
     public double PressurePa;
+}
+
+public sealed class FlowsheetObjectInput
+{
+    public string Id;
+    public string Tag;
+    public string UnitType;
+    public double X;
+    public double Y;
+    public Dictionary<string, object> Properties;
+}
+
+public sealed class FlowsheetConnectionInput
+{
+    public string From;
+    public int FromPort;
+    public string To;
+    public int ToPort;
+}
+
+public sealed class SolveFlowsheetRequest : ThermoSelection
+{
+    public List<FlowsheetObjectInput> Objects;
+    public List<FlowsheetConnectionInput> Connections;
 }
 
 public sealed class WorkerException : Exception

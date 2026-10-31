@@ -1,11 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
-if [[ ! -f "$DIR/DWSIMWorkerMono.exe" || "$DIR/Program.cs" -nt "$DIR/DWSIMWorkerMono.exe" || "$DIR/DwsimRuntime.cs" -nt "$DIR/DWSIMWorkerMono.exe" ]]; then
-  if ! command -v mcs >/dev/null 2>&1; then
-    echo '{"jsonrpc":"2.0","result":null,"error":{"code":"mono_compiler_unavailable","message":"mcs is required to compile DWSIMWorkerMono.exe. Install Mono or prebuild the worker."},"id":0}'
-    exit 1
-  fi
-  mcs -r:System.Web.Extensions.dll -out:"$DIR/DWSIMWorkerMono.exe" "$DIR/Program.cs" "$DIR/DwsimRuntime.cs"
+export DWSIM_AUTOMATION_RUNTIME="${DWSIM_AUTOMATION_RUNTIME:-$DIR/cavett-runtime}"
+SOURCES=("$DIR/Program.cs" "$DIR/DwsimRuntime.cs" "$DIR/FlowsheetSimulation.cs")
+
+fail() {
+  echo "{\"jsonrpc\":\"2.0\",\"result\":null,\"error\":{\"code\":\"$1\",\"message\":\"$2\"},\"id\":0}"
+  exit 1
+}
+
+needs_build() {
+  [[ ! -f "$DIR/DWSIMWorkerMono.exe" ]] && return 0
+  for source in "${SOURCES[@]}"; do
+    [[ "$source" -nt "$DIR/DWSIMWorkerMono.exe" ]] && return 0
+  done
+  return 1
+}
+
+if needs_build; then
+  command -v mcs >/dev/null 2>&1 ||
+    fail mono_compiler_unavailable "mcs is required to compile DWSIMWorkerMono.exe. Install Mono or prebuild the worker."
+  REFERENCES=()
+  for assembly in DWSIM.Automation DWSIM.Interfaces DWSIM.GlobalSettings; do
+    [[ -f "$DWSIM_AUTOMATION_RUNTIME/$assembly.dll" ]] ||
+      fail dwsim_automation_not_configured "Missing $DWSIM_AUTOMATION_RUNTIME/$assembly.dll. Set DWSIM_AUTOMATION_RUNTIME to a full DWSIM Mono bundle."
+    REFERENCES+=("-r:$DWSIM_AUTOMATION_RUNTIME/$assembly.dll")
+  done
+  mcs -r:System.Web.Extensions.dll "${REFERENCES[@]}" -out:"$DIR/DWSIMWorkerMono.exe" "${SOURCES[@]}" >&2
 fi
 exec mono "$DIR/DWSIMWorkerMono.exe"

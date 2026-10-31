@@ -8,7 +8,7 @@ using System.Reflection;
 
 public sealed class DwsimRuntime
 {
-    private static readonly Dictionary<string, string> PropertyPackageAliases = new Dictionary<
+    internal static readonly Dictionary<string, string> PropertyPackageAliases = new Dictionary<
         string,
         string
     >(StringComparer.OrdinalIgnoreCase)
