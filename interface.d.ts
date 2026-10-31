@@ -6,6 +6,10 @@ import type { dialog, shell } from 'electron'
 import type { WebContentSendPayload } from 'menu/channels'
 import type { ZooLabel } from 'menu/roles'
 import type { DatabaseAPI } from '@src/lib/store/database'
+import type {
+  SolveFlowsheetRequest,
+  SolveFlowsheetResult,
+} from '@src/lib/thermo'
 
 // Extend the interface with additional custom properties
 declare module 'electron' {
@@ -120,6 +124,9 @@ export interface IElectronAPI {
       temperatureK: number
       pressurePa: number
     }) => Promise<any>
+    solveFlowsheet: (
+      request: SolveFlowsheetRequest
+    ) => Promise<SolveFlowsheetResult>
   }
 
   // Helper functions to create application Menus

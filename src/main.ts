@@ -827,6 +827,9 @@ ipcMain.handle('thermo.validateSelection', async (_event, data) => {
 ipcMain.handle('thermo.calculatePTFlash', (_event, data) =>
   invokeThermoCommand('CalculatePTFlash', data)
 )
+ipcMain.handle('thermo.solveFlowsheet', (_event, data) =>
+  invokeThermoCommand('SolveFlowsheet', data)
+)
 
 ipcMain.handle('startDeviceFlow', async (_, host: string) => {
   // Do an OAuth 2.0 Device Authorization Grant dance to get a token.

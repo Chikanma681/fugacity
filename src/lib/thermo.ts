@@ -37,6 +37,57 @@ export type FlashResult = {
   }>
 }
 
+export type SolveFlowsheetObject = {
+  id: string
+  tag: string
+  unitType: string
+  x: number
+  y: number
+  properties: Record<string, string | number | boolean>
+}
+
+export type SolveFlowsheetConnection = {
+  from: string
+  fromPort: number
+  to: string
+  toPort: number
+}
+
+export type SolveFlowsheetRequest = ThermoSelection & {
+  objects: SolveFlowsheetObject[]
+  connections: SolveFlowsheetConnection[]
+}
+
+export type StreamPhaseResult = {
+  fraction: number
+  moleFractions: Record<string, number>
+}
+
+export type StreamResult = {
+  temperatureK: number
+  pressurePa: number
+  massFlowKgPerS: number
+  molarFlowMolPerS: number
+  massEnthalpyJPerKg: number
+  vaporFraction: number
+  moleFractions: Record<string, number>
+  phases: Partial<Record<'vapor' | 'liquid1' | 'liquid2', StreamPhaseResult>>
+}
+
+export type FlowsheetObjectResult = {
+  tag: string
+  calculated: boolean
+  errorMessage: string
+  stream?: StreamResult
+  energyFlowW?: number
+}
+
+export type SolveFlowsheetResult = {
+  solved: boolean
+  errors: string[]
+  objects: Record<string, FlowsheetObjectResult>
+}
+
 export type ThermoError = {
   code: string
   message: string
@@ -81,4 +132,14 @@ export async function calculatePTFlash(
   }
 
   return window.electron.thermo.calculatePTFlash(request)
+}
+
+export async function solveFlowsheet(
+  request: SolveFlowsheetRequest
+): Promise<SolveFlowsheetResult> {
+  if (!window.electron?.thermo.solveFlowsheet) {
+    return unavailableOnWeb('SolveFlowsheet')
+  }
+
+  return window.electron.thermo.solveFlowsheet(request)
 }

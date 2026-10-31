@@ -74,6 +74,8 @@ const thermo = {
     ipcRenderer.invoke('thermo.validateSelection', selection),
   calculatePTFlash: (request: any) =>
     ipcRenderer.invoke('thermo.calculatePTFlash', request),
+  solveFlowsheet: (request: any) =>
+    ipcRenderer.invoke('thermo.solveFlowsheet', request),
 }
 
 const isMac = os.platform() === 'darwin'
