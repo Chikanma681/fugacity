@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { toFlowsheetDocument } from '@src/flowsheet/agent/document'
+import {
+  type FlowsheetOperation,
+  applyFlowsheetOperations,
+} from '@src/flowsheet/agent/operations'
+import { registerFlowsheetAgentTarget } from '@src/flowsheet/agent/tools'
 import type { FlowsheetState } from '@src/flowsheet/types'
 import { openDB } from '@src/lib/store/database'
 import {
@@ -31,6 +37,7 @@ export function useFlowsheetState(filePath: string | undefined) {
   })
   const stateRef = useRef(state)
   const sessionRef = useRef<FlowsheetSession | undefined>(undefined)
+  const revisionRef = useRef(0)
 
   useEffect(() => {
     let disposed = false
@@ -39,6 +46,7 @@ export function useFlowsheetState(filePath: string | undefined) {
       if (disposed) {
         return
       }
+      revisionRef.current += 1
       const canvasState = {
         ...next,
         filePath,
@@ -96,6 +104,12 @@ export function useFlowsheetState(filePath: string | undefined) {
       }
       const value =
         typeof change === 'function' ? change(current.value) : change
+      if (
+        value.nodes !== current.value.nodes ||
+        value.edges !== current.value.edges
+      ) {
+        revisionRef.current += 1
+      }
       const next = { ...current, value, error: null }
       stateRef.current = next
       setState(next)
@@ -144,6 +158,44 @@ export function useFlowsheetState(filePath: string | undefined) {
     },
     [updateState]
   )
+
+  const applyAgentOperations = useCallback(
+    async (revision: number, operations: FlowsheetOperation[]) => {
+      const current = stateRef.current
+      if (current.filePath !== filePath || !current.ready) {
+        return { error: 'The flowsheet is not ready for edits.' }
+      }
+      if (revision !== revisionRef.current) {
+        return {
+          error: `The flowsheet changed (now revision ${revisionRef.current}). Read it again before editing.`,
+        }
+      }
+      const result = applyFlowsheetOperations(current.value, operations)
+      if ('error' in result) {
+        return result
+      }
+      try {
+        await updateState(result)
+      } catch (error) {
+        return { error: error instanceof Error ? error.message : String(error) }
+      }
+      return toFlowsheetDocument(stateRef.current.value, revisionRef.current)
+    },
+    [filePath, updateState]
+  )
+
+  const isActive = state.filePath === filePath && state.ready && !!filePath
+  useEffect(() => {
+    if (!isActive) {
+      return
+    }
+    return registerFlowsheetAgentTarget({
+      read: () =>
+        toFlowsheetDocument(stateRef.current.value, revisionRef.current),
+      apply: applyAgentOperations,
+    })
+  }, [isActive, applyAgentOperations])
+
   const current =
     state.filePath === filePath
       ? state
