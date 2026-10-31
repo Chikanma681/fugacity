@@ -372,7 +372,7 @@ export const MlEphantConversationInput = (
               ? 'Type a follow-up to queue...'
               : props.hasAlreadySentPrompts
                 ? ''
-                : 'Create a gear with 10 teeth and use sensible defaults for everything else...'
+                : 'Create a three-phase separator with one input and three outputs'
           }
           onKeyDown={(e) => {
             const isOnlyEnter =
