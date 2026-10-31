@@ -1,6 +1,7 @@
 import type { EventFrom, StateFrom } from 'xstate'
 
 import type { CustomIconName } from '@src/components/CustomIcon'
+import { runSimulation } from '@src/flowsheet/simulationRun'
 import type { PropertyPackageOption } from '@src/lib/thermo'
 import type { simulationMachine } from '@src/machines/simulationMachine'
 
@@ -44,10 +45,12 @@ export const useToolbarConfig = ({
   openCompoundsDialog = () => {},
   propertyPackages = [],
   thermoUnavailableReason = null,
+  simulationRunning = false,
 }: {
   openCompoundsDialog?: () => void
   propertyPackages?: PropertyPackageOption[]
   thermoUnavailableReason?: string | null
+  simulationRunning?: boolean
 } = {}): ToolbarConfig => ({
   items: [
     {
@@ -112,15 +115,16 @@ export const useToolbarConfig = ({
     },
     {
       id: 'Run Simulation',
-      onClick: () => openCompoundsDialog(),
+      onClick: ({ simulationState }) =>
+        void runSimulation({
+          propertyPackageId: simulationState.context.selectedPropertyPackageId,
+          compoundIds: simulationState.context.selectedCompoundIds,
+        }),
       icon: 'play',
       status: thermoUnavailableReason ? 'unavailable' : 'available',
-      disabled: !!thermoUnavailableReason,
+      disabled: !!thermoUnavailableReason || simulationRunning,
       disabledReason: thermoUnavailableReason || undefined,
-      title: ({ simulationState }) =>
-        simulationState.context.selectedCompoundIds.length > 0
-          ? `Run Simulation`
-          : 'Run Simulation',
+      title: simulationRunning ? 'Running Simulation…' : 'Run Simulation',
       showTitle: true,
       description: 'Run the process simulation to get the results',
       links: [],

@@ -6,6 +6,7 @@ import {
   applyFlowsheetOperations,
 } from '@src/flowsheet/agent/operations'
 import { registerFlowsheetAgentTarget } from '@src/flowsheet/agent/tools'
+import { registerSimulationFlowsheet } from '@src/flowsheet/simulationRun'
 import type { FlowsheetState } from '@src/flowsheet/types'
 import { openDB } from '@src/lib/store/database'
 import {
@@ -189,11 +190,18 @@ export function useFlowsheetState(filePath: string | undefined) {
     if (!isActive) {
       return
     }
-    return registerFlowsheetAgentTarget({
+    const unregisterAgentTarget = registerFlowsheetAgentTarget({
       read: () =>
         toFlowsheetDocument(stateRef.current.value, revisionRef.current),
       apply: applyAgentOperations,
     })
+    const unregisterSimulationFlowsheet = registerSimulationFlowsheet(
+      () => stateRef.current.value
+    )
+    return () => {
+      unregisterAgentTarget()
+      unregisterSimulationFlowsheet()
+    }
   }, [isActive, applyAgentOperations])
 
   const current =

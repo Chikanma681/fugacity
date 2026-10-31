@@ -1,3 +1,4 @@
+import { useSignals } from '@preact/signals-react/runtime'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 
@@ -8,6 +9,7 @@ import type { CompoundOption } from '@src/components/CompoundsDialog'
 import { CustomIcon } from '@src/components/CustomIcon'
 import { useSimulation } from '@src/components/SimulationProvider'
 import Tooltip from '@src/components/Tooltip'
+import { simulationRun } from '@src/flowsheet/simulationRun'
 import { filterEscHotkey } from '@src/lib/hotkeyWrapper'
 import { isDesktop } from '@src/lib/isDesktop'
 import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
@@ -35,6 +37,7 @@ type ResolvedToolbarDropdown = {
 }
 
 const Toolbar_ = memo(() => {
+  useSignals()
   const iconClassName =
     'group-disabled:text-chalkboard-50 !text-inherit dark:group-enabled:group-hover:!text-inherit'
   const bgClassName = '!bg-transparent'
@@ -89,6 +92,7 @@ const Toolbar_ = memo(() => {
     openCompoundsDialog,
     propertyPackages,
     thermoUnavailableReason: thermoError,
+    simulationRunning: simulationRun.value.status === 'running',
   })
 
   const disableAllButtons = false
