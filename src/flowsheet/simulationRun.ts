@@ -1,4 +1,5 @@
 import { signal } from '@preact/signals-core'
+import { toast } from 'react-hot-toast'
 
 import { toSolveFlowsheetRequest } from '@src/flowsheet/solveRequest'
 import type { FlowsheetState } from '@src/flowsheet/types'
@@ -16,6 +17,8 @@ export type SimulationRun =
 
 export const simulationRun = signal<SimulationRun>({ status: 'idle' })
 
+const SIMULATION_TOAST_ID = 'simulation-run'
+
 let readFlowsheet: (() => FlowsheetState) | undefined
 
 export function registerSimulationFlowsheet(read: () => FlowsheetState) {
@@ -28,9 +31,19 @@ export function registerSimulationFlowsheet(read: () => FlowsheetState) {
 }
 
 function fail(error: unknown) {
-  simulationRun.value = {
-    status: 'failed',
-    error: error instanceof Error ? error.message : String(error),
+  const message = error instanceof Error ? error.message : String(error)
+  simulationRun.value = { status: 'failed', error: message }
+  toast.error(message, { id: SIMULATION_TOAST_ID })
+}
+
+function finish(result: SolveFlowsheetResult) {
+  simulationRun.value = { status: 'finished', result, finishedAt: new Date() }
+  if (result.solved) {
+    toast.success('Simulation finished.', { id: SIMULATION_TOAST_ID })
+  } else {
+    toast.error(result.errors.join('\n') || 'Simulation did not converge.', {
+      id: SIMULATION_TOAST_ID,
+    })
   }
 }
 
@@ -49,9 +62,9 @@ export async function runSimulation(selection: ThermoSelection) {
     return fail(request)
   }
   simulationRun.value = { status: 'running' }
+  toast.loading('Running simulation…', { id: SIMULATION_TOAST_ID })
   try {
-    const result = await solveFlowsheet(request)
-    simulationRun.value = { status: 'finished', result, finishedAt: new Date() }
+    finish(await solveFlowsheet(request))
   } catch (error) {
     fail(error)
   }
