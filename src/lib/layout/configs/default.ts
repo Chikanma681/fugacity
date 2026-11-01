@@ -172,7 +172,7 @@ const secondaryPane: Layout = {
   children: [
     {
       id: DefaultLayoutPaneID.TTC,
-      label: 'Zookeeper',
+      label: 'Gibbs',
       type: LayoutType.Simple,
       areaType: AreaType.TTC,
       icon: 'sparkles',
