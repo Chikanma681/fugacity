@@ -91,7 +91,7 @@ export const playwrightLayoutConfig: Layout = {
         },
         {
           id: DefaultLayoutPaneID.TTC,
-          label: 'Zookeeper',
+          label: 'Gibbs',
           type: LayoutType.Simple,
           areaType: AreaType.TTC,
           icon: 'sparkles',
