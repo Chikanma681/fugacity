@@ -289,7 +289,9 @@ function parsePaneLayout(
     layout.activeIndices.every(Number.isSafeInteger) &&
     layout.activeIndices.every((a) => a >= 0 && a < newChildren.length)
       ? layout.activeIndices
-      : [0]
+      : newChildren.length
+        ? [0]
+        : []
 
   // Invalid sizes is healable, divide space evenly
   const length = activeIndices.length
