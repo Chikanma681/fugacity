@@ -313,7 +313,7 @@ export const GibbsConversationInput = (props: GibbsConversationInputProps) => {
               ? 'Type a follow-up to queue...'
               : props.hasAlreadySentPrompts
                 ? ''
-                : 'Create a three-phase separator with one input and three outputs'
+                : 'Add a three-phase separator fed by crude oil, using SRK with an inlet T and P that converges'
           }
           onKeyDown={(e) => {
             const isOnlyEnter =
