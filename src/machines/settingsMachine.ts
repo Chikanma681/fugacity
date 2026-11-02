@@ -406,7 +406,7 @@ export const settingsMachine = setup({
           actions: ['setSettingAtLevel', 'toastSuccess'],
         },
 
-        'set.app.zookeeperMode': {
+        'set.app.gibbsMode': {
           target: 'persisting settings',
           actions: ['setSettingAtLevel'],
         },

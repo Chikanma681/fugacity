@@ -4,7 +4,6 @@ import { relevantFileExtensions } from '@src/lang/wasmUtils'
 import type { Command, CommandArgumentOption } from '@src/lib/commandTypes'
 import {
   writeEnvironmentConfigurationKittycadWebSocketUrl,
-  writeEnvironmentConfigurationMlephantWebSocketUrl,
   writeEnvironmentFile,
 } from '@src/lib/desktop'
 import { getUniqueProjectName } from '@src/lib/desktopFS'
@@ -481,53 +480,6 @@ export function createApplicationCommands({
     },
   }
 
-  const overrideZookeeperCommand: Command = {
-    name: 'override-zookeeper',
-    displayName: 'Override Zookeeper',
-    description: 'Connect to a custom Zookeeper WebSocket URL',
-    icon: 'gear',
-    groupId: 'application',
-    needsReview: true,
-    reviewValidation: async (context) => {
-      const url = context.argumentsToSubmit.url as string | undefined
-      if (url) {
-        try {
-          new URL(url)
-        } catch {
-          return new Error('Invalid Zookeeper WebSocket URL')
-        }
-      }
-    },
-    onSubmit: (data) => {
-      if (!window.electron) {
-        console.error(new Error('No file system present'))
-        return
-      }
-      const environmentName = env().VITE_ZOO_BASE_DOMAIN
-      if (environmentName)
-        writeEnvironmentConfigurationMlephantWebSocketUrl(
-          environmentName,
-          data?.url ?? ''
-        )
-          .then(() => {
-            window.location.reload()
-          })
-          .catch(reportRejection)
-    },
-    args: {
-      url: {
-        inputType: 'string',
-        required: false,
-        displayName: 'URL',
-        description: `
-          Replace **api.${env().VITE_ZOO_BASE_DOMAIN}** with **localhost:8080** for locally-running Zookeeper.
-          Alternatively, append **?pr=NUMBER** to connect to a deployed Pull Request.
-        `.trim(),
-        defaultValue: () => env().VITE_MLEPHANT_WEBSOCKET_URL ?? '',
-      },
-    },
-  }
-
   const resetLayoutCommand: Command = {
     name: 'reset-layout',
     displayName: 'Reset layout',
@@ -585,7 +537,6 @@ export function createApplicationCommands({
         createASampleDesktopOnly,
         switchEnvironmentsCommand,
         overrideEngineCommand,
-        overrideZookeeperCommand,
       ]
     : [
         addKCLFileToProject,

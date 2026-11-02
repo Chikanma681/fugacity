@@ -7,7 +7,7 @@ import { DebugPane } from '@src/components/layout/areas/DebugPane'
 import { KclEditorPane } from '@src/components/layout/areas/KclEditorPane'
 import { LogsPane } from '@src/components/layout/areas/LoggingPanes'
 import { MemoryPane } from '@src/components/layout/areas/MemoryPane'
-import { MlEphantConversationPaneWrapper } from '@src/components/layout/areas/MlEphantConversationPaneWrapper'
+import { GibbsConversationPaneWrapper } from '@src/components/layout/areas/GibbsConversationPaneWrapper'
 import { ProjectExplorerPane } from '@src/components/layout/areas/ProjectExplorerPane'
 import { ResultsPane } from '@src/components/layout/areas/ResultsPane'
 import { StreamsPane } from '@src/components/layout/areas/StreamsPane'
@@ -84,7 +84,7 @@ export const useDefaultAreaLibrary = () => {
             button:
               'bg-ml-green pressed:bg-transparent dark:!text-chalkboard-100 hover:dark:!text-inherit dark:pressed:!text-inherit',
           },
-          Component: MlEphantConversationPaneWrapper,
+          Component: GibbsConversationPaneWrapper,
         },
         equipments: {
           hide: () => false,

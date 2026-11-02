@@ -1,4 +1,5 @@
-import type { MlCopilotMode, WebSocketResponse } from '@kittycad/lib'
+import type { WebSocketResponse } from '@kittycad/lib'
+import type { GibbsMode } from '@src/lib/gibbs/types'
 
 import type { UnitLength } from '@rust/kcl-lib/bindings/ModelingCmd'
 import type { WarningLevel } from '@rust/kcl-lib/bindings/WarningLevel'
@@ -278,7 +279,6 @@ export type EnvironmentConfiguration = {
   domain: string // same name as the file development for development.json
   token: string // authentication token from signing in. Can be empty string
   kittycadWebSocketUrl?: string // optional override for Engine WebSocket URL
-  mlephantWebSocketUrl?: string // optional override for Zookeeper WebSocket URL
 }
 
 /**
@@ -288,7 +288,6 @@ export type EnvironmentConfiguration = {
 export type EnvironmentConfigurationRuntime = {
   domain: string // same name as the file development for development.json
   kittycadWebSocketUrl?: string // optional override for Engine WebSocket URL
-  mlephantWebSocketUrl?: string // optional override for Zookeeper WebSocket URL
 }
 
 export const ENVIRONMENT_CONFIGURATION_FOLDER = 'envs'
@@ -298,7 +297,6 @@ export const MAX_PROJECT_NAME_LENGTH = 240
 // It's so ugh that `uuid` package doesn't export this.
 export const REGEXP_UUIDV4 = /^[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}$/i
 
-export const LOCAL_STORAGE_ML_CONVERSATIONS = 'mlConversations'
 /** URL query param key we watch for prompt input
  *  we should never set this search param from the app,
  *  only read and delete.
@@ -318,8 +316,7 @@ export const PENDING_COMMAND_TIMEOUT = 60_000
 /** Timeout in MS to save layout */
 export const LAYOUT_SAVE_THROTTLE = 500
 
-// Zookeeper input
-export const DEFAULT_ML_COPILOT_MODE: MlCopilotMode = 'fast'
+export const DEFAULT_GIBBS_MODE: GibbsMode = 'fast'
 
 // Default backface color
 export const DEFAULT_BACKFACE_COLOR = '#00D5FF'

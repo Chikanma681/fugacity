@@ -48,6 +48,7 @@
     "@ts-stack/markdown": "^1.5.0",
     "@tweenjs/tween.js": "^23.1.1",
     "@xstate/react": "^4.1.1",
+    "ai": "^7.0.159",
     "better-queue": "^3.8.12",
     "better-queue-memory": "^1.0.4",
     "better-sqlite3": "^13.0.3",
@@ -87,7 +88,8 @@
     "web-vitals": "^3.5.2",
     "why-is-node-running": "^3.2.2",
     "xstate": "^5.28.0",
-    "yargs": "^18.0.0"
+    "yargs": "^18.0.0",
+    "zod": "^4.6.7"
   },
   "scripts": {
     "prepare": "husky",

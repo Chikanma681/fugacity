@@ -1,4 +1,4 @@
-import type { MlCopilotMode } from '@kittycad/lib/dist/types/src'
+import type { GibbsMode } from '@src/lib/gibbs/types'
 import type { Locator, Page } from '@playwright/test'
 
 export class CopilotFixture {
@@ -27,7 +27,7 @@ export class CopilotFixture {
     this.modeButton = this.page.getByTestId('ml-copilot-efforts-button')
   }
 
-  async setMode(mode: MlCopilotMode) {
+  async setMode(mode: GibbsMode) {
     await this.modeButton.click()
     const modeOption = this.page.getByTestId(`ml-copilot-effort-button-${mode}`)
     await modeOption.click()

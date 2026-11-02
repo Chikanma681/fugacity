@@ -3,7 +3,8 @@ import type { CameraOrbitType } from '@rust/kcl-lib/bindings/CameraOrbitType'
 import type { CameraProjectionType } from '@rust/kcl-lib/bindings/CameraProjectionType'
 import type { NamedView } from '@rust/kcl-lib/bindings/NamedView'
 import type { OnboardingStatus } from '@rust/kcl-lib/bindings/OnboardingStatus'
-import { type MlCopilotMode, type UserFeatureEntry, users } from '@kittycad/lib'
+import { type UserFeatureEntry, users } from '@kittycad/lib'
+import type { GibbsMode } from '@src/lib/gibbs/types'
 
 import { NIL as uuidNIL } from 'uuid'
 
@@ -14,7 +15,7 @@ import { cameraMouseDragGuards, cameraSystems } from '@src/lib/cameraControls'
 import {
   DEFAULT_BACKFACE_COLOR,
   DEFAULT_DEFAULT_LENGTH_UNIT,
-  DEFAULT_ML_COPILOT_MODE,
+  DEFAULT_GIBBS_MODE,
   DEFAULT_PROJECT_NAME,
   REGEXP_UUIDV4,
 } from '@src/lib/constants'
@@ -261,12 +262,12 @@ export function createSettings() {
         },
       }),
       /**
-       * Zookeeper reasoning mode
+       * Gibbs reasoning mode
        */
-      zookeeperMode: new Setting<MlCopilotMode>({
-        defaultValue: DEFAULT_ML_COPILOT_MODE,
+      gibbsMode: new Setting<GibbsMode>({
+        defaultValue: DEFAULT_GIBBS_MODE,
         validate: (v) => v === 'fast' || v === 'thoughtful',
-        hideOnPlatform: 'both', // this setting is managed by the Zookeeper pane
+        hideOnPlatform: 'both', // this setting is managed by the Gibbs pane
       }),
       /**
        * Stream resource saving behavior toggle

@@ -340,7 +340,7 @@ contextBridge.exposeInMainWorld('electron', {
         'NODE_ENV',
         'VITE_ZOO_BASE_DOMAIN',
         'VITE_KITTYCAD_WEBSOCKET_URL',
-        'VITE_MLEPHANT_WEBSOCKET_URL',
+        'VITE_GIBBS_API_URL',
         'VITE_ZOO_API_TOKEN',
       ])
     ),

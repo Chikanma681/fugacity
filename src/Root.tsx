@@ -5,17 +5,38 @@ import { OpenInDesktopAppHandler } from '@src/components/OpenInDesktopAppHandler
 import { SystemIOMachineLogicListener } from '@src/components/SystemIOMachineLogicListener'
 import { RouteProvider } from '@src/components/RouteProvider'
 import { Outlet } from 'react-router-dom'
-import { MlEphantManagerReactContext } from '@src/machines/mlEphantManagerMachine'
-import { useApp } from '@src/lib/boot'
+import env from '@src/env'
+import {
+  createGibbsChatTransport,
+  createGibbsHttpConversationStore,
+} from '@src/lib/gibbs/api'
+import {
+  type GibbsChatInput,
+  GibbsChatReactContext,
+} from '@src/machines/gibbsChatMachine'
+import {
+  MockChatTransport,
+  createInMemoryConversationStore,
+} from '@src/mocks/gibbs'
+
+function createGibbsChatInput(): GibbsChatInput {
+  const apiUrl = env().VITE_GIBBS_API_URL
+  return apiUrl
+    ? {
+        transport: createGibbsChatTransport(apiUrl),
+        conversations: createGibbsHttpConversationStore(apiUrl),
+      }
+    : {
+        transport: new MockChatTransport(),
+        conversations: createInMemoryConversationStore(),
+      }
+}
+
+const gibbsChatInput = createGibbsChatInput()
 
 // Root component will live for the entire applications runtime
 // This is a great place to add polling code.
 function RootLayout() {
-  const { auth } = useApp()
-  // Many providers need at the very least a Zoo API token to work.
-  // We can provide that here.
-  const apiToken = auth.useToken()
-
   return (
     <OpenInDesktopAppHandler>
       <RouteProvider>
@@ -24,20 +45,14 @@ function RootLayout() {
         on the project view or anywhere else in the app in the future. It should
         work regardless of the LSP or sketching being available, as users
         may simply want to ask it questions. */}
-          <MlEphantManagerReactContext.Provider
-            options={{
-              input: {
-                apiToken,
-              },
-            }}
-          >
+          <GibbsChatReactContext.Provider options={{ input: gibbsChatInput }}>
             <LspProvider>
               <AppStateProvider>
                 <SystemIOMachineLogicListener />
                 <Outlet />
               </AppStateProvider>
             </LspProvider>
-          </MlEphantManagerReactContext.Provider>
+          </GibbsChatReactContext.Provider>
         </Auth>
       </RouteProvider>
     </OpenInDesktopAppHandler>

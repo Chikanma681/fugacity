@@ -4,9 +4,10 @@ import { useApp } from '@src/lib/boot'
 
 export function EnvironmentChip() {
   let label = env().VITE_ZOO_BASE_DOMAIN
+  const gibbsApiUrl = env().VITE_GIBBS_API_URL
   const urls = [
     new URL(env().VITE_KITTYCAD_WEBSOCKET_URL ?? ''),
-    new URL(env().VITE_MLEPHANT_WEBSOCKET_URL ?? ''),
+    ...(gibbsApiUrl ? [new URL(gibbsApiUrl)] : []),
   ]
   for (const url of urls) {
     if (['localhost', '127.0.0.1', '0.0.0.0'].includes(url.hostname)) {
@@ -94,30 +95,9 @@ export function EnvironmentDescription() {
           </p>
         </li>
         <li className="flex flex-col px-2 py-2 gap-1 last:mb-0 ">
-          <p className="text-chalkboard-100 dark:text-chalkboard-10">
-            Zookeeper
-          </p>{' '}
-          <p className="text-chalkboard-60 dark:text-chalkboard-40 flex flex-row justify-between items-center">
-            <span className="flex-1 min-w-0 truncate">
-              {env().VITE_MLEPHANT_WEBSOCKET_URL}
-            </span>
-            <ActionButton
-              Element="button"
-              onClick={() => {
-                commands.send({
-                  type: 'Find and select command',
-                  data: {
-                    groupId: 'application',
-                    name: 'override-zookeeper',
-                    argDefaultValues: {
-                      url: env().VITE_MLEPHANT_WEBSOCKET_URL,
-                    },
-                  },
-                })
-              }}
-              iconEnd={{ icon: 'sketch', bgClassName: '!bg-transparent' }}
-              className="ml-3 p-0.5 pr-2 flex-shrink-0"
-            />
+          <p className="text-chalkboard-100 dark:text-chalkboard-10">Gibbs</p>{' '}
+          <p className="text-chalkboard-60 dark:text-chalkboard-40 truncate">
+            {env().VITE_GIBBS_API_URL ?? 'Mock (VITE_GIBBS_API_URL is not set)'}
           </p>
         </li>
       </ul>

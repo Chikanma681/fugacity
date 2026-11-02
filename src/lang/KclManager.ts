@@ -711,7 +711,6 @@ export class KclManager extends File {
   private executionTimeoutId: ReturnType<typeof setTimeout> | undefined =
     undefined
   public writeCausedByAppCheckedInFileTreeFileSystemWatcher = false
-  public mlEphantManagerMachineBulkManipulatingFileSystem = false
   /**
     Indicator Promise that is pending while a live write is happening.
     If this value isn't `null`, don't watch for file system writes it was probably us!

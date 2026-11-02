@@ -1,18 +1,12 @@
-import { getSelectionTypeDisplayText } from '@src/lib/selections'
+import type { UIMessage } from 'ai'
 import Loading from '@src/components/Loading'
-import { type Selections } from '@src/machines/modelingSharedTypes'
-import type { MlCopilotMode } from '@kittycad/lib'
 import { Popover } from '@headlessui/react'
 import { CustomIcon } from '@src/components/CustomIcon'
-import { ExchangeCard } from '@src/components/ExchangeCard'
-import type {
-  Conversation,
-  Exchange,
-} from '@src/machines/mlEphantManagerMachine'
+import { ChatBubble, GibbsMessageCard } from '@src/components/GibbsMessageCard'
 import type { ChangeEvent, ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { DEFAULT_ML_COPILOT_MODE } from '@src/lib/constants'
-import { useSingletons } from '@src/lib/boot'
+import { DEFAULT_GIBBS_MODE } from '@src/lib/constants'
+import type { GibbsMode } from '@src/lib/gibbs/types'
 import Tooltip from '@src/components/Tooltip'
 import { isExternalFileDrag } from '@src/components/Explorer/utils'
 
@@ -21,61 +15,57 @@ const noop = () => {}
 export interface QueuedMessage {
   id: string
   text: string
-  mode: MlCopilotMode
+  mode: GibbsMode
   attachments: File[]
 }
 
-export interface MlEphantConversationProps {
+export interface GibbsConversationProps {
   isLoading: boolean
-  conversation?: Conversation
-  contexts: MlEphantManagerPromptContext[]
-  onProcess: (request: string, mode: MlCopilotMode, attachments: File[]) => void
+  messages: UIMessage[]
+  error?: string
+  onRetry: () => void
+  onProcess: (request: string, mode: GibbsMode, attachments: File[]) => void
   onCancel: () => void
   onClickClearChat: () => void
-  onReconnect: () => void
   disabled?: boolean
-  needsReconnect: boolean
-  hasPromptCompleted: boolean
   userAvatarSrc?: string
-  blockedReason?: string
   defaultPrompt?: string
-  initialMlCopilotMode?: MlCopilotMode // resolved from project settings
-  onMlCopilotModeChange?: (mode: MlCopilotMode) => void
+  initialGibbsMode?: GibbsMode // resolved from project settings
+  onGibbsModeChange?: (mode: GibbsMode) => void
   isProcessing: boolean
   queue: QueuedMessage[]
   onRemoveFromQueue: (id: string) => void
   onSteer: (id: string) => void
 }
 
-const ML_COPILOT_MODE_META = Object.freeze({
+const GIBBS_MODE_META = Object.freeze({
   fast: {
     pretty: 'Fast',
-    description: 'Lighter reasoning. Best for quick edits and simple tasks.',
+    description:
+      'Lighter reasoning. Best for quick edits like adding a stream or changing an input.',
     icon: (props: { className: string }) => (
       <CustomIcon name="stopwatch" className={props.className} />
     ),
   },
   thoughtful: {
     pretty: 'Thoughtful',
-    description: 'More thorough reasoning. Best for complex designs.',
+    description:
+      'More thorough reasoning. Best for building or troubleshooting whole flowsheets.',
     icon: (props: { className: string }) => (
       <CustomIcon name="brain" className={props.className} />
     ),
   },
 } as const)
 
-const ML_COPILOT_MODE: Readonly<MlCopilotMode[]> = Object.freeze([
-  'fast',
-  'thoughtful',
-])
+const GIBBS_MODES: Readonly<GibbsMode[]> = Object.freeze(['fast', 'thoughtful'])
 
-export interface MlCopilotModesProps {
-  onClick: (mode: MlCopilotMode) => void
+export interface GibbsModesProps {
+  onClick: (mode: GibbsMode) => void
   children: ReactNode
-  current: MlCopilotMode
+  current: GibbsMode
 }
 
-const MlCopilotModes = (props: MlCopilotModesProps) => {
+const GibbsModes = (props: GibbsModesProps) => {
   return (
     <>
       <Popover className="relative">
@@ -90,7 +80,7 @@ const MlCopilotModes = (props: MlCopilotModesProps) => {
         <Popover.Panel className="absolute bottom-full left-0 z-20 flex flex-col gap-2 bg-default mb-1 p-2 border border-chalkboard-70 text-xs rounded-md min-w-[240px]">
           {({ close }) => (
             <>
-              {ML_COPILOT_MODE.map((mode) => (
+              {GIBBS_MODES.map((mode) => (
                 <div
                   tabIndex={0}
                   role="button"
@@ -102,15 +92,15 @@ const MlCopilotModes = (props: MlCopilotModesProps) => {
                   className={`flex flex-row items-start gap-2 cursor-pointer hover:bg-3 p-2 pr-4 rounded-md border ${props.current === mode ? 'border-primary' : ''}`}
                   data-testid={`ml-copilot-effort-button-${mode}`}
                 >
-                  {ML_COPILOT_MODE_META[mode].icon({
+                  {GIBBS_MODE_META[mode].icon({
                     className: 'w-5 h-5 shrink-0 mt-0.5',
                   })}
                   <div className="flex flex-col gap-0.5 min-w-0">
                     <span className="font-medium">
-                      {ML_COPILOT_MODE_META[mode].pretty}
+                      {GIBBS_MODE_META[mode].pretty}
                     </span>
                     <span className="text-chalkboard-70 text-[11px] leading-tight">
-                      {ML_COPILOT_MODE_META[mode].description}
+                      {GIBBS_MODE_META[mode].description}
                     </span>
                   </div>
                 </div>
@@ -123,29 +113,23 @@ const MlCopilotModes = (props: MlCopilotModesProps) => {
   )
 }
 
-export interface MlEphantExtraInputsProps {
-  // TODO: Expand to a list with no type restriction
-  context?: Extract<MlEphantManagerPromptContext, { type: 'selections' }>
-  mode: MlCopilotMode
-  onSetMode: (mode: MlCopilotMode) => void
+export interface GibbsExtraInputsProps {
+  mode: GibbsMode
+  onSetMode: (mode: GibbsMode) => void
   onAttachFiles: () => void
   attachmentsDisabled?: boolean
 }
 
-export const MlEphantExtraInputs = (props: MlEphantExtraInputsProps) => {
+export const GibbsExtraInputs = (props: GibbsExtraInputsProps) => {
   return (
     <div className="flex-1 flex min-w-0 items-end">
       <div className="flex flex-row w-fit-content items-end gap-1">
-        {/* TODO: Generalize to a MlCopilotContexts component */}
-        {props.context && (
-          <MlCopilotSelectionsContext selections={props.context} />
-        )}
-        <MlCopilotModes onClick={props.onSetMode} current={props.mode}>
-          {ML_COPILOT_MODE_META[props.mode].icon({
+        <GibbsModes onClick={props.onSetMode} current={props.mode}>
+          {GIBBS_MODE_META[props.mode].icon({
             className: 'w-5 h-5',
           })}
-          {ML_COPILOT_MODE_META[props.mode].pretty}
-        </MlCopilotModes>
+          {GIBBS_MODE_META[props.mode].pretty}
+        </GibbsModes>
         <button
           type="button"
           data-testid="ml-ephant-attachments-button"
@@ -164,63 +148,25 @@ export const MlEphantExtraInputs = (props: MlEphantExtraInputsProps) => {
   )
 }
 
-export const DummyContent = 'o|-<'
-
-export type MlEphantManagerPromptContext =
-  | {
-      type: 'selections'
-      data: Selections
-    }
-  | {
-      type: 'dummy'
-      data: typeof DummyContent
-    }
-
-export interface MlEphantContextsProps {
-  contexts: MlEphantManagerPromptContext[]
-}
-
-const MlCopilotSelectionsContext = (props: {
-  selections: Extract<MlEphantManagerPromptContext, { type: 'selections' }>
-}) => {
-  const { kclManager } = useSingletons()
-  const selectionText = getSelectionTypeDisplayText(
-    kclManager.astSignal.value,
-    props.selections.data
-  )
-  return selectionText ? (
-    <button className="group/tool h-7 bg-default flex-none flex flex-row items-center gap-1 m-0 pl-1 pr-2 rounded-sm">
-      <CustomIcon name="clipboardCheckmark" className="w-6 h-6 block" />
-      {selectionText}
-    </button>
-  ) : null
-}
-
-interface MlEphantConversationInputProps {
-  contexts: MlEphantManagerPromptContext[]
-  onProcess: MlEphantConversationProps['onProcess']
-  onReconnect: MlEphantConversationProps['onReconnect']
-  onCancel: MlEphantConversationProps['onCancel']
-  hasPromptCompleted: MlEphantConversationProps['hasPromptCompleted']
+interface GibbsConversationInputProps {
+  onProcess: GibbsConversationProps['onProcess']
+  onCancel: GibbsConversationProps['onCancel']
+  onRetry: GibbsConversationProps['onRetry']
+  error?: string
   disabled?: boolean
-  needsReconnect: boolean
   defaultPrompt?: string
   hasAlreadySentPrompts: boolean
-  initialMlCopilotMode?: MlCopilotMode
-  onMlCopilotModeChange?: (mode: MlCopilotMode) => void
+  initialGibbsMode?: GibbsMode
+  onGibbsModeChange?: (mode: GibbsMode) => void
   isProcessing: boolean
-  queue: QueuedMessage[]
-  onRemoveFromQueue: (id: string) => void
 }
 
-export const MlEphantConversationInput = (
-  props: MlEphantConversationInputProps
-) => {
+export const GibbsConversationInput = (props: GibbsConversationInputProps) => {
   const refDiv = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState<string>('')
-  const [mode, setMode] = useState<MlCopilotMode>(
-    props.initialMlCopilotMode ?? DEFAULT_ML_COPILOT_MODE
+  const [mode, setMode] = useState<GibbsMode>(
+    props.initialGibbsMode ?? DEFAULT_GIBBS_MODE
   )
   const [attachments, setAttachments] = useState<File[]>([])
   const [isDraggingOver, setIsDraggingOver] = useState(false)
@@ -229,9 +175,8 @@ export const MlEphantConversationInput = (
   useEffect(() => setValue(props.defaultPrompt || ''), [props.defaultPrompt])
 
   useEffect(() => {
-    const next = props.initialMlCopilotMode ?? DEFAULT_ML_COPILOT_MODE
-    setMode(next)
-  }, [props.initialMlCopilotMode])
+    setMode(props.initialGibbsMode ?? DEFAULT_GIBBS_MODE)
+  }, [props.initialGibbsMode])
 
   const onClick = () => {
     if (props.disabled) return
@@ -332,10 +277,6 @@ export const MlEphantConversationInput = (
     appendAttachments(files)
   }
 
-  const selectionsContext:
-    | Extract<MlEphantManagerPromptContext, { type: 'selections' }>
-    | undefined = props.contexts.filter((m) => m.type === 'selections')[0]
-
   return (
     <div className="flex flex-col p-4 gap-2">
       <div
@@ -408,26 +349,27 @@ export const MlEphantConversationInput = (
             ))}
           </div>
         )}
-        {}
         <div className="flex items-end">
-          <MlEphantExtraInputs
-            context={selectionsContext}
+          <GibbsExtraInputs
             mode={mode}
             onSetMode={(m) => {
               setMode(m)
-              props.onMlCopilotModeChange?.(m)
+              props.onGibbsModeChange?.(m)
             }}
             onAttachFiles={onAttachFiles}
             attachmentsDisabled={props.disabled}
           />
           <div className="flex flex-row gap-1">
-            {!props.disabled && props.needsReconnect && (
+            {props.error && (
               <div className="flex flex-col w-fit items-end">
-                <div className="pr-1 text-xs text-red-500 flex flex-row items-center h-5">
+                <div
+                  className="pr-1 text-xs text-red-500 flex flex-row items-center h-5"
+                  title={props.error}
+                >
                   <CustomIcon name="close" className="w-7 h-7" />{' '}
-                  <span>Disconnected</span>
+                  <span>Something went wrong</span>
                 </div>
-                <button onClick={props.onReconnect}>Reconnect</button>
+                <button onClick={props.onRetry}>Retry</button>
               </div>
             )}
             {props.isProcessing && (
@@ -463,80 +405,65 @@ export const MlEphantConversationInput = (
   )
 }
 
-const StarterCard = ({ text }: { text: string }) => {
-  const [, setTrigger] = useState<number>(0)
+const StarterCard = ({ text }: { text: string }) => (
+  <div className="flex flex-col px-4 py-2 text-sm">
+    <ChatBubble
+      side="left"
+      wfull={true}
+      userAvatar={<div className="h-7 w-7 avatar bg-img-mel" />}
+      className="py-4"
+    >
+      {text}
+    </ChatBubble>
+  </div>
+)
 
-  useEffect(() => {
-    const i = setInterval(() => {
-      setTrigger((t) => t + 1)
-    }, 500)
-    return () => {
-      clearInterval(i)
-    }
-  }, [])
-
-  return (
-    <ExchangeCard
-      onClickClearChat={() => {}}
-      isLastResponse={false}
-      responses={[]}
-      deltasAggregated={text}
-    />
-  )
+const PENDING_RESPONSE: UIMessage = {
+  id: 'gibbs-pending-response',
+  role: 'assistant',
+  parts: [],
 }
 
-export const MlEphantConversation = (props: MlEphantConversationProps) => {
+export const GibbsConversation = (props: GibbsConversationProps) => {
   const refScroll = useRef<HTMLDivElement>(null)
-  const exchangesLength = props.conversation?.exchanges.length ?? 0
-  const lastExchange = exchangesLength
-    ? props.conversation?.exchanges[exchangesLength - 1]
-    : undefined
-  const isEndOfStream = lastExchange?.responses.some(
-    (ex) => 'end_of_stream' in ex || 'error' in ex || 'info' in ex
-  )
+  const lastMessage = props.messages.at(-1)
+  const messages =
+    props.isProcessing && lastMessage?.role === 'user'
+      ? [...props.messages, PENDING_RESPONSE]
+      : props.messages
 
-  // Autoscroll: right after sending a prompt when the new exchange is added
-  useEffect(() => {
-    if (exchangesLength === 0) return
-
+  const scrollToBottom = () => {
     requestAnimationFrame(() => {
-      if (refScroll.current) {
-        refScroll.current.scrollTo({
-          top: refScroll.current.scrollHeight,
-          behavior: 'smooth',
-        })
-      }
-    })
-  }, [exchangesLength])
-
-  // Autoscroll: right after Zookeeper completes its turn in the exchange.
-  useEffect(() => {
-    if (isEndOfStream) {
-      requestAnimationFrame(() => {
-        if (refScroll.current) {
-          refScroll.current.scrollTo({
-            top: refScroll.current.scrollHeight,
-            behavior: 'smooth',
-          })
-        }
+      refScroll.current?.scrollTo({
+        top: refScroll.current.scrollHeight,
+        behavior: 'smooth',
       })
-    }
-  }, [isEndOfStream])
+    })
+  }
 
-  const exchangeCards = props.conversation?.exchanges.flatMap(
-    (exchange: Exchange, exchangeIndex: number, list) => {
-      const isLastResponse = exchangeIndex === list.length - 1
-      return (
-        <ExchangeCard
-          key={`exchange-${exchangeIndex}`}
-          {...exchange}
-          userAvatar={props.userAvatarSrc}
-          isLastResponse={isLastResponse}
-          onClickClearChat={isLastResponse ? props.onClickClearChat : noop}
-        />
-      )
-    }
-  )
+  // Autoscroll: right after sending a prompt when the new message is added
+  useEffect(() => {
+    if (messages.length > 0) scrollToBottom()
+  }, [messages.length])
+
+  // Autoscroll: right after Gibbs completes its turn.
+  useEffect(() => {
+    if (!props.isProcessing) scrollToBottom()
+  }, [props.isProcessing])
+
+  const messageCards = messages.map((message, index) => {
+    const isLastMessage = index === messages.length - 1
+    return (
+      <GibbsMessageCard
+        key={message.id}
+        message={message}
+        userAvatar={props.userAvatarSrc}
+        isLastMessage={isLastMessage}
+        isStreaming={isLastMessage && props.isProcessing}
+        onClickClearChat={isLastMessage ? props.onClickClearChat : noop}
+      />
+    )
+  })
 
   return (
     <div className="relative">
@@ -544,18 +471,16 @@ export const MlEphantConversation = (props: MlEphantConversationProps) => {
         <div className="flex flex-col h-full">
           <div className="h-full flex flex-col justify-end overflow-auto relative">
             <div className="overflow-auto" ref={refScroll}>
-              {props.blockedReason ? (
-                <StarterCard text={props.blockedReason} />
-              ) : props.isLoading === false || props.needsReconnect ? (
-                exchangeCards !== undefined && exchangeCards.length > 0 ? (
+              {props.isLoading === false ? (
+                messageCards.length > 0 ? (
                   <>
-                    {exchangeCards}
-                    {lastExchange && !isEndOfStream && (
+                    {messageCards}
+                    {props.isProcessing && (
                       <div className="absolute z-10 bottom-0 h-[1px] bg-ml-green animate-shimmer w-full" />
                     )}
                   </>
                 ) : (
-                  <StarterCard text="Try requesting a model, ask engineering questions, or let's explore ideas." />
+                  <StarterCard text="Ask Gibbs to build or edit your flowsheet, or ask a process engineering question." />
                 )
               ) : (
                 <div className="text-center p-4">
@@ -581,7 +506,7 @@ export const MlEphantConversation = (props: MlEphantConversationProps) => {
                     </span>
                   )}
                   <span className="text-3 shrink-0">
-                    {ML_COPILOT_MODE_META[msg.mode].pretty}
+                    {GIBBS_MODE_META[msg.mode].pretty}
                   </span>
                   <button
                     type="button"
@@ -608,27 +533,17 @@ export const MlEphantConversation = (props: MlEphantConversationProps) => {
             </div>
           )}
           <div className="border-t b-4">
-            <MlEphantConversationInput
-              contexts={props.contexts}
-              disabled={
-                Boolean(props.blockedReason) ||
-                props.disabled ||
-                props.isLoading
-              }
-              hasPromptCompleted={props.hasPromptCompleted}
-              needsReconnect={props.needsReconnect}
+            <GibbsConversationInput
+              disabled={props.disabled || props.isLoading}
+              error={props.error}
+              onRetry={props.onRetry}
               onProcess={props.onProcess}
-              initialMlCopilotMode={props.initialMlCopilotMode}
-              onMlCopilotModeChange={props.onMlCopilotModeChange}
-              onReconnect={props.onReconnect}
+              initialGibbsMode={props.initialGibbsMode}
+              onGibbsModeChange={props.onGibbsModeChange}
               onCancel={props.onCancel}
               defaultPrompt={props.defaultPrompt}
-              hasAlreadySentPrompts={
-                exchangeCards !== undefined && exchangeCards.length > 0
-              }
+              hasAlreadySentPrompts={messageCards.length > 0}
               isProcessing={props.isProcessing}
-              queue={props.queue}
-              onRemoveFromQueue={props.onRemoveFromQueue}
             />
           </div>
         </div>

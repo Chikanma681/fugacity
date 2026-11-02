@@ -924,33 +924,6 @@ export const readEnvironmentConfigurationKittycadWebSocketUrl = async (
   return environmentConfiguration.kittycadWebSocketUrl.trim()
 }
 
-export const writeEnvironmentConfigurationMlephantWebSocketUrl = async (
-  environmentName: string,
-  mlephantWebSocketUrl: string
-) => {
-  mlephantWebSocketUrl = mlephantWebSocketUrl.trim()
-  const path = await getEnvironmentConfigurationPath(environmentName)
-  const environmentConfiguration =
-    await getEnvironmentConfigurationObject(environmentName)
-  environmentConfiguration.mlephantWebSocketUrl = mlephantWebSocketUrl
-  const requestedConfiguration = JSON.stringify(environmentConfiguration)
-  const result = await fsZds.writeFile(
-    path,
-    new TextEncoder().encode(requestedConfiguration)
-  )
-  console.log(`wrote ${environmentName}.json to disk`)
-  return result
-}
-
-export const readEnvironmentConfigurationMlephantWebSocketUrl = async (
-  environmentName: string
-) => {
-  const environmentConfiguration =
-    await readEnvironmentConfigurationFile(environmentName)
-  if (!environmentConfiguration?.mlephantWebSocketUrl) return ''
-  return environmentConfiguration.mlephantWebSocketUrl.trim()
-}
-
 export const readEnvironmentFile = async () => {
   let environmentFilePath = await getEnvironmentFilePath()
   console.log(readEnvironmentFile)

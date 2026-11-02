@@ -4,81 +4,18 @@ import { ActionIcon } from '@src/components/ActionIcon'
 // Yea, feels bad, but literally every other pane is doing this.
 // TODO: Don't use CSS module for this? More generic module?
 import styles from './KclEditorMenu.module.css'
-import { useApp, useSingletons } from '@src/lib/boot'
-import { MlEphantConversationPane } from '@src/components/layout/areas/MlEphantConversationPane'
-import { useModelingContext } from '@src/hooks/useModelingContext'
+import { useApp } from '@src/lib/boot'
+import { GibbsConversationPane } from '@src/components/layout/areas/GibbsConversationPane'
 import { LayoutPanel, LayoutPanelHeader } from '@src/components/layout/Panel'
 import type { AreaTypeComponentProps } from '@src/lib/layout'
-import {
-  MlEphantConversationToMarkdown,
-  MlEphantManagerReactContext,
-} from '@src/machines/mlEphantManagerMachine'
-import { BillingTransition } from '@src/machines/billingMachine'
+import { gibbsConversationToMarkdown } from '@src/lib/gibbs/markdown'
+import { GibbsChatReactContext } from '@src/machines/gibbsChatMachine'
 import { useSignals } from '@preact/signals-react/runtime'
 
-export function MlEphantConversationPaneWrapper(props: AreaTypeComponentProps) {
-  useSignals()
-  const { auth, billing, settings, project, systemIOActor } = useApp()
-  const { kclManager } = useSingletons()
-  const settingsValues = settings.useSettings()
-  const user = auth.useUser()
-  const token = auth.useToken()
-  const {
-    context: contextModeling,
-    send: sendModeling,
-    theProject,
-  } = useModelingContext()
-  const loaderFile = project?.executingFileEntry.value
-  const mlEphantManagerActor = MlEphantManagerReactContext.useActorRef()
-
-  const sendBillingUpdate = () => {
-    billing.send({
-      type: BillingTransition.Update,
-      apiToken: token,
-    })
-  }
-
-  return (
-    <LayoutPanel
-      title={props.layout.label}
-      id={`${props.layout.id}-pane`}
-      className="border-none"
-    >
-      <LayoutPanelHeader
-        id={props.layout.id}
-        icon="robot"
-        title="Gibbs"
-        onClose={props.onClose}
-        Menu={MlEphantConversationMenu}
-      />
-      <MlEphantConversationPane
-        {...{
-          mlEphantManagerActor: mlEphantManagerActor,
-          systemIOActor,
-          kclManager,
-          contextModeling,
-          sendModeling,
-          sendBillingUpdate,
-          theProject: theProject.current,
-          loaderFile,
-          settings: settingsValues,
-          user,
-          onMlCopilotModeChange: (mode) => {
-            settings.actor.send({
-              type: 'set.app.zookeeperMode',
-              data: { level: 'project', value: mode },
-            })
-          },
-        }}
-      />
-    </LayoutPanel>
-  )
-}
-
-export const MlEphantConversationMenu = ({
+export const GibbsConversationMenu = ({
   children,
 }: React.PropsWithChildren) => {
-  const mlEphantManagerActor = MlEphantManagerReactContext.useActorRef()
+  const gibbsChatActor = GibbsChatReactContext.useActorRef()
 
   return (
     <Menu>
@@ -107,8 +44,8 @@ export const MlEphantConversationMenu = ({
           <Menu.Item>
             <button
               onClick={() => {
-                const context = mlEphantManagerActor.getSnapshot().context
-                const md = MlEphantConversationToMarkdown(context.conversation)
+                const context = gibbsChatActor.getSnapshot().context
+                const md = gibbsConversationToMarkdown(context.messages)
                 const blob = new Blob([new TextEncoder().encode(md)], {
                   type: 'text/markdown',
                 })
@@ -126,5 +63,41 @@ export const MlEphantConversationMenu = ({
         </Menu.Items>
       </div>
     </Menu>
+  )
+}
+
+export function GibbsConversationPaneWrapper(props: AreaTypeComponentProps) {
+  useSignals()
+  const { auth, settings } = useApp()
+  const settingsValues = settings.useSettings()
+  const user = auth.useUser()
+  const gibbsChatActor = GibbsChatReactContext.useActorRef()
+
+  return (
+    <LayoutPanel
+      title={props.layout.label}
+      id={`${props.layout.id}-pane`}
+      className="border-none"
+    >
+      <LayoutPanelHeader
+        id={props.layout.id}
+        icon="robot"
+        title="Gibbs"
+        onClose={props.onClose}
+        Menu={GibbsConversationMenu}
+      />
+      <GibbsConversationPane
+        gibbsChatActor={gibbsChatActor}
+        projectId={settingsValues.meta.id.current}
+        userAvatar={user?.image}
+        gibbsMode={settingsValues.app.gibbsMode.current}
+        onGibbsModeChange={(mode) => {
+          settings.actor.send({
+            type: 'set.app.gibbsMode',
+            data: { level: 'project', value: mode },
+          })
+        }}
+      />
+    </LayoutPanel>
   )
 }

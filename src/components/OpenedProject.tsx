@@ -1,5 +1,4 @@
 import type { Project } from '@src/lib/project'
-import { useSelector } from '@xstate/react'
 import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useHotkeys } from 'react-hotkeys-hook'
@@ -50,15 +49,10 @@ import {
 import { useDefaultAreaLibrary } from '@src/lib/layout/defaultAreaLibrary'
 import { useDefaultActionLibrary } from '@src/lib/layout/defaultActionLibrary'
 import { getResolvedTheme } from '@src/lib/theme'
-import {
-  MlEphantManagerReactContext,
-  MlEphantManagerTransitions,
-} from '@src/machines/mlEphantManagerMachine'
 import { useSignalEffect } from '@preact/signals-react'
 import { UnitsMenu } from '@src/components/UnitsMenu'
 import { ExperimentalFeaturesMenu } from '@src/components/ExperimentalFeaturesMenu'
 import { ZookeeperCreditsMenu } from '@src/components/ZookeeperCreditsMenu'
-import { resetCameraPosition } from '@src/lib/resetCameraPosition'
 import { useSignals } from '@preact/signals-react/runtime'
 import { isMobile } from '@src/lib/isMobile'
 import { isDesktop } from '@src/lib/isDesktop'
@@ -81,7 +75,6 @@ export function OpenedProject() {
   const { state: modelingState } = useModelingContext()
   useQueryParamEffects(kclManager)
   const [nativeFileMenuCreated, setNativeFileMenuCreated] = useState(false)
-  const mlEphantManagerActor2 = MlEphantManagerReactContext.useActorRef()
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -99,8 +92,6 @@ export function OpenedProject() {
 
   const projectName = project?.name || null
   const projectPath = project?.path || null
-
-  const systemIOState = useSelector(systemIOActor, (actor) => actor.value)
 
   // Handle our project folder disappearing (Go back to Projects listing)
   useEffect(() => {
@@ -123,25 +114,6 @@ export function OpenedProject() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, lastOperation])
 
-  // ZOOKEEPER BEHAVIOR EXCEPTION
-  // Only fires on state changes, to deal with Zookeeper control.
-  useEffect(() => {
-    if (systemIOState !== 'idle') return
-    if (kclManager.mlEphantManagerMachineBulkManipulatingFileSystem === false)
-      return
-    kclManager
-      .executeCode()
-      .then(async () => {
-        await resetCameraPosition({
-          sceneInfra: kclManager.sceneInfra,
-          engineCommandManager: kclManager.engineCommandManager,
-          settingsActor,
-        })
-      })
-      .catch(reportRejection)
-    kclManager.mlEphantManagerMachineBulkManipulatingFileSystem = false
-  }, [systemIOState, kclManager, settingsActor])
-
   // Run LSP file open hook when navigating between projects or files
   useEffect(() => {
     onProjectOpen(
@@ -149,14 +121,6 @@ export function OpenedProject() {
       project?.executingPath ? project.executingFileEntry.value : null
     )
   }, [onProjectOpen, projectName, projectPath, project])
-
-  useEffect(() => {
-    // Clear conversation
-    mlEphantManagerActor2.send({
-      type: MlEphantManagerTransitions.ConversationClose,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-  }, [projectName, projectPath])
 
   useHotKeyListener(kclManager)
 

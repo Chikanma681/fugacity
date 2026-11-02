@@ -7,7 +7,6 @@ export function generateDomainsFromBaseDomain(baseDomain: string | undefined) {
     API_URL: `https://api.${normalizedBaseDomain}`,
     SITE_URL: `https://${normalizedBaseDomain}`,
     KITTYCAD_WEBSOCKET_URL: `wss://api.${normalizedBaseDomain}/ws/modeling/commands`,
-    MLEPHANT_WEBSOCKET_URL: `wss://api.${normalizedBaseDomain}/ws/ml/copilot`,
     APP_URL: `https://app.${normalizedBaseDomain}`,
   }
 }
@@ -17,7 +16,7 @@ export type EnvironmentVariables = {
   readonly VITE_ZOO_BASE_DOMAIN: string | undefined
   readonly VITE_ZOO_API_BASE_URL: string | undefined
   readonly VITE_KITTYCAD_WEBSOCKET_URL: string | undefined
-  readonly VITE_MLEPHANT_WEBSOCKET_URL: string | undefined
+  readonly VITE_GIBBS_API_URL: string | undefined
   readonly VITE_ZOO_API_TOKEN: string | undefined
   readonly VITE_ZOO_SITE_BASE_URL: string | undefined
   readonly VITE_ZOO_SITE_APP_URL: string | undefined
@@ -57,23 +56,12 @@ export const updateEnvironmentKittycadWebSocketUrl = (
   }
 }
 
-export const updateEnvironmentMlephantWebSocketUrl = (
-  environmentName: string,
-  mlephantWebSocketUrl: string
-) => {
-  if (!ENVIRONMENT) return
-  if (ENVIRONMENT.domain === environmentName) {
-    ENVIRONMENT.mlephantWebSocketUrl = mlephantWebSocketUrl
-  }
-}
-
 // Do not export the entire Environment! Use env()
 const getEnvironmentFromThisFile = (baseDomain: string | undefined) => {
   return (
     ENVIRONMENT || {
       domain: baseDomain ?? '',
       kittycadWebSocketUrl: undefined,
-      mlephantWebSocketUrl: undefined,
     }
   )
 }
@@ -124,13 +112,8 @@ export default (): EnvironmentVariables => {
     'VITE_ZOO_API_BASE_URL' in env ? env.VITE_ZOO_API_BASE_URL : undefined
 
   let BASE_DOMAIN = env.VITE_ZOO_BASE_DOMAIN
-  let {
-    API_URL,
-    SITE_URL,
-    KITTYCAD_WEBSOCKET_URL,
-    MLEPHANT_WEBSOCKET_URL,
-    APP_URL,
-  } = generateDomainsFromBaseDomain(BASE_DOMAIN)
+  let { API_URL, SITE_URL, KITTYCAD_WEBSOCKET_URL, APP_URL } =
+    generateDomainsFromBaseDomain(BASE_DOMAIN)
 
   /**
    * If you are desktop, see if you have any runtime environment which can be read from disk and
@@ -148,7 +131,6 @@ export default (): EnvironmentVariables => {
     API_URL = environmentDomains.API_URL
     SITE_URL = environmentDomains.SITE_URL
     KITTYCAD_WEBSOCKET_URL = environmentDomains.KITTYCAD_WEBSOCKET_URL
-    MLEPHANT_WEBSOCKET_URL = environmentDomains.MLEPHANT_WEBSOCKET_URL
     APP_URL = environmentDomains.APP_URL
     BASE_DOMAIN = environment.domain
   }
@@ -165,19 +147,14 @@ export default (): EnvironmentVariables => {
   ) {
     KITTYCAD_WEBSOCKET_URL = env.VITE_KITTYCAD_WEBSOCKET_URL
   }
-  if (
-    env.VITE_MLEPHANT_WEBSOCKET_URL &&
-    env.VITE_MLEPHANT_WEBSOCKET_URL !== 'undefined'
-  ) {
-    MLEPHANT_WEBSOCKET_URL = env.VITE_MLEPHANT_WEBSOCKET_URL
-  }
+  const GIBBS_API_URL =
+    env.VITE_GIBBS_API_URL && env.VITE_GIBBS_API_URL !== 'undefined'
+      ? env.VITE_GIBBS_API_URL
+      : undefined
 
-  // Allow the in-app settings to override local WebSocket URLs
+  // Allow the in-app settings to override the local Engine WebSocket URL
   if (environment.kittycadWebSocketUrl) {
     KITTYCAD_WEBSOCKET_URL = environment.kittycadWebSocketUrl
-  }
-  if (environment.mlephantWebSocketUrl) {
-    MLEPHANT_WEBSOCKET_URL = environment.mlephantWebSocketUrl
   }
 
   const environmentVariables: EnvironmentVariables = {
@@ -185,7 +162,7 @@ export default (): EnvironmentVariables => {
     VITE_ZOO_BASE_DOMAIN: BASE_DOMAIN || undefined,
     VITE_ZOO_API_BASE_URL: API_URL || undefined,
     VITE_KITTYCAD_WEBSOCKET_URL: KITTYCAD_WEBSOCKET_URL || undefined,
-    VITE_MLEPHANT_WEBSOCKET_URL: MLEPHANT_WEBSOCKET_URL || undefined,
+    VITE_GIBBS_API_URL: GIBBS_API_URL,
     VITE_ZOO_API_TOKEN:
       env.VITE_ZOO_API_TOKEN || env.VITE_KITTYCAD_API_TOKEN || undefined,
     VITE_ZOO_SITE_BASE_URL: SITE_URL || undefined,

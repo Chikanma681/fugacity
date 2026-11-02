@@ -12,28 +12,24 @@ import {
   webSafePathSplit,
 } from '@src/lib/paths'
 import { useApp, useSingletons } from '@src/lib/boot'
-import { MlEphantManagerReactContext } from '@src/machines/mlEphantManagerMachine'
 import {
   useHasListedProjects,
   useLastOperation,
   useProjectDirectoryPath,
-  useProjectIdToConversationId,
   useRequestedFileName,
   useRequestedProjectName,
-  useWatchForNewFileRequestsFromMlEphant,
 } from '@src/machines/systemIO/hooks'
 import {
   NO_PROJECT_DIRECTORY,
   SystemIOMachineEvents,
   SystemIOMachineStates,
-  prepareMlEphantNewFileRequest,
 } from '@src/machines/systemIO/utils'
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLocation } from 'react-router-dom'
 
 export function SystemIOMachineLogicListener() {
-  const { auth, billing, settings, systemIOActor } = useApp()
+  const { settings, systemIOActor } = useApp()
   const { kclManager } = useSingletons()
   // We gotta stop with this pattern. It doesn't scale. "Eager hook creation"
   const requestedProjectName = useRequestedProjectName()
@@ -44,7 +40,6 @@ export function SystemIOMachineLogicListener() {
 
   const navigate = useNavigate()
   const settingsValues = settings.useSettings()
-  const token = auth.useToken()
   const { onFileOpen, onFileClose } = useLspContext()
   const { pathname } = useLocation()
 
@@ -249,41 +244,6 @@ export function SystemIOMachineLogicListener() {
         : []
     )
   }
-
-  const mlEphantManagerActor = MlEphantManagerReactContext.useActorRef()
-
-  useWatchForNewFileRequestsFromMlEphant(
-    mlEphantManagerActor,
-    billing.actor,
-    token,
-    kclManager.engineCommandManager,
-    (props) => {
-      const payload = prepareMlEphantNewFileRequest(props)
-
-      if (payload) {
-        kclManager.mlEphantManagerMachineBulkManipulatingFileSystem = true
-        systemIOActor.send({
-          type: SystemIOMachineEvents.bulkCreateAndDeleteKCLFilesAndNavigateToFile,
-          data: {
-            files: payload.files,
-            override: true,
-            // Gotcha: Both are called "project name" and "file name", but one of them
-            // has to include the project-relative file path between the two.
-            requestedProjectName: payload.requestedProjectName,
-            requestedFileNameWithExtension:
-              payload.requestedFileNameWithExtension ?? '',
-          },
-        })
-      }
-    }
-  )
-
-  // Save the conversation id for the project id if necessary.
-  useProjectIdToConversationId(
-    mlEphantManagerActor,
-    systemIOActor,
-    settingsValues
-  )
 
   useGlobalProjectNavigation()
   useGlobalFileNavigation()

@@ -97,12 +97,22 @@ const readEnvironmentDomainForCsp = async () => {
   }
 }
 
+const toOrigin = (value?: string) => {
+  try {
+    return value ? new URL(value).origin : undefined
+  } catch {
+    return undefined
+  }
+}
+
 const buildCsp = (domain?: string) => {
   const connectSources = uniqueSources([
     "'self'",
     'https://plausible.corp.zoo.dev',
     domain ? `https://api.${domain}` : undefined,
     domain ? `wss://api.${domain}` : undefined,
+    'http://localhost:8787',
+    toOrigin(process.env.VITE_GIBBS_API_URL),
   ])
 
   return (

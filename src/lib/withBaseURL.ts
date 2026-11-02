@@ -12,8 +12,8 @@ export function withKittycadWebSocketURL(qs: string): string {
   return mergeQueryString(env().VITE_KITTYCAD_WEBSOCKET_URL, qs)
 }
 
-export function withMlephantWebSocketURL(qs: string): string {
-  return mergeQueryString(env().VITE_MLEPHANT_WEBSOCKET_URL, qs)
+export function withGibbsAPIURL(path: string): string {
+  return env().VITE_GIBBS_API_URL + path
 }
 
 function mergeQueryString(url: string | undefined, qs: string): string {
