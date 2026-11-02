@@ -99,7 +99,7 @@ export const OpenInDesktopAppHandler = (props: React.PropsWithChildren) => {
           <div className="mb-4">Launching </div>
           <div className="flex items-center gap-4 flex-wrap text-4xl">
             <Logo className="w-40" aria-label="Zoo" />
-            <span>Design Studio</span>
+            <span>Fugacity</span>
           </div>
         </h1>
         <div className="flex flex-col gap-4 items-center">

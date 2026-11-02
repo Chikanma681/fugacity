@@ -68,7 +68,7 @@ export const Router = () => {
                   <Suspense
                     fallback={
                       <div className="absolute inset-0 grid place-content-center">
-                        <Loading>Loading Design Studio...</Loading>
+                        <Loading>Loading Fugacity...</Loading>
                       </div>
                     }
                   >

@@ -85,7 +85,7 @@ function Welcome() {
   return (
     <div className="cursor-not-allowed fixed inset-0 z-50 grid items-end justify-center p-2">
       <OnboardingCard>
-        <h1 className="text-xl font-bold">Welcome to Zoo Design Studio</h1>
+        <h1 className="text-xl font-bold">Welcome to Fugacity</h1>
         <p className="my-4">
           Here is an assembly of a CPU fan that was made in Zoo Design Studio.
         </p>

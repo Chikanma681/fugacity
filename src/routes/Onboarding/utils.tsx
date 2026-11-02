@@ -377,7 +377,7 @@ export function TutorialRequestToast(
           className="w-20"
         />
         <div>
-          <h2 className="font-bold text-2xl">Welcome to Zoo Design Studio</h2>
+          <h2 className="font-bold text-2xl">Welcome to Fugacity</h2>
           <p className="text-lg text-2">Quick tips</p>
         </div>
       </section>
