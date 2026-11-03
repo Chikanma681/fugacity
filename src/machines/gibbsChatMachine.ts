@@ -7,7 +7,7 @@ import {
 } from 'ai'
 import { createActorContext } from '@xstate/react'
 import type { ActorRefFrom } from 'xstate'
-import { assign, fromCallback, fromPromise, setup } from 'xstate'
+import { and, assign, fromCallback, fromPromise, setup } from 'xstate'
 import { flowsheetAgentTools } from '@src/flowsheet/agent/tools'
 import { DEFAULT_GIBBS_MODE } from '@src/lib/constants'
 import {
@@ -106,11 +106,15 @@ function withoutLastTurnResponse(messages: UIMessage[]) {
   return messages.slice(0, lastUserIndex + 1)
 }
 
-function withLastMessageCancelled(messages: UIMessage[]) {
+function withLastMessageCancelled(messages: UIMessage[], reason: string) {
   const last = messages.at(-1)
-  return last?.role === 'assistant'
-    ? [...messages.slice(0, -1), cancelUnfinishedToolCalls(last)]
-    : messages
+  if (last?.role !== 'assistant') {
+    return messages
+  }
+  const cancelled = cancelUnfinishedToolCalls(last, reason)
+  return cancelled.parts.length > 0
+    ? [...messages.slice(0, -1), cancelled]
+    : messages.slice(0, -1)
 }
 
 const streamResponse = fromCallback<GibbsChatEvents, StreamResponseInput>(
@@ -193,8 +197,16 @@ export const gibbsChatMachine = setup({
   },
   actions: {
     cancelResponse: assign({
-      messages: ({ context }) => withLastMessageCancelled(context.messages),
+      messages: ({ context }) =>
+        withLastMessageCancelled(context.messages, 'Cancelled by the user.'),
     }),
+    stopAtStepLimit: assign(({ context }) => ({
+      messages: withLastMessageCancelled(
+        context.messages,
+        `Stopped after ${context.maxSteps} steps.`
+      ),
+      error: `Gibbs stopped after ${context.maxSteps} steps.`,
+    })),
   },
 }).createMachine({
   initial: S.Await,
@@ -230,7 +242,9 @@ export const gibbsChatMachine = setup({
           target: GibbsChatStates.Ready,
           actions: assign(({ event }) => ({
             conversationId: event.output.id,
-            messages: event.output.messages,
+            messages: event.output.messages.map((message) =>
+              cancelUnfinishedToolCalls(message, 'Interrupted.')
+            ),
           })),
         },
         onError: {
@@ -332,8 +346,13 @@ export const gibbsChatMachine = setup({
             },
             [GibbsChatTransitions.ResponseEnd]: [
               {
-                guard: 'hasPendingToolCalls',
+                guard: and(['hasPendingToolCalls', 'canTakeAnotherStep']),
                 target: GibbsChatStates.RunningTools,
+              },
+              {
+                guard: 'hasPendingToolCalls',
+                target: GibbsChatStates.Idle,
+                actions: 'stopAtStepLimit',
               },
               { target: GibbsChatStates.Idle },
             ],
@@ -360,23 +379,13 @@ export const gibbsChatMachine = setup({
             input: ({ context }) => ({
               message: context.messages[context.messages.length - 1],
             }),
-            onDone: [
-              {
-                guard: 'canTakeAnotherStep',
-                target: GibbsChatStates.Streaming,
-                actions: assign({
-                  messages: ({ context, event }) =>
-                    upsertMessage(context.messages, event.output),
-                }),
-              },
-              {
-                target: GibbsChatStates.Idle,
-                actions: assign(({ context, event }) => ({
-                  messages: upsertMessage(context.messages, event.output),
-                  error: `Gibbs stopped after ${context.maxSteps} steps.`,
-                })),
-              },
-            ],
+            onDone: {
+              target: GibbsChatStates.Streaming,
+              actions: assign({
+                messages: ({ context, event }) =>
+                  upsertMessage(context.messages, event.output),
+              }),
+            },
             onError: {
               target: GibbsChatStates.Idle,
               actions: [

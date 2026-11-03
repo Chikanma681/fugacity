@@ -32,13 +32,16 @@ function withToolError(part: GibbsToolPart, errorText: string) {
   return { ...part, state: 'output-error', errorText } as GibbsToolPart
 }
 
-export function cancelUnfinishedToolCalls(message: UIMessage): UIMessage {
+export function cancelUnfinishedToolCalls(
+  message: UIMessage,
+  reason: string
+): UIMessage {
   return {
     ...message,
     parts: message.parts.map((part) =>
       isToolUIPart(part) &&
       (part.state === 'input-streaming' || part.state === 'input-available')
-        ? withToolError(part, 'Cancelled by the user.')
+        ? withToolError(part, reason)
         : part
     ),
   }

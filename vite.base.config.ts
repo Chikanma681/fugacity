@@ -117,7 +117,21 @@ export function pluginHotRestart(command: 'reload' | 'restart'): Plugin {
   }
 }
 
+function toOrigin(value?: string) {
+  try {
+    return value ? new URL(value).origin : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export function indexHtmlCsp(enabled: boolean): Plugin {
+  const gibbsSources = [
+    ...new Set([
+      'http://localhost:8787',
+      toOrigin(process.env.VITE_GIBBS_API_URL) ?? 'http://localhost:8787',
+    ]),
+  ]
   const csp = [
     //  By default, only allow same origin.
     "default-src 'self'",
@@ -126,7 +140,7 @@ export function indexHtmlCsp(enabled: boolean): Plugin {
     // Allow images from any source and inline images. We fetch user profile images from any origin.
     "img-src * blob: data: 'unsafe-inline'",
     // Allow WebSocket connections and fetches to our API.
-    "connect-src 'self' https://plausible.corp.zoo.dev https://api.zoo.dev wss://api.zoo.dev https://api.dev.zoo.dev wss://api.dev.zoo.dev https://api.zoogov.dev wss://api.zoogov.dev",
+    `connect-src 'self' https://plausible.corp.zoo.dev https://api.zoo.dev wss://api.zoo.dev https://api.dev.zoo.dev wss://api.dev.zoo.dev https://api.zoogov.dev wss://api.zoogov.dev ${gibbsSources.join(' ')}`,
     // Disallow legacy stuff
     "object-src 'none'",
   ]
