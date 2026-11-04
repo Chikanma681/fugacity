@@ -9,6 +9,7 @@ import { CommandBarOpenButton } from '@src/components/CommandBarOpenButton'
 import { useLspContext } from '@src/components/LspProvider'
 import { ShareButton } from '@src/components/ShareButton'
 import { StatusBar } from '@src/components/StatusBar/StatusBar'
+import type { StatusBarItemType } from '@src/components/StatusBar/statusBarTypes'
 import {
   defaultGlobalStatusBarItems,
   defaultLocalStatusBarItems,
@@ -26,7 +27,6 @@ import {
   WASM_INIT_FAILED_TOAST_ID,
 } from '@src/lib/constants'
 import useHotkeyWrapper from '@src/lib/hotkeyWrapper'
-import { useNetworkHealthStatus } from '@src/components/NetworkHealthIndicator'
 import { PATHS } from '@src/lib/paths'
 import { getSelectionTypeDisplayText } from '@src/lib/selections'
 import { useApp, useSingletons } from '@src/lib/boot'
@@ -82,7 +82,6 @@ export function OpenedProject() {
   const lastOperation = useLastOperation()
   const projects = useFolders()
   const { onProjectOpen } = useLspContext()
-  const networkHealthStatus = useNetworkHealthStatus()
 
   // We need the ref for the outermost div so we can screenshot the app for
   // the coredump.
@@ -348,10 +347,7 @@ export function OpenedProject() {
           />
         </section>
         <StatusBar
-          globalItems={[
-            networkHealthStatus,
-            ...defaultGlobalStatusBarItems({ location, filePath }),
-          ]}
+          globalItems={defaultGlobalStatusBarItems({ location, filePath })}
           localItems={[
             ...(getSettings().app.showDebugPanel.current
               ? ([

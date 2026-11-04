@@ -1,11 +1,6 @@
-import { Popover } from '@headlessui/react'
 import { HelpMenu } from '@src/components/HelpMenu'
 import { DownloadDesktopApp } from '@src/components/StatusBar/DownloadDesktopApp'
 import type { StatusBarItemType } from '@src/components/StatusBar/statusBarTypes'
-import {
-  EnvironmentChip,
-  EnvironmentDescription,
-} from '@src/components/environment/Environment'
 import { isDesktop } from '@src/lib/isDesktop'
 import { PATHS } from '@src/lib/paths'
 import { APP_VERSION, getReleaseUrl } from '@src/routes/utils'
@@ -33,14 +28,6 @@ export const defaultGlobalStatusBarItems = ({
         'data-testid': 'download-desktop-app',
         component: DownloadDesktopApp,
       },
-  ...(isDesktop()
-    ? [
-        {
-          id: 'environment',
-          component: EnvironmentStatusBarItem,
-        },
-      ]
-    : []),
   {
     id: 'telemetry',
     element: 'link',
@@ -66,24 +53,6 @@ export const defaultGlobalStatusBarItems = ({
     label: 'Settings',
   },
 ]
-
-function EnvironmentStatusBarItem() {
-  return isDesktop() ? (
-    <Popover className="relative flex items-stretch">
-      <Popover.Button
-        className="m-0 p-0 border-0 flex items-stretch"
-        data-testid="environment-subdomain-bar"
-      >
-        <EnvironmentChip />
-      </Popover.Button>
-      <Popover.Panel className="absolute left-0 bottom-full mb-1 w-64 flex flex-col gap-1 align-stretch rounded-lg shadow-lg text-sm">
-        <EnvironmentDescription />
-      </Popover.Panel>
-    </Popover>
-  ) : (
-    <></>
-  )
-}
 
 export const defaultLocalStatusBarItems: StatusBarItemType[] = [
   {
