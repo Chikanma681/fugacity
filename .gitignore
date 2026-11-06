@@ -89,3 +89,5 @@ venv
 .biome/
 .million
 .cursor
+.env.development
+.env
