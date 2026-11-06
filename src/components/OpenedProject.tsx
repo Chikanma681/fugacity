@@ -364,7 +364,7 @@ export function OpenedProject() {
                   },
                 ] satisfies StatusBarItemType[])
               : []),
-           ...experimentalFeaturesLocalStatusBarItems,
+            ...experimentalFeaturesLocalStatusBarItems,
             ...zookeeperLocalStatusBarItems,
             ...defaultLocalStatusBarItems,
           ]}
