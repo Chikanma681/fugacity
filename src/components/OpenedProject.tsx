@@ -364,24 +364,7 @@ export function OpenedProject() {
                   },
                 ] satisfies StatusBarItemType[])
               : []),
-            {
-              id: 'selection',
-              'data-testid': 'selection-status',
-              element: 'text',
-              label:
-                getSelectionTypeDisplayText(
-                  kclManager.astSignal.value,
-                  modelingState.context.selectionRanges
-                ) ?? 'No selection',
-              toolTip: {
-                children: 'Currently selected geometry',
-              },
-            },
-            {
-              id: 'units',
-              component: UnitsMenu,
-            },
-            ...experimentalFeaturesLocalStatusBarItems,
+           ...experimentalFeaturesLocalStatusBarItems,
             ...zookeeperLocalStatusBarItems,
             ...defaultLocalStatusBarItems,
           ]}
