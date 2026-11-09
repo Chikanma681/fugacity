@@ -325,12 +325,12 @@ export function OpenedProject() {
             nativeFileMenuCreated={nativeFileMenuCreated}
             projectMenuChildren={undoRedoButtons}
           >
-          {/*   {!isMobile() && ( */}
-          {/*     <> */}
-          {/*       <CommandBarOpenButton /> */}
-          {/*       <ShareButton /> */}
-          {/*     </> */}
-          {/*   )} */}
+            {/*   {!isMobile() && ( */}
+            {/*     <> */}
+            {/*       <CommandBarOpenButton /> */}
+            {/*       <ShareButton /> */}
+            {/*     </> */}
+            {/*   )} */}
           </AppHeader>
         </div>
         <ModalContainer />
