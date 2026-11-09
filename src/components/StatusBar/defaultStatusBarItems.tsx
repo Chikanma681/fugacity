@@ -28,20 +28,20 @@ export const defaultGlobalStatusBarItems = ({
   //     'data-testid': 'download-desktop-app',
   //     component: DownloadDesktopApp,
   //   },
-  {
-    id: 'telemetry',
-    element: 'link',
-    icon: 'stopwatch',
-    href: location.pathname.includes(PATHS.FILE)
-      ? filePath + PATHS.TELEMETRY + '?tab=project'
-      : PATHS.HOME + PATHS.TELEMETRY,
-    'data-testid': 'telemetry-link',
-    label: 'Telemetry',
-    hideLabel: true,
-    toolTip: {
-      children: 'Telemetry',
-    },
-  },
+  // {
+  //   id: 'telemetry',
+  //   element: 'link',
+  //   icon: 'stopwatch',
+  //   href: location.pathname.includes(PATHS.FILE)
+  //     ? filePath + PATHS.TELEMETRY + '?tab=project'
+  //     : PATHS.HOME + PATHS.TELEMETRY,
+  //   'data-testid': 'telemetry-link',
+  //   label: 'Telemetry',
+  //   hideLabel: true,
+  //   toolTip: {
+  //     children: 'Telemetry',
+  //   },
+  // },
   {
     id: 'settings',
     element: 'link',
