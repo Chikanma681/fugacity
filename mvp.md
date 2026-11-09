@@ -8,6 +8,9 @@
 - figure out if we need the ai billings. we might 
 - figure out how to send updates to the application very > [!IMPORTANT]
 - we need to get the people emails tbh we need to be able to email before
+- create export button instead of export path sidebar we jave export (handoff to claude tbh)
+
+- write an x article about what you are building trying put it on build in public
 
 ## later
 fix your file system, it is not efficient. it is not effici
