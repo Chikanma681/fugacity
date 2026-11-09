@@ -63,80 +63,80 @@ export function HelpMenu() {
       >
         {({ close }) => (
           <>
-            <HelpMenuItem
-              as="a"
-              href="https://github.com/KittyCAD/modeling-app/issues/new/choose"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Report a bug
-            </HelpMenuItem>
-            <HelpMenuItem
-              as="a"
-              href="https://github.com/KittyCAD/modeling-app/discussions"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Request a feature
-            </HelpMenuItem>
-            <HelpMenuItem
-              as="a"
-              href="https://discord.gg/JQEpHR7Nt2"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Ask the community
-            </HelpMenuItem>
-            <HelpMenuDivider />
-            <HelpMenuItem
-              as="a"
-              href={withSiteBaseURL('/docs/kcl-samples')}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              KCL code samples
-            </HelpMenuItem>
-            <HelpMenuItem
-              as="a"
-              href={withSiteBaseURL('/docs/kcl-lang')}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              KCL docs
-            </HelpMenuItem>
-            <HelpMenuDivider />
-            <HelpMenuItem
-              as="a"
-              href="https://github.com/KittyCAD/modeling-app/releases"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Release notes
-            </HelpMenuItem>
-            {isDesktop() && (
-              <HelpMenuItem
-                as="button"
-                onClick={() => {
-                  close()
-                  window.electron?.appCheckForUpdates().catch(reportRejection)
-                }}
-              >
-                Check for updates
-              </HelpMenuItem>
-            )}
-            <HelpMenuItem
-              as="button"
-              onClick={() => {
-                const targetPath =
-                  filePath !== undefined
-                    ? filePath + PATHS.SETTINGS_KEYBINDINGS
-                    : PATHS.HOME + PATHS.SETTINGS_KEYBINDINGS
-                void navigate(targetPath)
-              }}
-              data-testid="keybindings-button"
-            >
-              Keyboard shortcuts
-            </HelpMenuItem>
+            {/* <HelpMenuItem */}
+            {/*   as="a" */}
+            {/*   href="https://github.com/KittyCAD/modeling-app/issues/new/choose" */}
+            {/*   target="_blank" */}
+            {/*   rel="noopener noreferrer" */}
+            {/* > */}
+            {/*   Report a bug */}
+            {/* </HelpMenuItem> */}
+            {/* <HelpMenuItem */}
+            {/*   as="a" */}
+            {/*   href="https://github.com/KittyCAD/modeling-app/discussions" */}
+            {/*   target="_blank" */}
+            {/*   rel="noopener noreferrer" */}
+            {/* > */}
+            {/*   Request a feature */}
+            {/* </HelpMenuItem> */}
+            {/* <HelpMenuItem */}
+            {/*   as="a" */}
+            {/*   href="https://discord.gg/JQEpHR7Nt2" */}
+            {/*   target="_blank" */}
+            {/*   rel="noopener noreferrer" */}
+            {/* > */}
+            {/*   Ask the community */}
+            {/* </HelpMenuItem> */}
+            {/* <HelpMenuDivider /> */}
+            {/* <HelpMenuItem */}
+            {/*   as="a" */}
+            {/*   href={withSiteBaseURL('/docs/kcl-samples')} */}
+            {/*   target="_blank" */}
+            {/*   rel="noopener noreferrer" */}
+            {/* > */}
+            {/*   KCL code samples */}
+            {/* </HelpMenuItem> */}
+            {/* <HelpMenuItem */}
+            {/*   as="a" */}
+            {/*   href={withSiteBaseURL('/docs/kcl-lang')} */}
+            {/*   target="_blank" */}
+            {/*   rel="noopener noreferrer" */}
+            {/* > */}
+            {/*   KCL docs */}
+            {/* </HelpMenuItem> */}
+            {/* <HelpMenuDivider /> */}
+            {/* <HelpMenuItem */}
+            {/*   as="a" */}
+            {/*   href="https://github.com/KittyCAD/modeling-app/releases" */}
+            {/*   target="_blank" */}
+            {/*   rel="noopener noreferrer" */}
+            {/* > */}
+            {/*   Release notes */}
+            {/* </HelpMenuItem> */}
+            {/* {isDesktop() && ( */}
+            {/*   <HelpMenuItem */}
+            {/*     as="button" */}
+            {/*     onClick={() => { */}
+            {/*       close() */}
+            {/*       window.electron?.appCheckForUpdates().catch(reportRejection) */}
+            {/*     }} */}
+            {/*   > */}
+            {/*     Check for updates */}
+            {/*   </HelpMenuItem> */}
+            {/* )} */}
+            {/* <HelpMenuItem */}
+            {/*   as="button" */}
+            {/*   onClick={() => { */}
+            {/*     const targetPath = */}
+            {/*       filePath !== undefined */}
+            {/*         ? filePath + PATHS.SETTINGS_KEYBINDINGS */}
+            {/*         : PATHS.HOME + PATHS.SETTINGS_KEYBINDINGS */}
+            {/*     void navigate(targetPath) */}
+            {/*   }} */}
+            {/*   data-testid="keybindings-button" */}
+            {/* > */}
+            {/*   Keyboard shortcuts */}
+            {/* </HelpMenuItem> */}
             <HelpMenuItem
               as="button"
               onClick={() => {
