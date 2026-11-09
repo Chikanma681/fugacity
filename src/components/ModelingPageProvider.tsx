@@ -1,18 +1,13 @@
-import React, { use, useEffect, useMemo } from 'react'
+import React, { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useAbsoluteFilePath } from '@src/hooks/useAbsoluteFilePath'
 import { useMenuListener } from '@src/hooks/useMenu'
-import { createNamedViewsCommand } from '@src/lib/commandBarConfigs/namedViewsConfig'
 import { createRouteCommands } from '@src/lib/commandBarConfigs/routeCommandConfig'
-import { DEFAULT_DEFAULT_LENGTH_UNIT } from '@src/lib/constants'
-import { kclCommands } from '@src/lib/kclCommands'
 import { PATHS } from '@src/lib/paths'
 import { markOnce } from '@src/lib/performance'
 import { useApp, useSingletons } from '@src/lib/boot'
 import { modelingMenuCallbackMostActions } from '@src/menu/register'
-import { createStandardViewsCommands } from '@src/lib/commandBarConfigs/standardViewsConfig'
-import fsZds from '@src/lib/fs-zds'
 import { useSignals } from '@preact/signals-react/runtime'
 
 /**
@@ -27,70 +22,21 @@ export const ModelingPageProvider = ({
   children: React.ReactNode
 }) => {
   useSignals()
-  const { auth, commands, settings, project, systemIOActor } = useApp()
+  const { auth, commands, settings, project } = useApp()
   const { kclManager } = useSingletons()
-  const wasmInstance = use(kclManager.wasmInstancePromise)
   const navigate = useNavigate()
   const location = useLocation()
-  const token = auth.useToken()
   const settingsValues = settings.useSettings()
   const settingsActor = settings.actor
-  const projectIORef = project?.projectIORefSignal
   const file = project?.executingFileEntry.value
   const filePath = useAbsoluteFilePath()
-
-  useEffect(() => {
-    const {
-      createNamedViewCommand,
-      deleteNamedViewCommand,
-      loadNamedViewCommand,
-    } = createNamedViewsCommand(kclManager.engineCommandManager, settingsActor)
-
-    const {
-      topViewCommand,
-      frontViewCommand,
-      rightViewCommand,
-      backViewCommand,
-      bottomViewCommand,
-      leftViewCommand,
-      zoomToFitCommand,
-    } = createStandardViewsCommands(kclManager)
-
-    const namedViewCommands = [
-      createNamedViewCommand,
-      deleteNamedViewCommand,
-      loadNamedViewCommand,
-      topViewCommand,
-      frontViewCommand,
-      rightViewCommand,
-      backViewCommand,
-      bottomViewCommand,
-      leftViewCommand,
-      zoomToFitCommand,
-    ]
-    commands.send({
-      type: 'Add commands',
-      data: {
-        commands: namedViewCommands,
-      },
-    })
-    return () => {
-      // Remove commands if you go to the home page
-      commands.send({
-        type: 'Remove commands',
-        data: {
-          commands: namedViewCommands,
-        },
-      })
-    }
-  }, [commands, settingsActor, kclManager])
 
   useEffect(() => {
     markOnce('code/didLoadFile')
   }, [])
 
   // Due to the route provider, i've moved this to the ModelingPageProvider instead of CommandBarProvider
-  // This will register the commands to route to Telemetry, Home, and Settings.
+  // This will register the commands to route to Home and Settings.
   useEffect(() => {
     if (file?.path === undefined) {
       return
@@ -98,38 +44,23 @@ export const ModelingPageProvider = ({
 
     const filePath = PATHS.FILE + '/' + encodeURIComponent(file?.path)
 
-    const { RouteTelemetryCommand, RouteHomeCommand, RouteSettingsCommand } =
-      createRouteCommands(navigate, location, filePath)
+    const { RouteHomeCommand, RouteSettingsCommand } = createRouteCommands(
+      navigate,
+      location,
+      filePath
+    )
+    const routeCommands = [RouteSettingsCommand, RouteHomeCommand]
     commands.send({
-      type: 'Remove commands',
-      data: {
-        commands: [
-          RouteTelemetryCommand,
-          RouteHomeCommand,
-          RouteSettingsCommand,
-        ],
-      },
+      type: 'Add commands',
+      data: { commands: routeCommands },
     })
-    if (location.pathname === PATHS.HOME) {
+
+    return () => {
       commands.send({
-        type: 'Add commands',
-        data: {
-          commands: [RouteTelemetryCommand, RouteSettingsCommand],
-        },
-      })
-    } else if (location.pathname.includes(PATHS.FILE)) {
-      commands.send({
-        type: 'Add commands',
-        data: {
-          commands: [
-            RouteTelemetryCommand,
-            RouteSettingsCommand,
-            RouteHomeCommand,
-          ],
-        },
+        type: 'Remove commands',
+        data: { commands: routeCommands },
       })
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
   }, [location])
 
@@ -143,69 +74,6 @@ export const ModelingPageProvider = ({
     settingsActor,
   })
   useMenuListener(cb)
-
-  const kclCommandMemo = useMemo(() => {
-    const providedOptions = []
-    if (projectIORef?.value.children && file?.path) {
-      const projectPath = projectIORef.value.path
-      const filePath = file.path
-      let children = structuredClone(projectIORef.value.children)
-      while (children.length > 0) {
-        const v = children.pop()
-        if (!v) {
-          continue
-        }
-
-        if (v.children) {
-          children.push(...v.children)
-          continue
-        }
-
-        const relativeFilePath = v.path.replace(projectPath + fsZds.sep, '')
-        const isCurrentFile = v.path === filePath
-        if (!isCurrentFile) {
-          providedOptions.push({
-            name: relativeFilePath.replaceAll(fsZds.sep, '/'),
-            value: relativeFilePath.replaceAll(fsZds.sep, '/'),
-          })
-        }
-      }
-    }
-    return kclCommands({
-      authToken: token ?? '',
-      projectData: {
-        project: projectIORef?.value,
-        file,
-        code: project?.executingEditor.value?.state.doc.toString() ?? '',
-      },
-      kclManager,
-      settings: {
-        defaultUnit:
-          settingsValues.modeling.defaultUnit.current ??
-          DEFAULT_DEFAULT_LENGTH_UNIT,
-      },
-      specialPropsForInsertCommand: { providedOptions },
-      project: projectIORef?.value,
-      systemIOActor,
-      wasmInstance,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-  }, [kclManager, project, file])
-
-  useEffect(() => {
-    commands.send({
-      type: 'Add commands',
-      data: { commands: kclCommandMemo },
-    })
-
-    return () => {
-      commands.send({
-        type: 'Remove commands',
-        data: { commands: kclCommandMemo },
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps, @typescript-eslint/unbound-method -- TODO: blanket-ignored fix me!
-  }, [commands.send, kclCommandMemo])
 
   return <div>{children}</div>
 }

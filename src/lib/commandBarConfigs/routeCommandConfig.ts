@@ -8,20 +8,20 @@ export function createRouteCommands(
   location: Location,
   filePath: string
 ) {
-  const RouteTelemetryCommand: Command = {
-    name: 'Go to Telemetry',
-    displayName: `Go to Telemetry`,
-    description: 'View the Telemetry metrics',
-    groupId: 'routes',
-    icon: 'settings',
-    needsReview: false,
-    onSubmit: (_data) => {
-      const path = location.pathname.includes(PATHS.FILE)
-        ? filePath + PATHS.TELEMETRY + '?tab=project'
-        : PATHS.HOME + PATHS.TELEMETRY
-      void navigate(path)
-    },
-  }
+  // const RouteTelemetryCommand: Command = {
+  // name: 'Go to Telemetry',
+  // displayName: `Go to Telemetry`,
+  // description: 'View the Telemetry metrics',
+  // groupId: 'routes',
+  // icon: 'settings',
+  // needsReview: false,
+  // onSubmit: (_data) => {
+  // const path = location.pathname.includes(PATHS.FILE)
+  // ? filePath + PATHS.TELEMETRY + '?tab=project'
+  // : PATHS.HOME + PATHS.TELEMETRY
+  // void navigate(path)
+  // },
+  // }
 
   const RouteHomeCommand: Command = {
     name: 'Go to Home',
@@ -51,7 +51,7 @@ export function createRouteCommands(
   }
 
   return {
-    RouteTelemetryCommand,
+    // RouteTelemetryCommand,
     RouteHomeCommand,
     RouteSettingsCommand,
   }

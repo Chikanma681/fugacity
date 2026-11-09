@@ -11,7 +11,6 @@ import {
   useMenuListener,
   useSketchModeMenuEnableDisable,
 } from '@src/hooks/useMenu'
-import useModelingMachineCommands from '@src/hooks/useStateMachineCommands'
 import { reportRejection } from '@src/lib/trap'
 
 import useHotkeyWrapper from '@src/lib/hotkeyWrapper'
@@ -20,7 +19,6 @@ import { SNAP_TO_GRID_HOTKEY } from '@src/lib/hotkeys'
 import { useApp, useSingletons } from '@src/lib/boot'
 import { getDeleteKeys } from '@src/lib/utils'
 import { useNetworkContext } from '@src/hooks/useNetworkContext'
-import { modelingMachineCommandConfig } from '@src/lib/commandBarConfigs/modelingCommandConfig'
 import type { Project } from '@src/lib/project'
 import { resetCameraPosition } from '@src/lib/resetCameraPosition'
 import { selectAllInCurrentSketch } from '@src/lib/selections'
@@ -68,7 +66,6 @@ export const ModelingMachineProvider = ({
       snapToGrid,
     },
   } = settingsValues
-  const commandBarConfig = modelingMachineCommandConfig
   const previousCameraOrbit = useRef<CameraOrbitType | null>(null)
   const projects = useFolders()
   const theProject = useRef<Project | undefined>(
@@ -429,20 +426,6 @@ export const ModelingMachineProvider = ({
     },
     [modelingState, commandBarState, modelingSend]
   )
-
-  useModelingMachineCommands({
-    machineId: 'modeling',
-    state: modelingState,
-    send: modelingSend,
-    actor: modelingActor,
-    commandBarConfig,
-    isExecuting: kclManager.isExecutingSignal.value,
-    // TODO for when sketch tools are in the toolbar: This was added when we used one "Cancel" event,
-    // but we need to support "SketchCancel" and basically
-    // make this function take the actor or state so it
-    // can call the correct event.
-    onCancel: () => modelingSend({ type: 'Cancel' }),
-  })
 
   return (
     <ModelingMachineContext.Provider

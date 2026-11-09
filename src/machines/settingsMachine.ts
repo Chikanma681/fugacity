@@ -184,11 +184,11 @@ export const settingsMachine = setup({
           )
           .filter((c) => c !== null)
 
-      const addCommands = (actor: ActorRefFrom<typeof commandBarMachine>) =>
-        actor.send({
-          type: 'Add commands',
-          data: { commands: commands },
-        })
+      // const addCommands = (actor: ActorRefFrom<typeof commandBarMachine>) =>
+      //   actor.send({
+      //     type: 'Add commands',
+      //     data: { commands: commands },
+      //   })
 
       const removeCommands = (actor: ActorRefFrom<typeof commandBarMachine>) =>
         actor.send({
@@ -205,14 +205,14 @@ export const settingsMachine = setup({
           newSettings.commandBar.includeSettings.current === false
             ? []
             : updateCommands(newSettings)
-        addCommands(commandBarActor)
+        // addCommands(commandBarActor)
       })
 
       // Initial command registration
       // Note: Async hideOnPlatform values are already resolved in loadAndValidateSettings,
       // so we can just register commands synchronously here
       commands = updateCommands(input.settings)
-      addCommands(input.commandBarActor)
+      // addCommands(input.commandBarActor)
     }),
   },
   actions: {

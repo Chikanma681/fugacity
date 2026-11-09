@@ -11,7 +11,7 @@ import type {
   Subscription,
 } from 'xstate'
 import { createActor } from 'xstate'
-import { createAuthCommands } from '@src/lib/commandBarConfigs/authCommandConfig'
+// import { createAuthCommands } from '@src/lib/commandBarConfigs/authCommandConfig'
 import { createProjectCommands } from '@src/lib/commandBarConfigs/projectsCommandConfig'
 import {
   createSettings,
@@ -173,7 +173,7 @@ export class App implements AppSubsystems {
       type: 'Add commands',
       data: {
         commands: [
-          ...createAuthCommands({ authActor: this.auth.actor }),
+          // ...createAuthCommands({ authActor: this.auth.actor }),
           ...createProjectCommands({ systemIOActor: this.systemIOActor }),
         ],
       },

@@ -80,8 +80,8 @@ export const Settings = () => {
           </>
         ) : (
           <>
-            <KeybindingsSectionsList scrollRef={scrollRef} />
-            <AllKeybindingsFields ref={scrollRef} />
+            {/* <KeybindingsSectionsList scrollRef={scrollRef} /> */}
+            {/* <AllKeybindingsFields ref={scrollRef} /> */}
           </>
         )}
       </div>

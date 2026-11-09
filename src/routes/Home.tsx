@@ -26,6 +26,7 @@ import {
 import Tooltip from '@src/components/Tooltip'
 import { useMenuListener } from '@src/hooks/useMenu'
 import { useQueryParamEffects } from '@src/hooks/useQueryParamEffects'
+import { createRouteCommands } from '@src/lib/commandBarConfigs/routeCommandConfig'
 import { isDesktop } from '@src/lib/isDesktop'
 import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
 import { PATHS } from '@src/lib/paths'
@@ -105,6 +106,26 @@ const Home = () => {
   const location = useLocation()
   const settingsValues = settings.useSettings()
   const onboardingStatus = settingsValues.app.onboardingStatus.current
+
+  useEffect(() => {
+    const { RouteHomeCommand, RouteSettingsCommand } = createRouteCommands(
+      navigate,
+      location,
+      PATHS.HOME
+    )
+    const routeCommands = [RouteHomeCommand, RouteSettingsCommand]
+    commands.send({
+      type: 'Add commands',
+      data: { commands: routeCommands },
+    })
+
+    return () => {
+      commands.send({
+        type: 'Remove commands',
+        data: { commands: routeCommands },
+      })
+    }
+  }, [commands, navigate, location])
 
   useEffect(() => {
     systemIOActor.send({

@@ -6,12 +6,11 @@ import ModalContainer from 'react-modal-promise'
 import { Router } from '@src/Router'
 import { ToastUpdate } from '@src/components/ToastUpdate'
 import '@src/index.css'
-import { createApplicationCommands } from '@src/lib/commandBarConfigs/applicationCommandConfig'
+// import { createApplicationCommands } from '@src/lib/commandBarConfigs/applicationCommandConfig'
 import { AUTO_UPDATER_TOAST_ID } from '@src/lib/constants'
 import { initializeWindowExceptionHandler } from '@src/lib/exceptions'
 import { markOnce } from '@src/lib/performance'
 import type { App } from '@src/lib/app'
-import { reportRejection } from '@src/lib/trap'
 import reportWebVitals from '@src/reportWebVitals'
 import monkeyPatchForBrowserTranslation from '@src/lib/monkeyPatchBrowserTranslate'
 import { app, AppContext } from '@src/lib/boot'
@@ -34,25 +33,12 @@ function initSingletonBehavior(app: App) {
   markOnce('code/willAuth')
   initializeWindowExceptionHandler(singletons.kclManager)
 
-  // Don't start the app machine until all these singletons
-  // are initialized, and the wasm module is loaded.
-  singletons.kclManager.wasmInstancePromise
-    .then((wasmInstance) => {
-      // Application commands must be created after the initPromise because
-      // it calls WASM functions to file extensions, this dependency is not available during initialization, it is an async dependency
-      app.commands.send({
-        type: 'Add commands',
-        data: {
-          commands: [
-            ...createApplicationCommands({
-              app,
-              wasmInstance,
-            }),
-          ],
-        },
-      })
-    })
-    .catch(reportRejection)
+  // app.commands.send({
+  //   type: 'Add commands',
+  //   data: {
+  //     commands: [...createApplicationCommands({ app })],
+  //   },
+  // })
 }
 
 /** initialize behaviors that rely on electron (this is only available on desktop) */
