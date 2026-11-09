@@ -42,8 +42,8 @@ import {
 import { SystemIOMachineStates } from '@src/machines/systemIO/utils'
 import {
   defaultLayout,
-  DefaultLayoutPaneID,
-  getOpenPanes,
+  // DefaultLayoutPaneID,
+  // getOpenPanes,
   LayoutRootNode,
 } from '@src/lib/layout'
 import { useDefaultAreaLibrary } from '@src/lib/layout/defaultAreaLibrary'
@@ -52,7 +52,7 @@ import { getResolvedTheme } from '@src/lib/theme'
 import { useSignalEffect } from '@preact/signals-react'
 import { UnitsMenu } from '@src/components/UnitsMenu'
 import { ExperimentalFeaturesMenu } from '@src/components/ExperimentalFeaturesMenu'
-import { ZookeeperCreditsMenu } from '@src/components/ZookeeperCreditsMenu'
+// import { ZookeeperCreditsMenu } from '@src/components/ZookeeperCreditsMenu'
 import { useSignals } from '@preact/signals-react/runtime'
 import { isMobile } from '@src/lib/isMobile'
 import { isDesktop } from '@src/lib/isDesktop'
@@ -277,20 +277,20 @@ export function OpenedProject() {
         ]
       : []
 
-  const zookeeperLocalStatusBarItems: StatusBarItemType[] = useMemo(
-    () =>
-      getOpenPanes({ rootLayout: layout.signal.value }).includes(
-        DefaultLayoutPaneID.TTC
-      )
-        ? [
-            {
-              id: 'zookeeper-credits',
-              component: ZookeeperCreditsMenu,
-            },
-          ]
-        : [],
-    [layout.signal.value]
-  )
+  // const zookeeperLocalStatusBarItems: StatusBarItemType[] = useMemo(
+  //   () =>
+  //     getOpenPanes({ rootLayout: layout.signal.value }).includes(
+  //       DefaultLayoutPaneID.TTC
+  //     )
+  //       ? [
+  //           {
+  //             id: 'zookeeper-credits',
+  //             component: ZookeeperCreditsMenu,
+  //           },
+  //         ]
+  //       : [],
+  //   [layout.signal.value]
+  // )
 
   const undoRedoButtons = useMemo(
     () => (
@@ -365,7 +365,7 @@ export function OpenedProject() {
                 ] satisfies StatusBarItemType[])
               : []),
             ...experimentalFeaturesLocalStatusBarItems,
-            ...zookeeperLocalStatusBarItems,
+            // ...zookeeperLocalStatusBarItems,
             ...defaultLocalStatusBarItems,
           ]}
         />
