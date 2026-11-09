@@ -233,53 +233,53 @@ export const AllSettingsFields = forwardRef(
               Reset Layout
             </ActionButton>
           </SettingsSection>
-          <h2 id="settings-about" className="text-2xl mt-6 font-bold">
-            About Design Studio
-          </h2>
-          <div className="text-sm mb-12">
-            <p>
-              {/* This uses a Vite plugin, set in vite.config.ts
-                  to inject the version from package.json */}
-              App version {APP_VERSION}.{' '}
-            </p>
-            <div className="flex gap-2 flex-wrap my-4">
-              <ActionButton
-                Element="externalLink"
-                to={getReleaseUrl()}
-                iconStart={{ icon: 'file', className: 'p-1' }}
-              >
-                View release on GitHub
-              </ActionButton>
-              <ActionButton
-                Element="button"
-                onClick={() => {
-                  window.electron?.appCheckForUpdates().catch(reportRejection)
-                }}
-                iconStart={{
-                  icon: 'refresh',
-                  size: 'sm',
-                  className: 'p-1',
-                }}
-              >
-                Check for updates
-              </ActionButton>
-            </div>
-            <p className="max-w-2xl mt-6">
-              Don't see the feature you want? Check to see if it's on{' '}
-              <a
-                onClick={openExternalBrowserIfDesktop(
-                  'https://github.com/KittyCAD/modeling-app/discussions'
-                )}
-                href="https://github.com/KittyCAD/modeling-app/discussions"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                our roadmap
-              </a>
-              , and start a discussion if you don't see it! Your feedback will
-              help us prioritize what to build next.
-            </p>
-          </div>
+        {/*   <h2 id="settings-about" className="text-2xl mt-6 font-bold"> */}
+        {/*     About Design Studio */}
+        {/*   </h2> */}
+        {/*   <div className="text-sm mb-12"> */}
+        {/*     <p> */}
+        {/*       {/* This uses a Vite plugin, set in vite.config.ts */}
+        {/*          to inject the version from package.json */}
+        {/*       App version {APP_VERSION}.{' '} */}
+        {/*     </p> */}
+        {/*     <div className="flex gap-2 flex-wrap my-4"> */}
+        {/*       <ActionButton */}
+        {/*         Element="externalLink" */}
+        {/*         to={getReleaseUrl()} */}
+        {/*         iconStart={{ icon: 'file', className: 'p-1' }} */}
+        {/*       > */}
+        {/*         View release on GitHub */}
+        {/*       </ActionButton> */}
+        {/*       <ActionButton */}
+        {/*         Element="button" */}
+        {/*         onClick={() => { */}
+        {/*           window.electron?.appCheckForUpdates().catch(reportRejection) */}
+        {/*         }} */}
+        {/*         iconStart={{ */}
+        {/*           icon: 'refresh', */}
+        {/*           size: 'sm', */}
+        {/*           className: 'p-1', */}
+        {/*         }} */}
+        {/*       > */}
+        {/*         Check for updates */}
+        {/*       </ActionButton> */}
+        {/*     </div> */}
+        {/*     <p className="max-w-2xl mt-6"> */}
+        {/*       Don't see the feature you want? Check to see if it's on{' '} */}
+        {/*       <a */}
+        {/*         onClick={openExternalBrowserIfDesktop( */}
+        {/*           'https://github.com/KittyCAD/modeling-app/discussions' */}
+        {/*         )} */}
+        {/*         href="https://github.com/KittyCAD/modeling-app/discussions" */}
+        {/*         target="_blank" */}
+        {/*         rel="noopener noreferrer" */}
+        {/*       > */}
+        {/*         our roadmap */}
+        {/*       </a> */}
+        {/*       , and start a discussion if you don't see it! Your feedback will */}
+        {/*       help us prioritize what to build next. */}
+        {/*     </p> */}
+          {/* </div> */}
         </div>
       </div>
     )
