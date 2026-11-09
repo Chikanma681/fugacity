@@ -14,20 +14,20 @@ export const defaultGlobalStatusBarItems = ({
   filePath?: string
 }): StatusBarItemType[] => [
   // isDesktop()
-    // ? {
-    //     id: 'version',
-    //     element: 'externalLink',
-    //     label: `v${APP_VERSION}`,
-    //     href: getReleaseUrl(),
-    //     toolTip: {
-    //       children: 'View the release notes on GitHub',
-    //     },
-    //   }
-    // : {
-    //     id: 'download-desktop-app',
-    //     'data-testid': 'download-desktop-app',
-    //     component: DownloadDesktopApp,
-    //   },
+  // ? {
+  //     id: 'version',
+  //     element: 'externalLink',
+  //     label: `v${APP_VERSION}`,
+  //     href: getReleaseUrl(),
+  //     toolTip: {
+  //       children: 'View the release notes on GitHub',
+  //     },
+  //   }
+  // : {
+  //     id: 'download-desktop-app',
+  //     'data-testid': 'download-desktop-app',
+  //     component: DownloadDesktopApp,
+  //   },
   {
     id: 'telemetry',
     element: 'link',
