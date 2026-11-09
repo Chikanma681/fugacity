@@ -224,12 +224,12 @@ function ProjectMenuPopover({
   const breadCrumb = {
     projectName: project?.name || '',
     // sep: '/',
-    filename: '.fgc'
+    filename: '.fgc',
     // filename: file?.name
     //   ? file.name.slice(file.name.lastIndexOf(fsZds.sep) + 1)
     //   : APP_NAME,
   }
-  const breadCrumbTooltip = `${project?.name}.fgc`;
+  const breadCrumbTooltip = `${project?.name}.fgc`
 
   return (
     <Popover className="relative">
