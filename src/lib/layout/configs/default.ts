@@ -122,18 +122,18 @@ const primaryPane: Layout = {
           },
         ] satisfies Action[])
       : []),
-    {
-      id: 'add-file-to-project',
-      label: 'Add file to project',
-      icon: 'importFile',
-      actionType: ActionType.AddFile,
-    },
-    {
-      id: 'export',
-      label: 'Export part',
-      icon: 'floppyDiskArrow',
-      actionType: ActionType.Export,
-    },
+    // {
+    //   id: 'add-file-to-project',
+    //   label: 'Add file to project',
+    //   icon: 'importFile',
+    //   actionType: ActionType.AddFile,
+    // },
+    // {
+    //   id: 'export',
+    //   label: 'Export part',
+    //   icon: 'floppyDiskArrow',
+    //   actionType: ActionType.Export,
+    // },
   ],
 }
 const workspacePane: Layout = {
