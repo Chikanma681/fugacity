@@ -149,50 +149,50 @@ function ProjectMenuPopover({
           },
         },
         'break',
-        {
-          id: 'importFile',
-          Element: 'button',
-          children: (
-            <>
-              <span className="flex-1">Add file to project</span>
-              <kbd className="hotkey">
-                {hotkeyDisplay('mod+alt+l', platform)}
-              </kbd>
-            </>
-          ),
-          onClick: () =>
-            sendAddFileToProjectCommandForCurrentProject(
-              settings.actor,
-              commands.actor
-            ),
-        },
-        {
-          id: 'export',
-          Element: 'button',
-          children: (
-            <>
-              <span className="flex-1">Export current part</span>
-              <kbd className="hotkey">
-                {hotkeyDisplay('ctrl+shift+e', platform)}
-              </kbd>
-              {!hasCommand(exportCommandInfo) && (
-                <Tooltip
-                  position="right"
-                  wrapperClassName="!max-w-none min-w-fit"
-                >
-                  Awaiting engine connection
-                </Tooltip>
-              )}
-            </>
-          ),
-          disabled: !hasCommand(exportCommandInfo),
-          onClick: () =>
-            commands.send({
-              type: 'Find and select command',
-              data: exportCommandInfo,
-            }),
-        },
-        'break',
+        // {
+        //   id: 'importFile',
+        //   Element: 'button',
+        //   children: (
+        //     <>
+        //       <span className="flex-1">Add file to project</span>
+        //       <kbd className="hotkey">
+        //         {hotkeyDisplay('mod+alt+l', platform)}
+        //       </kbd>
+        //     </>
+        //   ),
+        //   onClick: () =>
+        //     sendAddFileToProjectCommandForCurrentProject(
+        //       settings.actor,
+        //       commands.actor
+        //     ),
+        // },
+        // // {
+        //   id: 'export',
+        //   Element: 'button',
+        //   children: (
+        //     <>
+        //       <span className="flex-1">Export current part</span>
+        //       <kbd className="hotkey">
+        //         {hotkeyDisplay('ctrl+shift+e', platform)}
+        //       </kbd>
+        //       {!hasCommand(exportCommandInfo) && (
+        //         <Tooltip
+        //           position="right"
+        //           wrapperClassName="!max-w-none min-w-fit"
+        //         >
+        //           Awaiting engine connection
+        //         </Tooltip>
+        //       )}
+        //     </>
+        //   ),
+        //   disabled: !hasCommand(exportCommandInfo),
+        //   onClick: () =>
+        //     commands.send({
+        //       type: 'Find and select command',
+        //       data: exportCommandInfo,
+        //     }),
+        // },
+        // 'break',
         {
           id: 'go-home',
           Element: 'button',
