@@ -40,7 +40,7 @@ const ProjectSidebarMenu = ({
   return (
     <div className={'!no-underline flex gap-2 ' + trafficLightsOffset}>
       <div className="relative group/home">
-        {/* <AppLogoLink project={project} file={file} /> */}
+        <AppLogoLink project={project} file={file} />
         {isDesktop() && <Tooltip position="bottom-left">Go home</Tooltip>}
       </div>
       {enableMenu ? (
@@ -68,14 +68,14 @@ function AppLogoLink({
   const { kclManager } = useSingletons()
   const { onProjectClose } = useLspContext()
   const wrapperClassName =
-    "cursor-pointer relative group-hover/home:before:outline h-full grid flex-none place-content-center group p-1.5 before:block before:content-[''] before:absolute before:inset-0 before:bottom-1 before:z-[-1] before:bg-primary before:rounded-b-sm"
-  const logoClassName = 'w-auto h-4 text-chalkboard-10'
+    "cursor-pointer relative group-hover/home:before:outline h-full grid flex-none place-content-center group p-1.5 before:block before:content-[''] before:absolute before:inset-0 before:bottom-1 before:z-[-1] before:bg-chalkboard-100 before:rounded-b-sm"
+  const logoClassName = 'w-auto h-6 text-chalkboard-10'
 
   if (!window.electron) {
     return (
       <div
         data-testid="app-logo"
-        className="relative h-full grid flex-none place-content-center group p-1.5 before:block before:content-[''] before:absolute before:inset-0 before:bottom-1 before:z-[-1] before:bg-primary before:rounded-b-sm"
+        className="relative h-full grid flex-none place-content-center group p-1.5 before:block before:content-[''] before:absolute before:inset-0 before:bottom-1 before:z-[-1] before:bg-chalkboard-100 before:rounded-b-sm"
       >
         <Logo data-onboarding-id="app-logo" className={logoClassName} />
         <span className="sr-only">{APP_NAME}</span>

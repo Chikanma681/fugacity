@@ -98,7 +98,7 @@ export const OpenInDesktopAppHandler = (props: React.PropsWithChildren) => {
         <h1 className="text-2xl text-center ">
           <div className="mb-4">Launching </div>
           <div className="flex items-center gap-4 flex-wrap text-4xl">
-            <Logo className="w-40" aria-label="Zoo" />
+            <Logo className="h-20 w-auto" aria-label="Fugacity" />
             <span>Fugacity</span>
           </div>
         </h1>
