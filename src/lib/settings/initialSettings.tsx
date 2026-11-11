@@ -333,6 +333,7 @@ export function createSettings() {
       includeSettings: new Setting<boolean>({
         defaultValue: true,
         description: 'Whether to include settings in the command bar',
+        hideOnPlatform: 'both',
         validate: (v) => typeof v === 'boolean',
         commandConfig: {
           inputType: 'boolean',
