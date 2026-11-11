@@ -1396,7 +1396,6 @@ export class CameraControls {
         this.enableRotate &&
         velocity > 0
       ) {
-
         const decayInterval = setInterval(() => {
           const decayedVelocity = velocity - velocityFlickDecay
           if (decayedVelocity <= 0) {

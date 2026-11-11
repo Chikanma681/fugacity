@@ -13,7 +13,6 @@ import {
 } from '@src/hooks/useMenu'
 import { reportRejection } from '@src/lib/trap'
 
-
 import { useApp, useSingletons } from '@src/lib/boot'
 import { getDeleteKeys } from '@src/lib/utils'
 import { useNetworkContext } from '@src/hooks/useNetworkContext'

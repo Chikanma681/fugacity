@@ -500,8 +500,7 @@ export class SceneEntities {
           new Vector2()
         )
         // Choose grid colors based on app theme: dark = existing colors, light = subtle gray
-        const isLight =
-          getResolvedTheme(this.sceneInfra.theme) === Themes.Light
+        const isLight = getResolvedTheme(this.sceneInfra.theme) === Themes.Light
         const majorColor: [number, number, number, number] = isLight
           ? [0.3, 0.3, 0.3, 1.0]
           : [0.7, 0.7, 0.7, 1.0]

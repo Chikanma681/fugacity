@@ -13,7 +13,10 @@ import {
   REGEXP_UUIDV4,
 } from '@src/lib/constants'
 import { isDesktop } from '@src/lib/isDesktop'
-import type { SettingProps, SettingsLevel } from '@src/lib/settings/settingsTypes'
+import type {
+  SettingProps,
+  SettingsLevel,
+} from '@src/lib/settings/settingsTypes'
 import { Themes } from '@src/lib/theme'
 import { reportRejection } from '@src/lib/trap'
 import { isEnumMember } from '@src/lib/types'
