@@ -332,31 +332,6 @@ const Home = () => {
                 Create project
               </ActionButton>
             </li>
-            <li className="contents">
-              <ActionButton
-                Element="button"
-                onClick={() =>
-                  commands.send({
-                    type: 'Find and select command',
-                    data: {
-                      groupId: 'application',
-                      name: 'create-a-sample',
-                      argDefaultValues: {
-                        source: 'kcl-samples',
-                      },
-                    },
-                  })
-                }
-                className={sidebarButtonClasses}
-                iconStart={{
-                  icon: 'importFile',
-                  bgClassName: '!bg-transparent rounded-sm',
-                }}
-                data-testid="home-create-from-sample"
-              >
-                Create from a sample
-              </ActionButton>
-            </li>
           </ul>
           <ul className="flex flex-col">
             {!hasUnlimitedCredits && (
@@ -389,22 +364,7 @@ const Home = () => {
                 View your account
               </ActionButton>
             </li>
-            <li className="contents">
-              <ActionButton
-                Element="externalLink"
-                to={withSiteBaseURL('/blog')}
-                onClick={openExternalBrowserIfDesktop(withSiteBaseURL('/blog'))}
-                className={sidebarButtonClasses}
-                iconStart={{
-                  icon: 'glasses',
-                  bgClassName: '!bg-transparent rounded-sm',
-                }}
-                data-testid="home-blog"
-              >
-                Read the Zoo blog
-              </ActionButton>
-            </li>
-          </ul>
+                     </ul>
         </aside>
         <ProjectGrid
           searchResults={searchResults ?? []}
