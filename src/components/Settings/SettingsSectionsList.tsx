@@ -53,17 +53,6 @@ export function SettingsSectionsList({
       >
         Resets
       </button>
-      <button
-        onClick={() =>
-          scrollRef.current?.querySelector(`#settings-about`)?.scrollIntoView({
-            block: 'center',
-            behavior: 'smooth',
-          })
-        }
-        className="capitalize text-left border-none px-1"
-      >
-        About
-      </button>
     </div>
   )
 }
