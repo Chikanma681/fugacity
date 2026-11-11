@@ -4,7 +4,7 @@ import type { GibbsMode } from '@src/lib/gibbs/types'
 import type { UnitLength } from '@rust/kcl-lib/bindings/ModelingCmd'
 import type { WarningLevel } from '@rust/kcl-lib/bindings/WarningLevel'
 
-export const APP_NAME = 'Design Studio'
+export const APP_NAME = 'Fugacity'
 /** Search string in new project names to increment as an index */
 export const INDEX_IDENTIFIER = '$n'
 /** The maximum number of 0's to pad a default project name's index with */
