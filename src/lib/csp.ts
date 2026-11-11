@@ -109,6 +109,7 @@ const buildCsp = (domain?: string) => {
   const connectSources = uniqueSources([
     "'self'",
     'https://plausible.corp.zoo.dev',
+    'https://discord.com',
     domain ? `https://api.${domain}` : undefined,
     domain ? `wss://api.${domain}` : undefined,
     'http://localhost:8787',

@@ -20,6 +20,7 @@ export type EnvironmentVariables = {
   readonly VITE_ZOO_API_TOKEN: string | undefined
   readonly VITE_ZOO_SITE_BASE_URL: string | undefined
   readonly VITE_ZOO_SITE_APP_URL: string | undefined
+  readonly VITE_FUGACITY_FEEDBACK_WEBHOOK_URL: string | undefined
 }
 
 /** Store the environment in memory to be accessed during runtime */
@@ -167,6 +168,8 @@ export default (): EnvironmentVariables => {
       env.VITE_ZOO_API_TOKEN || env.VITE_KITTYCAD_API_TOKEN || undefined,
     VITE_ZOO_SITE_BASE_URL: SITE_URL || undefined,
     VITE_ZOO_SITE_APP_URL: APP_URL || undefined,
+    VITE_FUGACITY_FEEDBACK_WEBHOOK_URL:
+      env.VITE_FUGACITY_FEEDBACK_WEBHOOK_URL || undefined,
   }
 
   return environmentVariables

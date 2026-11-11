@@ -84,6 +84,7 @@ export interface IElectronAPI {
       VITE_GIBBS_API_URL: string
       VITE_KITTYCAD_API_TOKEN: string // legacy token name
       VITE_ZOO_API_TOKEN: string
+      VITE_FUGACITY_FEEDBACK_WEBHOOK_URL: string
     }
   }
   kittycad: (access: string, args: any) => any

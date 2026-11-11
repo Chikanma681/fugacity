@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import type { ActionButtonProps } from '@src/components/ActionButton'
 import { ActionButton } from '@src/components/ActionButton'
 import { CustomIcon } from '@src/components/CustomIcon'
+import { FeedbackDialog } from '@src/components/FeedbackDialog'
 import Tooltip from '@src/components/Tooltip'
 import env from '@src/env'
 import { useAbsoluteFilePath } from '@src/hooks/useAbsoluteFilePath'
@@ -29,6 +30,7 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
   const navigate = useNavigate()
   const fullEnvironmentName = env().VITE_ZOO_BASE_DOMAIN
   const [hasMultipleEnvironments, setHasMultipleEnvironments] = useState(false)
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
   useEffect(() => {
     if (!didListEnvironments) {
@@ -84,32 +86,11 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
         },
         'break',
         {
-          id: 'request-feature',
-          Element: 'externalLink',
-          to: 'https://github.com/KittyCAD/modeling-app/discussions',
-          children: (
-            <>
-              <span className="flex-1">Request a feature</span>
-              <CustomIcon
-                name="link"
-                className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
-              />
-            </>
-          ),
-        },
-        {
-          id: 'report-bug',
-          Element: 'externalLink',
-          to: 'https://github.com/KittyCAD/modeling-app/issues/new/choose',
-          children: (
-            <>
-              <span className="flex-1">Report a bug</span>
-              <CustomIcon
-                name="link"
-                className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
-              />
-            </>
-          ),
+          id: 'send-feedback',
+          Element: 'button',
+          'data-testid': 'user-sidebar-send-feedback',
+          children: <span className="flex-1">Send feedback</span>,
+          onClick: () => setIsFeedbackOpen(true),
         },
         // {
         //    id: 'release-notes',
@@ -187,97 +168,104 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
   }
 
   return (
-    <Popover className="relative grid">
-      <Popover.Button
-        className="m-0 relative group/avatar border-0 w-fit min-w-max p-0 rounded-sm focus-visible:outline-2 hover:bg-transparent"
-        data-testid="user-sidebar-toggle"
-      >
-        <div className="flex items-center">
-          <div className="avatar">
-            {user?.image && !imageLoadFailed ? (
-              <img
-                src={user?.image || ''}
-                alt={user?.name || ''}
-                className="h-6 w-6"
-                referrerPolicy="no-referrer"
-                onError={() => setImageLoadFailed(true)}
-              />
-            ) : (
-              <CustomIcon
-                name="person"
-                className="w-6 h-6 text-chalkboard-70 dark:text-chalkboard-40 bg-chalkboard-20 dark:bg-chalkboard-80"
-              />
-            )}
+    <>
+      <Popover className="relative grid">
+        <Popover.Button
+          className="m-0 relative group/avatar border-0 w-fit min-w-max p-0 rounded-sm focus-visible:outline-2 hover:bg-transparent"
+          data-testid="user-sidebar-toggle"
+        >
+          <div className="flex items-center">
+            <div className="avatar">
+              {user?.image && !imageLoadFailed ? (
+                <img
+                  src={user?.image || ''}
+                  alt={user?.name || ''}
+                  className="h-6 w-6"
+                  referrerPolicy="no-referrer"
+                  onError={() => setImageLoadFailed(true)}
+                />
+              ) : (
+                <CustomIcon
+                  name="person"
+                  className="w-6 h-6 text-chalkboard-70 dark:text-chalkboard-40 bg-chalkboard-20 dark:bg-chalkboard-80"
+                />
+              )}
+            </div>
+            <CustomIcon
+              name="caretDown"
+              className="w-4 h-4 text-chalkboard-70 dark:text-chalkboard-40 ui-open:rotate-180"
+            />
           </div>
-          <CustomIcon
-            name="caretDown"
-            className="w-4 h-4 text-chalkboard-70 dark:text-chalkboard-40 ui-open:rotate-180"
-          />
-        </div>
-        <Tooltip position="bottom-right" hoverOnly>
-          User menu
-        </Tooltip>
-      </Popover.Button>
-      <Transition
-        enter="duration-100 ease-out"
-        enterFrom="opacity-0 -translate-y-2"
-        enterTo="opacity-100 translate-y-0"
-        as={Fragment}
-      >
-        <Popover.Panel
-          data-testid="user-dropdown"
-          className={`z-10 absolute top-full right-0 mt-1 pb-1 w-48 bg-chalkboard-10 dark:bg-chalkboard-90
+          <Tooltip position="bottom-right" hoverOnly>
+            User menu
+          </Tooltip>
+        </Popover.Button>
+        <Transition
+          enter="duration-100 ease-out"
+          enterFrom="opacity-0 -translate-y-2"
+          enterTo="opacity-100 translate-y-0"
+          as={Fragment}
+        >
+          <Popover.Panel
+            data-testid="user-dropdown"
+            className={`z-10 absolute top-full right-0 mt-1 pb-1 w-48 bg-chalkboard-10 dark:bg-chalkboard-90
           border border-solid border-chalkboard-20 dark:border-chalkboard-90 rounded
           shadow-lg`}
-        >
-          {({ close }) => (
-            <>
-              {user && (
-                <div className="flex flex-col gap-1 px-2.5 py-3 bg-chalkboard-20 dark:bg-chalkboard-80/50">
-                  <p className="m-0 text-mono text-xs" data-testid="username">
-                    {displayedName || ''}
-                  </p>
-                  {displayedName !== user.email && (
-                    <p
-                      className="m-0 overflow-ellipsis overflow-hidden text-chalkboard-70 dark:text-chalkboard-40 text-xs"
-                      data-testid="email"
-                    >
-                      {user.email}
+          >
+            {({ close }) => (
+              <>
+                {user && (
+                  <div className="flex flex-col gap-1 px-2.5 py-3 bg-chalkboard-20 dark:bg-chalkboard-80/50">
+                    <p className="m-0 text-mono text-xs" data-testid="username">
+                      {displayedName || ''}
                     </p>
-                  )}
-                </div>
-              )}
-              <ul className="relative flex flex-col items-stretch content-stretch p-0.5">
-                {userMenuItems.map((props, index) => {
-                  if (props === 'break') {
-                    return index !== userMenuItems.length - 1 ? (
-                      <li key={`break-${index}`} className="contents">
-                        <hr className="border-chalkboard-20 dark:border-chalkboard-80" />
-                      </li>
-                    ) : null
-                  }
-
-                  const { id, children, ...rest } = props
-                  return (
-                    <li key={id} className="contents">
-                      <ActionButton
-                        {...rest}
-                        className="!font-sans flex items-center gap-2 rounded-sm py-1.5 px-2 cursor-pointer hover:bg-chalkboard-20 dark:hover:bg-chalkboard-80 !border-none text-left focus-visible:outline-appForeground"
-                        onMouseUp={() => {
-                          close()
-                        }}
+                    {displayedName !== user.email && (
+                      <p
+                        className="m-0 overflow-ellipsis overflow-hidden text-chalkboard-70 dark:text-chalkboard-40 text-xs"
+                        data-testid="email"
                       >
-                        {children}
-                      </ActionButton>
-                    </li>
-                  )
-                })}
-              </ul>
-            </>
-          )}
-        </Popover.Panel>
-      </Transition>
-    </Popover>
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <ul className="relative flex flex-col items-stretch content-stretch p-0.5">
+                  {userMenuItems.map((props, index) => {
+                    if (props === 'break') {
+                      return index !== userMenuItems.length - 1 ? (
+                        <li key={`break-${index}`} className="contents">
+                          <hr className="border-chalkboard-20 dark:border-chalkboard-80" />
+                        </li>
+                      ) : null
+                    }
+
+                    const { id, children, ...rest } = props
+                    return (
+                      <li key={id} className="contents">
+                        <ActionButton
+                          {...rest}
+                          className="!font-sans flex items-center gap-2 rounded-sm py-1.5 px-2 cursor-pointer hover:bg-chalkboard-20 dark:hover:bg-chalkboard-80 !border-none text-left focus-visible:outline-appForeground"
+                          onMouseUp={() => {
+                            close()
+                          }}
+                        >
+                          {children}
+                        </ActionButton>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </>
+            )}
+          </Popover.Panel>
+        </Transition>
+      </Popover>
+      <FeedbackDialog
+        isOpen={isFeedbackOpen}
+        user={{ name: displayedName, email: user?.email }}
+        onClose={() => setIsFeedbackOpen(false)}
+      />
+    </>
   )
 }
 
