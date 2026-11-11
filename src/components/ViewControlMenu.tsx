@@ -10,7 +10,6 @@ import { useModelingContext } from '@src/hooks/useModelingContext'
 import { getSelectedSketchTarget } from '@src/lang/queryAst'
 import type { AxisNames } from '@src/lib/constants'
 import { VIEW_NAMES_SEMANTIC } from '@src/lib/constants'
-import { SNAP_TO_GRID_HOTKEY } from '@src/lib/hotkeys'
 import { resetCameraPosition } from '@src/lib/resetCameraPosition'
 import { useApp, useSingletons } from '@src/lib/boot'
 import { reportRejection } from '@src/lib/trap'
@@ -36,9 +35,6 @@ export function useViewControlMenuItems() {
   const shouldLockView =
     modelingState.matches('Sketch') &&
     !settingsValues.app.allowOrbitInSketchMode.current
-
-  const sketching = modelingState.matches('Sketch')
-  const snapToGrid = settingsValues.modeling.snapToGrid.current
 
   // Check if there's a valid selection with source range for "View KCL source code"
   const firstValidSelection = useMemo(() => {
@@ -72,9 +68,7 @@ export function useViewControlMenuItems() {
       <ContextMenuItem
         onClick={() => {
           resetCameraPosition({
-            sceneInfra: kclManager.sceneInfra,
             engineCommandManager: kclManager.engineCommandManager,
-            settingsActor: settings.actor,
           }).catch(reportRejection)
         }}
         disabled={shouldLockView}
@@ -143,26 +137,6 @@ export function useViewControlMenuItems() {
       >
         Start sketch on selection
       </ContextMenuItem>,
-      ...(sketching
-        ? [
-            <ContextMenuDivider />,
-            <ContextMenuItem
-              icon={snapToGrid ? 'checkmark' : undefined}
-              hotkey={SNAP_TO_GRID_HOTKEY}
-              onClick={() => {
-                settings.send({
-                  type: 'set.modeling.snapToGrid',
-                  data: {
-                    level: 'project',
-                    value: !snapToGrid,
-                  },
-                })
-              }}
-            >
-              Snap to Grid
-            </ContextMenuItem>,
-          ]
-        : []),
     ],
     [
       shouldLockView,
@@ -170,8 +144,6 @@ export function useViewControlMenuItems() {
       firstValidSelection,
       modelingSend,
       modelingState.context.store.useSketchSolveMode,
-      sketching,
-      snapToGrid,
       layout.signal.value,
       kclManager,
       settings,

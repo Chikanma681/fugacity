@@ -13,8 +13,6 @@ import {
 } from '@src/hooks/useMenu'
 import { reportRejection } from '@src/lib/trap'
 
-import useHotkeyWrapper from '@src/lib/hotkeyWrapper'
-import { SNAP_TO_GRID_HOTKEY } from '@src/lib/hotkeys'
 
 import { useApp, useSingletons } from '@src/lib/boot'
 import { getDeleteKeys } from '@src/lib/utils'
@@ -367,23 +365,9 @@ export const ModelingMachineProvider = ({
   })
   useHotkeys(['mod + alt + x'], () => {
     resetCameraPosition({
-      sceneInfra: kclManager.sceneInfra,
       engineCommandManager: kclManager.engineCommandManager,
-      settingsActor,
     }).catch(reportRejection)
   })
-
-  // Toggle Snap to grid
-  useHotkeyWrapper(
-    [SNAP_TO_GRID_HOTKEY],
-    () => {
-      settingsActor.send({
-        type: 'set.modeling.snapToGrid',
-        data: { level: 'project', value: !snapToGrid.current },
-      })
-    },
-    kclManager
-  )
 
   useHotkeys(
     ['mod + a'],

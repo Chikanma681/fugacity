@@ -1063,41 +1063,9 @@ export class CameraControls {
     })
   }
 
-  /**
-   * A helper function that will override this.oldCameraState
-   * with the current setting's camera projection. If these are desynced
-   * that is okay but when the camera restores we want the user to be in the correct
-   * camera projection which is the settings value. Not this old state.
-   *
-   * Gotcha: This is not to be confused with Named Views, those have correct state.
-   */
   overrideOldCameraStateToPreventDesync() {
-    if (!this.getSettings) {
-      return
-    }
-
-    // Engine idle disconnection happened, we saved off the camera state
-    // If the settings camera projection is different from the saved camera state we need to override it.
-    const settings = this.getSettings()
-    const cameraProjection = settings.modeling.cameraProjection.current
-    const isOrtho = cameraProjection === 'orthographic' ? true : false
-
     if (this.oldCameraState) {
-      // Leave a log to know when this desyncs
-      console.log(`restoring camera projection setting:${cameraProjection}`)
-      console.log(
-        `oldCameraState projection:${isOrtho ? 'orthographic' : 'perspective'}, ortho_scaled_enabled:${this.oldCameraState.ortho_scale_enabled}`
-      )
-
-      if (this.oldCameraState.is_ortho !== isOrtho) {
-        console.log(
-          'oldCameraState is_ortho desynced',
-          this.oldCameraState.is_ortho,
-          isOrtho
-        )
-      }
-
-      this.oldCameraState.is_ortho = isOrtho
+      this.oldCameraState.is_ortho = true
       // Always keep this enabled!
       this.oldCameraState.ortho_scale_enabled = true
     }
@@ -1105,7 +1073,6 @@ export class CameraControls {
 
   async restoreRemoteCameraStateAndTriggerSync() {
     if (this.oldCameraState) {
-      // Always write settings.modeling.cameraProjection to the restored camera view
       this.overrideOldCameraStateToPreventDesync()
       await this.engineCommandManager.sendSceneCommand({
         type: 'modeling_cmd_req',
@@ -1344,12 +1311,6 @@ export class CameraControls {
             this.enableRotate,
             this.enableZoom
           )
-    if (
-      initialInteractionType === 'rotate' &&
-      this.getSettings?.().modeling.cameraOrbit.current === 'trackball'
-    ) {
-      return 'rotatetrackball'
-    }
     return initialInteractionType
   }
 
@@ -1416,12 +1377,8 @@ export class CameraControls {
     hammertime.on('pan', (ev) => {
       if (this.syncDirection === 'engineToClient' && ev.maxPointers === 1) {
         if (this.enableRotate) {
-          const orbitMode =
-            this.getSettings?.().modeling.cameraOrbit.current !== 'spherical'
-              ? 'rotatetrackball'
-              : 'rotate'
           this.moveSender.send(() => {
-            this.doMove(orbitMode, [ev.center.x, ev.center.y])
+            this.doMove('rotate', [ev.center.x, ev.center.y])
           })
         }
       }
@@ -1439,10 +1396,6 @@ export class CameraControls {
         this.enableRotate &&
         velocity > 0
       ) {
-        const orbitMode =
-          this.getSettings?.().modeling.cameraOrbit.current !== 'spherical'
-            ? 'rotatetrackball'
-            : 'rotate'
 
         const decayInterval = setInterval(() => {
           const decayedVelocity = velocity - velocityFlickDecay
@@ -1465,7 +1418,7 @@ export class CameraControls {
             Math.sin(degToRad(direction)) * velocity * decayRefreshRate
 
           this.moveSender.send(() => {
-            this.doMove(orbitMode, [center.x, center.y])
+            this.doMove('rotate', [center.x, center.y])
           })
         }, decayRefreshRate)
         decayIntervals.push(decayInterval)

@@ -2,7 +2,6 @@ import { withAPIBaseURL } from '@src/lib/withBaseURL'
 import { KclManager, ZDSProject } from '@src/lang/KclManager'
 import RustContext from '@src/lib/rustContext'
 import { uuidv4 } from '@src/lib/utils'
-import type { SaveSettingsPayload } from '@src/lib/settings/settingsTypes'
 import { useSelector } from '@xstate/react'
 import type {
   ActorRefFrom,
@@ -44,10 +43,6 @@ import {
 } from '@src/lib/layout'
 import { buildFSHistoryExtension } from '@src/editor/plugins/fs'
 import { type Signal, signal, effect } from '@preact/signals-core'
-import {
-  getAllCurrentSettings,
-  jsAppSettings,
-} from '@src/lib/settings/settingsUtils'
 import { reportRejection } from '@src/lib/trap'
 import type { Project } from '@src/lib/project'
 import type { UserResponse } from '@kittycad/lib/dist/types/src'
@@ -149,9 +144,6 @@ export class App implements AppSubsystems {
    */
   systemIOActor: SystemIOActor
 
-  // TODO: refactor this to not require keeping around the last settings to compare to
-  private lastSettings: SaveSettingsPayload
-
   constructor(subsystems: AppSubsystems) {
     this.wasmPromise = subsystems.wasmPromise
     this.auth = subsystems.auth
@@ -180,9 +172,6 @@ export class App implements AppSubsystems {
     })
 
     this.singletons = this.buildSingletons()
-    this.lastSettings = getAllCurrentSettings(
-      getOnlySettingsFromContext(this.settings.actor.getSnapshot().context)
-    )
   }
 
   /**
@@ -397,93 +386,11 @@ export class App implements AppSubsystems {
     }
     const { context } = snapshot
 
-    // Update line wrapping
-    this.singletons.kclManager.setEditorLineWrapping(
-      context.textEditor.textWrapping.current
-    )
-
-    // Update engine highlighting
-    const newHighlighting = context.modeling.highlightEdges.current
-    if (
-      newHighlighting !== this.lastSettings.modeling.highlightEdges &&
-      this.singletons.kclManager.engineCommandManager.connection
-    ) {
-      this.singletons.kclManager.engineCommandManager
-        .setHighlightEdges(newHighlighting)
-        .catch(reportRejection)
-    }
-
-    // Update cursor blinking
-    const newBlinking = context.textEditor.blinkingCursor.current
-    document.documentElement.style.setProperty(
-      `--cursor-color`,
-      newBlinking ? 'auto' : 'transparent'
-    )
-    this.singletons.kclManager.setCursorBlinking(newBlinking)
-
-    // Update theme
-    const newTheme = context.app.theme.current
-    const newBackfaceColor = context.modeling.backfaceColor.current
-    Promise.all([
-      this.singletons.kclManager.updateTheme(newTheme),
-      ...(this.singletons.kclManager.engineCommandManager.connection?.connected
-        ? [
-            this.singletons.kclManager.engineCommandManager.setBackfaceColor(
-              newBackfaceColor
-            ),
-          ]
-        : []),
-    ]).catch(reportRejection)
-
-    // Execute AST
-    try {
-      const relevantSetting = (s: SaveSettingsPayload) => {
-        const hasScaleGrid =
-          s.modeling.showScaleGrid !== context.modeling.showScaleGrid.current
-        const hasHighlightEdges =
-          s.modeling.highlightEdges !== context.modeling.highlightEdges.current
-        const hasBackfaceColor =
-          s.modeling.backfaceColor !== context.modeling.backfaceColor.current
-        return hasScaleGrid || hasHighlightEdges || hasBackfaceColor
-      }
-
-      const settingsIncludeNewRelevantValues = relevantSetting(
-        this.lastSettings
-      )
-
-      // Relevant settings requiring a cleared scene and re-exec
-      if (
-        settingsIncludeNewRelevantValues &&
-        this.singletons.kclManager.engineCommandManager.connection
-      ) {
-        this.singletons.kclManager.rustContext
-          .clearSceneAndBustCache(
-            jsAppSettings(this.settings.actor),
-            this.singletons.kclManager.path
-          )
-          .then(() => this.singletons.kclManager.executeCode())
-          .catch(reportRejection)
-      }
-    } catch (e) {
-      console.error('Error executing AST after settings change', e)
-    }
+    this.singletons.kclManager
+      .updateTheme(context.app.theme.current)
+      .catch(reportRejection)
 
     this.singletons.kclManager.sceneInfra.camControls._setting_allowOrbitInSketchMode =
       context.app.allowOrbitInSketchMode.current
-
-    const newCurrentProjection = context.modeling.cameraProjection.current
-    if (
-      this.singletons.kclManager.sceneInfra.camControls &&
-      !this.singletons.kclManager.modelingState?.matches('Sketch')
-    ) {
-      this.singletons.kclManager.sceneInfra.camControls.engineCameraProjection =
-        newCurrentProjection
-    }
-
-    // TODO: Migrate settings to not be an XState actor so we don't need to save a snapshot
-    // of the last settings to know if they've changed.
-    this.lastSettings = getAllCurrentSettings(
-      getOnlySettingsFromContext(context)
-    )
   }
 }

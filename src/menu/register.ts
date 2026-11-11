@@ -166,22 +166,6 @@ export function modelingMenuCallbackMostActions({
       } else {
         kclManager.redo()
       }
-    } else if (data.menuLabel === 'View.Orthographic view') {
-      settingsActor.send({
-        type: 'set.modeling.cameraProjection',
-        data: {
-          level: 'user',
-          value: 'orthographic',
-        },
-      })
-    } else if (data.menuLabel === 'View.Perspective view') {
-      settingsActor.send({
-        type: 'set.modeling.cameraProjection',
-        data: {
-          level: 'user',
-          value: 'perspective',
-        },
-      })
     } else if (data.menuLabel === 'View.Standard views.Right view') {
       kclManager.sceneInfra.camControls
         .updateCameraToAxis(AxisNames.X)

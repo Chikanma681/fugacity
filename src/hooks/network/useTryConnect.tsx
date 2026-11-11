@@ -155,9 +155,7 @@ const setupSceneAndExecuteCodeAfterOpenedEngineConnection = async ({
     await sceneInfra.camControls.restoreRemoteCameraStateAndTriggerSync()
   } else {
     await resetCameraPosition({
-      sceneInfra,
       engineCommandManager,
-      settingsActor,
     })
   }
 
