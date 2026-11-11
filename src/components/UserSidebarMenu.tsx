@@ -82,7 +82,7 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
             void navigate(targetPath)
           },
         },
-       'break',
+        'break',
         {
           id: 'request-feature',
           Element: 'externalLink',
@@ -111,21 +111,21 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
             </>
           ),
         },
-       // {
-       //    id: 'release-notes',
-       //    Element: 'externalLink',
-       //    to: 'https://github.com/KittyCAD/modeling-app/releases',
-       //    children: (
-       //      <>
-       //        <span className="flex-1">Release notes</span>
-       //        <CustomIcon
-       //          name="link"
-       //          className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
-       //        />
-       //      </>
-       //    ),
-       //  },
-       {
+        // {
+        //    id: 'release-notes',
+        //    Element: 'externalLink',
+        //    to: 'https://github.com/KittyCAD/modeling-app/releases',
+        //    children: (
+        //      <>
+        //        <span className="flex-1">Release notes</span>
+        //        <CustomIcon
+        //          name="link"
+        //          className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
+        //        />
+        //      </>
+        //    ),
+        //  },
+        {
           id: 'check-for-updates',
           Element: 'button',
           hide: !isDesktop(),
