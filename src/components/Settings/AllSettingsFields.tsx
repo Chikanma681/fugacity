@@ -164,75 +164,75 @@ export const AllSettingsFields = forwardRef(
               Replay Onboarding
             </ActionButton>
           </SettingsSection>
-          <SettingsSection
-            title="Reset settings"
-            description={`Restore settings to their default values. Your settings are saved in
-                    ${
-                      isDesktop()
-                        ? ' a file in the app data folder for your OS.'
-                        : " your browser's local storage."
-                    }
-                  `}
-          >
-            <div className="flex flex-col items-start gap-4">
-              {isDesktop() && (
-                <ActionButton
-                  Element="button"
-                  onClick={toSync(async () => {
-                    const paths = await getSettingsFolderPaths(projectPath)
-                    const finalPath = paths[searchParamTab]
-                    if (!finalPath) {
-                      return new Error('finalPath undefined')
-                    }
-                    window.electron?.showInFolder(finalPath)
-                  }, reportRejection)}
-                  iconStart={{
-                    icon: 'folder',
-                    size: 'sm',
-                    className: 'p-1',
-                  }}
-                >
-                  Show in folder
-                </ActionButton>
-              )}
-              <ActionButton
-                Element="button"
-                onClick={() => {
-                  settings.send({
-                    type: 'Reset settings',
-                    level: searchParamTab,
-                  })
-                  toast.success(
-                    `Your ${searchParamTab}-level settings were reset`
-                  )
-                }}
-                iconStart={{
-                  icon: 'refresh',
-                  size: 'sm',
-                  className: 'p-1 text-chalkboard-10',
-                  bgClassName: 'bg-destroy-70',
-                }}
-              >
-                Reset {searchParamTab}-level settings
-              </ActionButton>
-            </div>
-          </SettingsSection>
-          <SettingsSection
-            title="Layout"
-            description="Reset to the default layout"
-          >
-            <ActionButton
-              Element="button"
-              onClick={layout.reset}
-              iconStart={{
-                icon: 'refresh',
-                size: 'sm',
-                className: 'p-1',
-              }}
-            >
-              Reset Layout
-            </ActionButton>
-          </SettingsSection>
+          {/* <SettingsSection */}
+          {/*   title="Reset settings" */}
+          {/*   description={`Restore settings to their default values. Your settings are saved in */}
+          {/*           ${ */}
+          {/*             isDesktop() */}
+          {/*               ? ' a file in the app data folder for your OS.' */}
+          {/*               : " your browser's local storage." */}
+          {/*           } */}
+          {/*         `} */}
+          {/* > */}
+          {/*   <div className="flex flex-col items-start gap-4"> */}
+          {/*     {isDesktop() && ( */}
+          {/*       <ActionButton */}
+          {/*         Element="button" */}
+          {/*         onClick={toSync(async () => { */}
+          {/*           const paths = await getSettingsFolderPaths(projectPath) */}
+          {/*           const finalPath = paths[searchParamTab] */}
+          {/*           if (!finalPath) { */}
+          {/*             return new Error('finalPath undefined') */}
+          {/*           } */}
+          {/*           window.electron?.showInFolder(finalPath) */}
+          {/*         }, reportRejection)} */}
+          {/*         iconStart={{ */}
+          {/*           icon: 'folder', */}
+          {/*           size: 'sm', */}
+          {/*           className: 'p-1', */}
+          {/*         }} */}
+          {/*       > */}
+          {/*         Show in folder */}
+          {/*       </ActionButton> */}
+          {/*     )} */}
+          {/*     <ActionButton */}
+          {/*       Element="button" */}
+          {/*       onClick={() => { */}
+          {/*         settings.send({ */}
+          {/*           type: 'Reset settings', */}
+          {/*           level: searchParamTab, */}
+          {/*         }) */}
+          {/*         toast.success( */}
+          {/*           `Your ${searchParamTab}-level settings were reset` */}
+          {/*         ) */}
+          {/*       }} */}
+          {/*       iconStart={{ */}
+          {/*         icon: 'refresh', */}
+          {/*         size: 'sm', */}
+          {/*         className: 'p-1 text-chalkboard-10', */}
+          {/*         bgClassName: 'bg-destroy-70', */}
+          {/*       }} */}
+          {/*     > */}
+          {/*       Reset {searchParamTab}-level settings */}
+          {/*     </ActionButton> */}
+          {/*   </div> */}
+          {/* </SettingsSection> */}
+          {/* <SettingsSection */}
+          {/*   title="Layout" */}
+          {/*   description="Reset to the default layout" */}
+          {/* > */}
+          {/*   <ActionButton */}
+          {/*     Element="button" */}
+          {/*     onClick={layout.reset} */}
+          {/*     iconStart={{ */}
+          {/*       icon: 'refresh', */}
+          {/*       size: 'sm', */}
+          {/*       className: 'p-1', */}
+          {/*     }} */}
+          {/*   > */}
+          {/*     Reset Layout */}
+          {/*   </ActionButton> */}
+          {/* </SettingsSection> */}
           {/*   <h2 id="settings-about" className="text-2xl mt-6 font-bold"> */}
           {/*     About Design Studio */}
           {/*   </h2> */}
