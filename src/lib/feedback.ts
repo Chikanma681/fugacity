@@ -4,10 +4,10 @@ import { APP_VERSION } from '@src/routes/utils'
 export type FeedbackType = 'bug' | 'feature' | 'complaint' | 'other'
 
 export const FEEDBACK_TYPE_LABELS: Record<FeedbackType, string> = {
-  bug: '🐛 Bug report',
-  feature: '💡 Feature request',
-  complaint: '😠 Complaint',
-  other: '💬 Other feedback',
+  bug: 'Bug report',
+  feature: ' Feature request',
+  complaint: ' Complaint',
+  other: ' Other feedback',
 }
 
 export type FeedbackUser = {
