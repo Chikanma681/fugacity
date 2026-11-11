@@ -35,6 +35,6 @@ export function SettingsTabs({
           )}
         </RadioGroup.Option>
       )}
-   </RadioGroup>
+    </RadioGroup>
   )
 }
