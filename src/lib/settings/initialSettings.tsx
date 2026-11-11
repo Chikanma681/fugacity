@@ -157,6 +157,7 @@ export function createSettings() {
        */
       showDebugPanel: new Setting<boolean>({
         defaultValue: false,
+        hideOnPlatform: 'both',
         description: 'Whether to show the debug panel, a development tool',
         validate: (v) => typeof v === 'boolean',
         commandConfig: {
