@@ -48,20 +48,20 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
   const userMenuItems = useMemo<(ActionButtonProps | 'break')[]>(
     () =>
       [
-        {
-          id: 'account',
-          Element: 'externalLink',
-          to: withSiteBaseURL('/account'),
-          children: (
-            <>
-              <span className="flex-1">Manage Zoo account</span>
-              <CustomIcon
-                name="link"
-                className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
-              />
-            </>
-          ),
-        },
+        // {
+        //   id: 'account',
+        //   Element: 'externalLink',
+        //   to: withSiteBaseURL('/account'),
+        //   children: (
+        //     <>
+        //       <span className="flex-1">Manage Fugacity account</span>
+        //       <CustomIcon
+        //         name="link"
+        //         className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
+        //       />
+        //     </>
+        //   ),
+        // },
         {
           id: 'settings',
           Element: 'button',
@@ -82,18 +82,7 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
             void navigate(targetPath)
           },
         },
-        {
-          id: 'keybindings',
-          Element: 'button',
-          children: 'Keyboard shortcuts',
-          onClick: () => {
-            const targetPath = location.pathname.includes(PATHS.FILE)
-              ? filePath + PATHS.SETTINGS_KEYBINDINGS
-              : PATHS.HOME + PATHS.SETTINGS_KEYBINDINGS
-            void navigate(targetPath)
-          },
-        },
-        'break',
+       'break',
         {
           id: 'request-feature',
           Element: 'externalLink',
@@ -122,35 +111,21 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
             </>
           ),
         },
-        {
-          id: 'community',
-          Element: 'externalLink',
-          to: 'https://discord.gg/JQEpHR7Nt2',
-          children: (
-            <>
-              <span className="flex-1">Ask the community</span>
-              <CustomIcon
-                name="link"
-                className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
-              />
-            </>
-          ),
-        },
-        {
-          id: 'release-notes',
-          Element: 'externalLink',
-          to: 'https://github.com/KittyCAD/modeling-app/releases',
-          children: (
-            <>
-              <span className="flex-1">Release notes</span>
-              <CustomIcon
-                name="link"
-                className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
-              />
-            </>
-          ),
-        },
-        {
+       // {
+       //    id: 'release-notes',
+       //    Element: 'externalLink',
+       //    to: 'https://github.com/KittyCAD/modeling-app/releases',
+       //    children: (
+       //      <>
+       //        <span className="flex-1">Release notes</span>
+       //        <CustomIcon
+       //          name="link"
+       //          className="w-3 h-3 text-chalkboard-70 dark:text-chalkboard-40"
+       //        />
+       //      </>
+       //    ),
+       //  },
+       {
           id: 'check-for-updates',
           Element: 'button',
           hide: !isDesktop(),
