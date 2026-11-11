@@ -65,15 +65,6 @@ export const projectFileRole = (
             },
           },
           {
-            label: 'User Default Units',
-            id: 'File.Preferences.User default units',
-            click: () => {
-              typeSafeWebContentsSend(mainWindow, 'menu-action-clicked', {
-                menuLabel: 'File.Preferences.User default units',
-              })
-            },
-          },
-          {
             label: 'Theme',
             id: 'File.Preferences.Theme',
             click: () => {
@@ -192,15 +183,6 @@ export const modelingFileRole = (
             click: () => {
               typeSafeWebContentsSend(mainWindow, 'menu-action-clicked', {
                 menuLabel: 'File.Preferences.Keybindings',
-              })
-            },
-          },
-          {
-            label: 'User Default Units',
-            id: 'File.Preferences.User default units',
-            click: () => {
-              typeSafeWebContentsSend(mainWindow, 'menu-action-clicked', {
-                menuLabel: 'File.Preferences.User default units',
               })
             },
           },

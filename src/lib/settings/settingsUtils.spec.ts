@@ -48,9 +48,7 @@ describe(`testing settings initialization`, () => {
           appearance: {
             theme: 'dark',
           },
-        },
-        modeling: {
-          base_unit: 'cm',
+          allow_orbit_in_sketch_mode: false,
         },
       },
     }
@@ -61,9 +59,7 @@ describe(`testing settings initialization`, () => {
           appearance: {
             theme: 'light',
           },
-        },
-        modeling: {
-          base_unit: 'ft',
+          allow_orbit_in_sketch_mode: true,
         },
       },
     }
@@ -77,8 +73,8 @@ describe(`testing settings initialization`, () => {
 
     // The 'project'-level for `theme` setting should be ignored completely
     expect(settings.app.theme.current).toBe('dark')
-    // But the 'project'-level for `defaultUnit` setting should be applied
-    expect(settings.modeling.defaultUnit.current).toBe('ft')
+    // But the 'project'-level for `allowOrbitInSketchMode` setting should be applied
+    expect(settings.app.allowOrbitInSketchMode.current).toBe(true)
   })
 })
 
@@ -92,16 +88,14 @@ describe(`testing getAllCurrentSettings`, () => {
           appearance: {
             theme: 'dark',
           },
-        },
-        modeling: {
-          base_unit: 'm',
+          allow_orbit_in_sketch_mode: false,
         },
       },
     }
     const projectConfiguration: DeepPartial<ProjectConfiguration> = {
       settings: {
-        modeling: {
-          base_unit: 'ft',
+        app: {
+          allow_orbit_in_sketch_mode: true,
         },
       },
     }
@@ -118,7 +112,7 @@ describe(`testing getAllCurrentSettings`, () => {
     // This one gets the 'user'-level theme because it's ignored at the project level
     // (see the test "doesn't read theme from project settings")
     expect(allCurrentSettings.app.theme).toBe('dark')
-    expect(allCurrentSettings.modeling.defaultUnit).toBe('ft')
+    expect(allCurrentSettings.app.allowOrbitInSketchMode).toBe(true)
   })
 })
 

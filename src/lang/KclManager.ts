@@ -992,9 +992,7 @@ export class KclManager extends File {
           await this.executeCode(newCode)
           if (shouldResetCamera) {
             await resetCameraPosition({
-              sceneInfra: this.sceneInfra,
               engineCommandManager: this.engineCommandManager,
-              settingsActor: this.systemDeps.settings,
             })
           }
         }

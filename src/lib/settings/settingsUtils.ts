@@ -8,10 +8,6 @@ import {
   serializeProjectConfiguration,
 } from '@src/lang/wasm'
 import {
-  cameraSystemToMouseControl,
-  mouseControlsToCameraSystem,
-} from '@src/lib/cameraControls'
-import {
   getInitialDefaultDir,
   readAppSettingsFile,
   readProjectSettingsFile,
@@ -58,32 +54,6 @@ export function configurationToSettingsPayload(
       projectDirectory: configuration?.settings?.project?.directory,
       showDebugPanel: configuration?.settings?.app?.show_debug_panel,
     },
-    modeling: {
-      defaultUnit: configuration?.settings?.modeling?.base_unit,
-      cameraProjection: configuration?.settings?.modeling?.camera_projection,
-      cameraOrbit: configuration?.settings?.modeling?.camera_orbit,
-      mouseControls: mouseControlsToCameraSystem(
-        configuration?.settings?.modeling?.mouse_controls
-      ),
-      enableTouchControls:
-        configuration?.settings?.modeling?.enable_touch_controls,
-      useSketchSolveMode:
-        configuration?.settings?.modeling?.use_sketch_solve_mode,
-      highlightEdges: configuration?.settings?.modeling?.highlight_edges,
-      enableSSAO: configuration?.settings?.modeling?.enable_ssao,
-      backfaceColor: configuration?.settings?.modeling?.backface_color,
-      showScaleGrid: configuration?.settings?.modeling?.show_scale_grid,
-      fixedSizeGrid: configuration?.settings?.modeling?.fixed_size_grid,
-      snapToGrid: configuration?.settings?.modeling?.snap_to_grid,
-      majorGridSpacing: configuration?.settings?.modeling?.major_grid_spacing,
-      minorGridsPerMajor:
-        configuration?.settings?.modeling?.minor_grids_per_major,
-      snapsPerMinor: configuration?.settings?.modeling?.snaps_per_minor,
-    },
-    textEditor: {
-      textWrapping: configuration?.settings?.text_editor?.text_wrapping,
-      blinkingCursor: configuration?.settings?.text_editor?.blinking_cursor,
-    },
     projects: {
       defaultProjectName:
         configuration?.settings?.project?.default_project_name,
@@ -107,29 +77,6 @@ export function settingsPayloadToConfiguration(
         stream_idle_mode: configuration?.app?.streamIdleMode,
         allow_orbit_in_sketch_mode: configuration?.app?.allowOrbitInSketchMode,
         show_debug_panel: configuration?.app?.showDebugPanel,
-      },
-      modeling: {
-        base_unit: configuration?.modeling?.defaultUnit,
-        camera_projection: configuration?.modeling?.cameraProjection,
-        camera_orbit: configuration?.modeling?.cameraOrbit,
-        mouse_controls: configuration?.modeling?.mouseControls
-          ? cameraSystemToMouseControl(configuration?.modeling?.mouseControls)
-          : undefined,
-        enable_touch_controls: configuration?.modeling?.enableTouchControls,
-        use_sketch_solve_mode: configuration?.modeling?.useSketchSolveMode,
-        highlight_edges: configuration?.modeling?.highlightEdges,
-        enable_ssao: configuration?.modeling?.enableSSAO,
-        backface_color: configuration?.modeling?.backfaceColor,
-        show_scale_grid: configuration?.modeling?.showScaleGrid,
-        fixed_size_grid: configuration?.modeling?.fixedSizeGrid,
-        snap_to_grid: configuration?.modeling?.snapToGrid,
-        major_grid_spacing: configuration?.modeling?.majorGridSpacing,
-        minor_grids_per_major: configuration?.modeling?.minorGridsPerMajor,
-        snaps_per_minor: configuration?.modeling?.snapsPerMinor,
-      },
-      text_editor: {
-        text_wrapping: configuration?.textEditor?.textWrapping,
-        blinking_cursor: configuration?.textEditor?.blinkingCursor,
       },
       project: {
         directory: configuration?.app?.projectDirectory,
@@ -201,32 +148,6 @@ export function projectConfigurationToSettingsPayload(
         return v === 'fast' || v === 'thoughtful' ? v : undefined
       })(),
     },
-    modeling: {
-      defaultUnit: configuration?.settings?.modeling?.base_unit ?? undefined,
-      highlightEdges: configuration?.settings?.modeling?.highlight_edges,
-      enableSSAO: configuration?.settings?.modeling?.enable_ssao,
-      fixedSizeGrid: toUndefinedIfNull(
-        configuration?.settings?.modeling?.fixed_size_grid
-      ),
-      snapToGrid: toUndefinedIfNull(
-        configuration?.settings?.modeling?.snap_to_grid
-      ),
-      majorGridSpacing: toUndefinedIfNull(
-        configuration?.settings?.modeling?.major_grid_spacing
-      ),
-      minorGridsPerMajor: toUndefinedIfNull(
-        configuration?.settings?.modeling?.minor_grids_per_major
-      ),
-      snapsPerMinor: toUndefinedIfNull(
-        configuration?.settings?.modeling?.snaps_per_minor
-      ),
-    },
-    textEditor: {
-      textWrapping:
-        configuration?.settings?.text_editor?.text_wrapping ?? undefined,
-      blinkingCursor:
-        configuration?.settings?.text_editor?.blinking_cursor ?? undefined,
-    },
     commandBar: {
       includeSettings:
         configuration?.settings?.command_bar?.include_settings ?? undefined,
@@ -250,20 +171,6 @@ export function settingsPayloadToProjectConfiguration(
         named_views: deepPartialNamedViewsToNamedViews(
           configuration?.app?.namedViews
         ),
-      },
-      modeling: {
-        base_unit: configuration?.modeling?.defaultUnit,
-        highlight_edges: configuration?.modeling?.highlightEdges,
-        enable_ssao: configuration?.modeling?.enableSSAO,
-        fixed_size_grid: configuration?.modeling?.fixedSizeGrid,
-        snap_to_grid: configuration?.modeling?.snapToGrid,
-        major_grid_spacing: configuration?.modeling?.majorGridSpacing,
-        minor_grids_per_major: configuration?.modeling?.minorGridsPerMajor,
-        snaps_per_minor: configuration?.modeling?.snapsPerMinor,
-      },
-      text_editor: {
-        text_wrapping: configuration?.textEditor?.textWrapping,
-        blinking_cursor: configuration?.textEditor?.blinkingCursor,
       },
       command_bar: {
         include_settings: configuration?.commandBar?.includeSettings,
@@ -422,7 +329,7 @@ export async function loadAndValidateSettings(
 async function resolveAsyncHideOnPlatform(
   settings: SettingsType
 ): Promise<void> {
-  const settingsToResolve: Array<{ setting: Setting<unknown> }> = []
+  const settingsToResolve: Array<{ setting: Setting }> = []
 
   // Collect all settings with async hideOnPlatform functions
   Object.entries(settings).forEach(([_, categorySettings]) => {
@@ -595,7 +502,7 @@ export function setSettingsAtLevel(
  * so this works synchronously.
  */
 export function shouldHideSetting(
-  setting: Setting<unknown>,
+  setting: Setting,
   settingsLevel: SettingsLevel
 ): boolean {
   // Async functions should have been resolved in loadAndValidateSettings,
@@ -620,7 +527,7 @@ export function shouldHideSetting(
  * so this works synchronously.
  */
 export function shouldShowSettingInput(
-  setting: Setting<unknown>,
+  setting: Setting,
   settingsLevel: SettingsLevel
 ): boolean {
   const isHidden = shouldHideSetting(setting, settingsLevel)

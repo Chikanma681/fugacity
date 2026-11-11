@@ -489,53 +489,46 @@ export class SceneEntities {
   private updateInfiniteGrid() {
     const camera = this.sceneInfra.camControls.camera
     if (camera instanceof OrthographicCamera) {
-      const settings = this.getSettings?.()
-      if (settings) {
-        const gridRenderer = this.sceneInfra.scene
-          .getObjectByName(AXIS_GROUP)
-          ?.children.find((child) => child instanceof InfiniteGridRenderer)
-        if (gridRenderer) {
-          const majorGridSpacing =
-            settings.modeling.majorGridSpacing.current ?? 1
-          const minorGridsPerMajor =
-            settings.modeling.minorGridsPerMajor.current ?? 4
+      const gridRenderer = this.sceneInfra.scene
+        .getObjectByName(AXIS_GROUP)
+        ?.children.find((child) => child instanceof InfiniteGridRenderer)
+      if (gridRenderer) {
+        const majorGridSpacing = 1
+        const minorGridsPerMajor = 4
 
-          const viewportSize = this.sceneInfra.renderer.getDrawingBufferSize(
-            new Vector2()
-          )
-          // Choose grid colors based on app theme: dark = existing colors, light = subtle gray
-          const isLight =
-            getResolvedTheme(this.sceneInfra.theme) === Themes.Light
-          const majorColor: [number, number, number, number] = isLight
-            ? [0.3, 0.3, 0.3, 1.0]
-            : [0.7, 0.7, 0.7, 1.0]
-          const minorColor: [number, number, number, number] = isLight
-            ? [0.2, 0.2, 0.2, 1.0]
-            : [0.9, 0.9, 0.9, 1.0]
+        const viewportSize = this.sceneInfra.renderer.getDrawingBufferSize(
+          new Vector2()
+        )
+        // Choose grid colors based on app theme: dark = existing colors, light = subtle gray
+        const isLight =
+          getResolvedTheme(this.sceneInfra.theme) === Themes.Light
+        const majorColor: [number, number, number, number] = isLight
+          ? [0.3, 0.3, 0.3, 1.0]
+          : [0.7, 0.7, 0.7, 1.0]
+        const minorColor: [number, number, number, number] = isLight
+          ? [0.2, 0.2, 0.2, 1.0]
+          : [0.9, 0.9, 0.9, 1.0]
 
-          const pixelsPerBaseUnit = this.sceneInfra.getPixelsPerBaseUnit(camera)
-          const fixedSizeGrid = settings.modeling.fixedSizeGrid.current
-          const gridScaleFactor = getGridScaleFactor({
+        const pixelsPerBaseUnit = this.sceneInfra.getPixelsPerBaseUnit(camera)
+        const fixedSizeGrid = true
+        const gridScaleFactor = getGridScaleFactor({
+          majorGridSpacing,
+          pixelsPerBaseUnit,
+          fixedSizeGrid,
+        })
+        gridRenderer.update(
+          camera,
+          [viewportSize.x, viewportSize.y],
+          pixelsPerBaseUnit,
+          gridScaleFactor,
+          {
             majorGridSpacing,
-            pixelsPerBaseUnit,
+            minorGridsPerMajor,
+            majorColor,
+            minorColor,
             fixedSizeGrid,
-          })
-          gridRenderer.update(
-            camera,
-            [viewportSize.x, viewportSize.y],
-            pixelsPerBaseUnit,
-            gridScaleFactor,
-            {
-              majorGridSpacing,
-              minorGridsPerMajor,
-              majorColor,
-              minorColor,
-              fixedSizeGrid,
-            }
-          )
-        }
-      } else {
-        console.error('Settings not available for grid update')
+          }
+        )
       }
     }
   }
@@ -595,48 +588,9 @@ export class SceneEntities {
 
   private snapToGrid(
     point: Coords2d,
-    event: MouseEvent
+    _event: MouseEvent
   ): { point: Coords2d; snapped: boolean } {
-    if (event.ctrlKey || event.metaKey) {
-      // disable snapping with ctrl
-      return { point, snapped: false }
-    }
-
-    const settings = this.getSettings?.()
-    if (!settings) {
-      console.error('getSettings not injected!')
-      return { point, snapped: false }
-    }
-    if (!settings.modeling.snapToGrid.current) {
-      return { point, snapped: false }
-    }
-
-    const minorsPerMajor = settings.modeling.minorGridsPerMajor.current
-    const snapsPerMinor = settings.modeling.snapsPerMinor.current
-
-    let gridScaleFactor = 1
-    if (this.sceneInfra.camControls.camera instanceof OrthographicCamera) {
-      const pixelsPerBaseUnit = this.sceneInfra.getPixelsPerBaseUnit(
-        this.sceneInfra.camControls.camera
-      )
-      const fixedSizeGrid = settings.modeling.fixedSizeGrid.current
-      gridScaleFactor = getGridScaleFactor({
-        majorGridSpacing: settings.modeling.majorGridSpacing.current,
-        pixelsPerBaseUnit,
-        fixedSizeGrid,
-      })
-    } else {
-      console.error("Camera is not orthographic, can't snap to grid")
-    }
-
-    const multiplier = (minorsPerMajor * snapsPerMinor) / gridScaleFactor
-    return {
-      point: [
-        Math.round(point[0] * multiplier) / multiplier,
-        Math.round(point[1] * multiplier) / multiplier,
-      ],
-      snapped: true,
-    }
+    return { point, snapped: false }
   }
 
   setupNoPointsListener({
@@ -676,9 +630,7 @@ export class SceneEntities {
       onMove: (args) => {
         const { intersectionPoint } = args
         const snappedPoint = intersectionPoint.twoD.clone()
-        const snapToGrid = this.getSettings?.().modeling.snapToGrid.current
-
-        if (!args.intersects.length && !snapToGrid) {
+        if (!args.intersects.length) {
           return
         }
 
@@ -707,8 +659,7 @@ export class SceneEntities {
           !(
             parent?.userData?.isLastInProfile &&
             (arrowHead || parent?.name === PROFILE_START)
-          ) &&
-          !snapToGrid
+          )
         ) {
           return
         }
@@ -722,14 +673,6 @@ export class SceneEntities {
             snappedPoint.setComponent(1, 0)
           } else if (intersectsXY.y) {
             snappedPoint.setComponent(0, 0)
-          }
-
-          if (snapToGrid) {
-            const snappedToGrid = this.snapToGrid(
-              [snappedPoint.x, snappedPoint.y],
-              args.mouseEvent
-            ).point
-            snappedPoint.set(snappedToGrid[0], snappedToGrid[1])
           }
         }
 

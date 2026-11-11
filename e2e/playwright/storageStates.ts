@@ -49,16 +49,8 @@ export const TEST_SETTINGS_CORRUPTED = {
     projectDirectory: 123 as any,
     showDebugPanel: true,
   },
-  modeling: {
-    defaultUnit: 'invalid' as any,
-    mouseControls: `() => alert('hack the planet')` as any,
-    cameraProjection: 'perspective',
-  },
   projects: {
     defaultProjectName: false as any,
-  },
-  textEditor: {
-    textWrapping: true,
   },
 } satisfies Partial<SaveSettingsPayload>
 

@@ -93,7 +93,7 @@ export const AllSettingsFields = forwardRef(
                   {decamelize(category, { separator: ' ' })}
                 </h2>
                 {Object.entries(categorySettings)
-                  .filter((item: [string, Setting<unknown>]) =>
+                  .filter((item: [string, Setting]) =>
                     shouldShowSettingInput(item[1], searchParamTab)
                   )
                   .map(([settingName, s]) => {

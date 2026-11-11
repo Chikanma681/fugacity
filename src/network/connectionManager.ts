@@ -51,6 +51,7 @@ import { CommandLogType } from '@src/lang/std/commandLog'
 import { defaultSourceRange } from '@src/lang/sourceRange'
 import type { SourceRange } from '@src/lang/wasm'
 import {
+  DEFAULT_BACKFACE_COLOR,
   EXECUTE_AST_INTERRUPT_ERROR_MESSAGE,
   PENDING_COMMAND_TIMEOUT,
 } from '@src/lib/constants'
@@ -107,12 +108,12 @@ export class ConnectionManager extends EventTarget {
     const s = getSettingsFromActorContext(this.systemDeps.settingsActor)
     return {
       theme: s.app.theme.current,
-      highlightEdges: s.modeling.highlightEdges.current,
-      enableSSAO: s.modeling.enableSSAO.current,
-      showScaleGrid: s.modeling.showScaleGrid.current,
-      cameraProjection: s.modeling.cameraProjection.current,
-      cameraOrbit: s.modeling.cameraOrbit.current,
-      backfaceColor: s.modeling.backfaceColor.current,
+      highlightEdges: true,
+      enableSSAO: true,
+      showScaleGrid: false,
+      cameraProjection: 'orthographic',
+      cameraOrbit: 'spherical',
+      backfaceColor: DEFAULT_BACKFACE_COLOR,
     }
   }
 

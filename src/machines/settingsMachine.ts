@@ -21,7 +21,6 @@ import type { Project } from '@src/lib/project'
 import type { SettingsType } from '@src/lib/settings/initialSettings'
 import { createSettings } from '@src/lib/settings/initialSettings'
 import type {
-  BaseUnit,
   SetEventTypes,
   SettingsLevel,
   SettingsPaths,
@@ -60,10 +59,6 @@ export const settingsMachine = setup({
     events: {} as (
       | WildcardSetEvent<SettingsPaths>
       | SetEventTypes
-      | {
-          type: 'set.modeling.units'
-          data: { level: SettingsLevel; value: BaseUnit }
-        }
       | {
           type: 'Reset settings'
           level: SettingsLevel
@@ -300,12 +295,6 @@ export const settingsMachine = setup({
         currentTheme === Themes.System ? getSystemTheme() : currentTheme
       )
     },
-    setEngineCameraProjection: () => {
-      // Implementation moved to singletons.ts to provide necessary singletons.
-    },
-    setEngineHighlightEdges: () => {
-      // Implementation moved to singletons.ts to provide necessary singletons.
-    },
     sendThemeToWatcher: sendTo('watchSystemTheme', ({ context }) => ({
       type: 'update.themeWatcher',
       theme: context.app.theme.current,
@@ -373,26 +362,10 @@ export const settingsMachine = setup({
           ],
         },
 
-        'set.modeling.defaultUnit': {
-          target: 'persisting settings',
-
-          actions: ['setSettingAtLevel', 'toastSuccess'],
-        },
-
         'set.app.theme': {
           target: 'persisting settings',
 
           actions: ['setSettingAtLevel', 'toastSuccess', 'sendThemeToWatcher'],
-        },
-        'set.textEditor.textWrapping': {
-          target: 'persisting settings',
-
-          actions: ['setSettingAtLevel'],
-        },
-        'set.textEditor.blinkingCursor': {
-          target: 'persisting settings',
-
-          actions: ['setSettingAtLevel'],
         },
 
         'set.app.streamIdleMode': {
@@ -409,32 +382,6 @@ export const settingsMachine = setup({
         'set.app.gibbsMode': {
           target: 'persisting settings',
           actions: ['setSettingAtLevel'],
-        },
-
-        'set.modeling.cameraProjection': {
-          target: 'persisting settings',
-
-          actions: [
-            'setSettingAtLevel',
-            'toastSuccess',
-            'setEngineCameraProjection',
-          ],
-        },
-
-        'set.modeling.highlightEdges': {
-          target: 'persisting settings',
-
-          actions: [
-            'setSettingAtLevel',
-            'toastSuccess',
-            'setEngineHighlightEdges',
-          ],
-        },
-
-        'set.modeling.backfaceColor': {
-          target: 'persisting settings',
-
-          actions: ['setSettingAtLevel', 'toastSuccess'],
         },
 
         'Reset settings': {
@@ -461,11 +408,6 @@ export const settingsMachine = setup({
               commandBarActor: context.commandBarActor,
             })),
           ],
-        },
-
-        'set.modeling.showScaleGrid': {
-          target: 'persisting settings',
-          actions: ['setSettingAtLevel', 'toastSuccess'],
         },
 
         'load.project': {

@@ -69,7 +69,7 @@ export function createSettingsCommand({ type, actor }: CreateSettingsArgs) {
   const shouldHideOnThisLevel =
     setting.hideOnLevel === 'user' && !isProjectAvailable
   const shouldHideOnThisPlatform = hiddenOnPlatform(
-    setting as Setting<unknown>,
+    setting as Setting,
     isDesktop()
   )
 

@@ -13,8 +13,6 @@ import {
 } from '@src/hooks/useMenu'
 import { reportRejection } from '@src/lib/trap'
 
-import useHotkeyWrapper from '@src/lib/hotkeyWrapper'
-import { SNAP_TO_GRID_HOTKEY } from '@src/lib/hotkeys'
 
 import { useApp, useSingletons } from '@src/lib/boot'
 import { getDeleteKeys } from '@src/lib/utils'
@@ -30,7 +28,6 @@ import {
   EngineConnectionStateType,
 } from '@src/network/utils'
 import type { WebContentSendPayload } from '@src/menu/channels'
-import type { CameraOrbitType } from '@rust/kcl-lib/bindings/CameraOrbitType'
 import { DefaultLayoutPaneID } from '@src/lib/layout'
 import { togglePaneLayoutNode } from '@src/lib/layout/utils'
 import { useSignals } from '@preact/signals-react/runtime'
@@ -58,15 +55,7 @@ export const ModelingMachineProvider = ({
   const settingsValues = settings.useSettings()
   const {
     app: { allowOrbitInSketchMode },
-    modeling: {
-      defaultUnit,
-      cameraProjection,
-      cameraOrbit,
-      useSketchSolveMode,
-      snapToGrid,
-    },
   } = settingsValues
-  const previousCameraOrbit = useRef<CameraOrbitType | null>(null)
   const projects = useFolders()
   const theProject = useRef<Project | undefined>(
     project?.projectIORefSignal.value
@@ -118,11 +107,7 @@ export const ModelingMachineProvider = ({
         projectRef: theProject,
         // React Suspense will await this
         wasmInstance,
-        store: {
-          useSketchSolveMode,
-          cameraProjection,
-          defaultUnit,
-        },
+        store: {},
       },
       // devTools: true,
     }
@@ -247,31 +232,6 @@ export const ModelingMachineProvider = ({
     kclManager.selectionRanges = modelingState.context.selectionRanges
   }, [modelingState.context.selectionRanges, kclManager])
 
-  // When changing camera modes reset the camera to the default orientation to correct
-  // the up vector otherwise the conconical orientation for the camera modes will be
-  // wrong
-  useEffect(() => {
-    kclManager.engineCommandManager.connection?.deferredPeerConnection?.promise
-      .then(() => {
-        if (
-          previousCameraOrbit.current === null ||
-          cameraOrbit.current === previousCameraOrbit.current
-        ) {
-          // Do not reset, nothing has changed.
-          // Do not trigger on first initialization either.
-          previousCameraOrbit.current = cameraOrbit.current
-          return
-        }
-        previousCameraOrbit.current = cameraOrbit.current
-        // Gotcha: This will absolutely brick E2E tests if called incorrectly.
-        kclManager.sceneInfra.camControls
-          .resetCameraPosition()
-          .catch(reportRejection)
-      })
-      .catch(reportRejection)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-  }, [cameraOrbit.current])
-
   useEffect(() => {
     const onConnectionStateChanged = ({ detail }: CustomEvent) => {
       if (detail.type === EngineConnectionStateType.Disconnecting) {
@@ -367,23 +327,9 @@ export const ModelingMachineProvider = ({
   })
   useHotkeys(['mod + alt + x'], () => {
     resetCameraPosition({
-      sceneInfra: kclManager.sceneInfra,
       engineCommandManager: kclManager.engineCommandManager,
-      settingsActor,
     }).catch(reportRejection)
   })
-
-  // Toggle Snap to grid
-  useHotkeyWrapper(
-    [SNAP_TO_GRID_HOTKEY],
-    () => {
-      settingsActor.send({
-        type: 'set.modeling.snapToGrid',
-        data: { level: 'project', value: !snapToGrid.current },
-      })
-    },
-    kclManager
-  )
 
   useHotkeys(
     ['mod + a'],

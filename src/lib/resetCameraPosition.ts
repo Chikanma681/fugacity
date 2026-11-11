@@ -1,7 +1,5 @@
-import type { SceneInfra } from '@src/clientSideScene/sceneInfra'
 import { isPlaywright } from '@src/lib/isPlaywright'
 import { engineStreamZoomToFit, engineViewIsometric } from '@src/lib/utils'
-import type { SettingsActorType } from '@src/machines/settingsMachine'
 import type { ConnectionManager } from '@src/network/connectionManager'
 
 /**
@@ -13,13 +11,9 @@ import type { ConnectionManager } from '@src/network/connectionManager'
  * debugging e2e tests
  */
 export async function resetCameraPosition({
-  sceneInfra,
   engineCommandManager,
-  settingsActor,
 }: {
-  sceneInfra: SceneInfra
   engineCommandManager: ConnectionManager
-  settingsActor: SettingsActorType
 }) {
   // We need a padding of 0.1 for zoom_to_fit for all E2E tests since they were originally
   // written with zoom_to_fit with padding 0.1
@@ -27,15 +21,6 @@ export async function resetCameraPosition({
   if (isPlaywright()) {
     await engineStreamZoomToFit({ engineCommandManager, padding })
   } else {
-    // Get user camera projection
-    const cameraProjection =
-      settingsActor.getSnapshot().context.modeling.cameraProjection.current
-
-    // We need to keep the users projection setting when resetting their camera
-    if (cameraProjection === 'perspective') {
-      await sceneInfra.camControls.usePerspectiveCamera()
-    }
-
     await engineViewIsometric({
       engineCommandManager,
       padding,

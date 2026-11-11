@@ -1,7 +1,5 @@
 import { type Platform } from '@src/lib/utils'
 
-export const SNAP_TO_GRID_HOTKEY = 'mod+g'
-
 const LOWER_CASE_LETTER = /[a-z]/
 const WHITESPACE = /\s+/g
 

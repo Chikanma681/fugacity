@@ -17,7 +17,7 @@ interface SettingsFieldInputProps {
   category: string
   settingName: string
   settingsLevel: SettingsLevel
-  setting: Setting<unknown>
+  setting: Setting
 }
 
 export function SettingsFieldInput({

@@ -73,25 +73,6 @@ export const modelingViewRole = (
       },
       { type: 'separator' },
       {
-        label: 'Orthographic View',
-        id: 'View.Orthographic view',
-        click: () => {
-          typeSafeWebContentsSend(mainWindow, 'menu-action-clicked', {
-            menuLabel: 'View.Orthographic view',
-          })
-        },
-      },
-      {
-        label: 'Perspective View',
-        id: 'View.Perspective view',
-        click: () => {
-          typeSafeWebContentsSend(mainWindow, 'menu-action-clicked', {
-            menuLabel: 'View.Perspective view',
-          })
-        },
-      },
-      { type: 'separator' },
-      {
         label: 'Standard Views',
         id: 'View.Standard views',
         submenu: [

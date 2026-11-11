@@ -113,12 +113,6 @@ export function modelingMenuCallbackMostActions({
           name: 'app.theme',
         },
       })
-    } else if (data.menuLabel === 'File.Preferences.User default units') {
-      if (!filePath) {
-        console.warn('filePath is undefined')
-        return
-      }
-      void navigate(filePath + PATHS.SETTINGS_USER + '#defaultUnit')
     } else if (data.menuLabel === 'File.Add file to project') {
       const currentProject = settingsActor.getSnapshot().context.currentProject
       commandBarActor.send({
@@ -166,22 +160,6 @@ export function modelingMenuCallbackMostActions({
       } else {
         kclManager.redo()
       }
-    } else if (data.menuLabel === 'View.Orthographic view') {
-      settingsActor.send({
-        type: 'set.modeling.cameraProjection',
-        data: {
-          level: 'user',
-          value: 'orthographic',
-        },
-      })
-    } else if (data.menuLabel === 'View.Perspective view') {
-      settingsActor.send({
-        type: 'set.modeling.cameraProjection',
-        data: {
-          level: 'user',
-          value: 'perspective',
-        },
-      })
     } else if (data.menuLabel === 'View.Standard views.Right view') {
       kclManager.sceneInfra.camControls
         .updateCameraToAxis(AxisNames.X)
