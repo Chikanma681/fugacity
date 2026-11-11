@@ -364,7 +364,7 @@ const Home = () => {
                 View your account
               </ActionButton>
             </li>
-                     </ul>
+          </ul>
         </aside>
         <ProjectGrid
           searchResults={searchResults ?? []}
