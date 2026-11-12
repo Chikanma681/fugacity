@@ -168,6 +168,15 @@ else
 endif
 
 ###############################################################################
+# RELEASE
+
+.PHONY: release
+release: ## Tag and push a release, e.g. make release VERSION=0.1.0
+	@ echo "$(VERSION)" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$$' || (echo "Usage: make release VERSION=X.Y.Z" && exit 1)
+	git tag v$(VERSION)
+	git push origin v$(VERSION)
+
+###############################################################################
 # CLEAN
 
 .PHONY: clean
