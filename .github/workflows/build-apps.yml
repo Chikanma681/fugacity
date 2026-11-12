@@ -3,26 +3,27 @@ name: build-apps
 on:
   pull_request:
   push:
-    branches:
-      - main
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
-
-env:
-  IS_RELEASE: ${{ github.ref_type == 'tag' && startsWith(github.ref_name, 'v') }}
-  IS_STAGING: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-  FORCE_RELEASE_BUILD: false # Set to true to enable codesign in a PR
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  prepare-files:
-    runs-on: namespace-profile-ubuntu-8-cores
-    outputs:
-      version: ${{ steps.export_version.outputs.version }}
-      notes: ${{ steps.export_notes.outputs.notes }}
+  create-release:
+    if: ${{ github.ref_type == 'tag' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --draft --title "${GITHUB_REF_NAME}" --notes ""
+
+  build-wasm:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
@@ -33,346 +34,76 @@ jobs:
 
       - run: npm install
 
-      - id: filter
-        name: Check for Rust changes
-        uses: dorny/paths-filter@v3
+      - run: cp rust/rust-toolchain.toml ./
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          filters: |
-            rust:
-              - 'rust/**'
-
-      - name: Download Wasm Cache
-        id: download-wasm
-        if: ${{ github.event_name == 'pull_request' && steps.filter.outputs.rust == 'false' }}
-        uses: dawidd6/action-download-artifact@v16
-        continue-on-error: true
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          name: wasm-bundle
-          workflow: build-and-store-wasm.yml
-          branch: main
-          path: rust/kcl-wasm-lib/pkg
-
-      - name: Build Wasm condition
-        id: wasm
-        env:
-          DOWNLOAD_OUTCOME: ${{ steps.download-wasm.outcome }}
-          EVENT_NAME: ${{ github.event_name }}
-          RUST_CHANGES: ${{ steps.filter.outputs.rust }}
-        run: |
-          # Build Wasm with pushes to main, Rust changes, or cache misses
-          if [[ "${EVENT_NAME}" == 'push' || "${RUST_CHANGES}" == 'true' || "${DOWNLOAD_OUTCOME}" == 'failure' ]]; then
-            echo "should-build-wasm=true" >> $GITHUB_OUTPUT
-          else
-            echo "should-build-wasm=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Use correct Rust toolchain
-        if: ${{ steps.wasm.outputs.should-build-wasm == 'true' }}
-        shell: bash
-        run: |
-          [ -e rust-toolchain.toml ] || cp rust/rust-toolchain.toml ./
-
-      - name: Install rust
-        if: ${{ steps.wasm.outputs.should-build-wasm == 'true' }}
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          cache: false # Configured below.
-          rustflags: '' # Use .cargo/config.toml
+          cache: false
+          rustflags: ''
 
       - uses: taiki-e/install-action@493d7f216ecab2af0602481ce809ab2c72836fa1
-        if: ${{ steps.wasm.outputs.should-build-wasm == 'true' }}
         with:
           tool: wasm-pack
 
-      - name: Rust Cache
-        if: ${{ steps.wasm.outputs.should-build-wasm == 'true' }}
-        uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2
         with:
           workspaces: rust
 
-      - name: Run build:wasm
-        if: ${{ steps.wasm.outputs.should-build-wasm == 'true' }}
-        run: "npm run build:wasm"
+      - run: npm run build:wasm
 
-      - name: Set staging version, product name, release notes, and icons
-        if: ${{ env.IS_STAGING == 'true' }}
-        env:
-          AZURE_TRUSTED_SIGNING_ENDPOINT: ${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}
-          AZURE_TRUSTED_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
-          AZURE_TRUSTED_SIGNING_CERT_PROFILE_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_CERT_PROFILE_NAME }}
-          AZURE_TRUSTED_SIGNING_PUBLISHER_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_PUBLISHER_NAME }}
-        run: |
-          COMMIT=$(git rev-parse --short HEAD)
-          DATE=$(date +'%-y.%-m.%-d')
-          export VERSION=$DATE-main.$COMMIT
-          npm run files:set-version
-          npm run files:flip-to-staging
-          npm run files:set-windows-codesign-config
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wasm
+          path: rust/kcl-wasm-lib/pkg/kcl_wasm_lib*
 
-      - name: Set release version
-        if: ${{ env.IS_RELEASE == 'true' }}
+  build-apps:
+    needs: [create-release, build-wasm]
+    if: ${{ !failure() && !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: wasm
+          path: rust/kcl-wasm-lib/pkg
+
+      - name: Copy wasm into public
+        shell: bash
+        run: cp rust/kcl-wasm-lib/pkg/kcl_wasm_lib_bg.wasm public
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm install
+
+      - name: Build (pull request)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npm run tronb:package:dev
+
+      - name: Set version from tag
+        if: ${{ github.ref_type == 'tag' }}
+        shell: bash
         run: |
           export VERSION=${GITHUB_REF_NAME#v}
           npm run files:set-version
 
-      - name: Set dummy release version (forced release build) and disable updater
-        if: ${{ env.FORCE_RELEASE_BUILD == 'true' }}
-        run: |
-          export VERSION=255.255.0
-          npm run files:set-version
-          yq -i '.publish[0].url = "https://dl.zoo.dev/releases/design-studio/no-update"' electron-builder.yml
-
-      - name: Set windows codesign config
-        if: ${{ env.IS_RELEASE == 'true' || env.FORCE_RELEASE_BUILD == 'true' }}
+      - name: Build and publish to GitHub Releases
+        if: ${{ github.ref_type == 'tag' }}
+        shell: bash
         env:
-          AZURE_TRUSTED_SIGNING_ENDPOINT: ${{ secrets.AZURE_TRUSTED_SIGNING_ENDPOINT }}
-          AZURE_TRUSTED_SIGNING_ACCOUNT_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT_NAME }}
-          AZURE_TRUSTED_SIGNING_CERT_PROFILE_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_CERT_PROFILE_NAME }}
-          AZURE_TRUSTED_SIGNING_PUBLISHER_NAME: ${{ secrets.AZURE_TRUSTED_SIGNING_PUBLISHER_NAME }}
-        run: |
-          npm run files:set-windows-codesign-config
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: prepared-files
-          path: |
-            package.json
-            electron-builder.yml
-            rust/kcl-wasm-lib/pkg/kcl_wasm_lib*
-            release-notes.md
-            assets/icon.ico
-            assets/icon.png
-
-      - id: export_version
-        run: echo "version=`cat package.json | jq -r '.version'`" >> "$GITHUB_OUTPUT"
-
-      - id: export_notes
-        run: echo "notes=`cat release-notes.md`" >> "$GITHUB_OUTPUT"
-
-
-  build-apps:
-    needs: [prepare-files]
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: namespace-profile-macos-6-cores
-            platform: macos
-          - os: namespace-profile-windows-4-cores
-            platform: windows
-          - os: ubuntu-22.04
-            platform: linux
-    runs-on: ${{ matrix.os }}
-    name: build-apps (${{ matrix.platform }})
-    env:
-      VERSION_NO_V: ${{ needs.prepare-files.outputs.version }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: prepared-files
-          path: prepared-files
-
-      - name: Copy prepared files
-        run: |
-          ls -R prepared-files
-          cp prepared-files/package.json package.json
-          cp prepared-files/electron-builder.yml electron-builder.yml
-          cp prepared-files/rust/kcl-wasm-lib/pkg/kcl_wasm_lib_bg.wasm public
-          mkdir rust/kcl-wasm-lib/pkg
-          cp prepared-files/rust/kcl-wasm-lib/pkg/kcl_wasm_lib* rust/kcl-wasm-lib/pkg
-          cp prepared-files/release-notes.md release-notes.md
-          cp prepared-files/assets/icon.ico assets/icon.ico
-          cp prepared-files/assets/icon.png assets/icon.png
-
-      - name: Sync node version and setup cache
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: .nvmrc
-          cache: npm # Set this to npm, npm or pnpm.
-
-      - run: npm install
-
-      - name: Build the app (debug)
-        if: ${{ env.IS_RELEASE == 'false' && env.FORCE_RELEASE_BUILD == 'false' && env.IS_STAGING == 'false' }}
-        # electron-builder doesn't have a concept of release vs debug,
-        # this is just not doing any codesign or release yml generation, and points to dev infra
-        run: npm run tronb:package:dev
-
-      - name: Build the app (release)
-        if: ${{ env.IS_RELEASE == 'true' || env.FORCE_RELEASE_BUILD == 'true' || env.IS_STAGING == 'true' }}
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.APPLE_CERTIFICATE }}
           CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          CSC_KEYCHAIN: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          CSC_FOR_PULL_REQUEST: ${{ env.FORCE_RELEASE_BUILD }}
-          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-          # Windows codesign config is part of electron-builder.yml and handled in prepare-files
-        run: npm run tronb:package:${{ env.IS_STAGING == 'true' && 'dev' || 'prod' }}
-
-      - name: List artifacts in out/
-        run: ls -R out
-
-      - uses: actions/upload-artifact@v7
-        if: ${{ matrix.platform == 'linux' }}
-        with:
-          name: out-arm64-linux
-          path: |
-            out/*-arm64-linux.*
-
-      - uses: actions/upload-artifact@v7
-        if: ${{ matrix.platform == 'linux' }}
-        with:
-          name: out-x64-linux
-          path: |
-            out/*-x86_64-linux.*
-
-      - uses: actions/upload-artifact@v7
-        if: ${{ matrix.platform == 'macos' }}
-        with:
-          name: out-universal-macos
-          path: |
-            out/*universal-mac.*
-
-      - uses: actions/upload-artifact@v7
-        if: ${{ matrix.platform == 'windows' }}
-        with:
-          name: out-universal-windows
-          path: |
-            out/*universal-win.exe
-
-      - uses: actions/upload-artifact@v7
-        if: ${{ env.IS_RELEASE == 'true' || env.FORCE_RELEASE_BUILD == 'true' || env.IS_STAGING == 'true' }}
-        with:
-          name: out-yml-${{ matrix.platform }}
-          path: |
-            out/latest*.yml
-
-      # TODO: add the 'Build for Mac TestFlight' stage back
-
-
-  upload-apps-release:
-    runs-on: namespace-profile-ubuntu-2-cores
-    permissions:
-      contents: write
-    # Equivalent to IS_RELEASE || IS_STAGING (but we can't access those env vars here)
-    if: ${{ (github.ref_type == 'tag' && startsWith(github.ref_name, 'v')) || (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
-    env:
-      VERSION_NO_V: ${{ needs.prepare-files.outputs.version }}
-      VERSION: ${{ format('v{0}', needs.prepare-files.outputs.version) }}
-    needs: [prepare-files, build-apps]
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: out-universal-windows
-          path: out
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: out-yml-windows
-          path: out
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: out-universal-macos
-          path: out
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: out-yml-macos
-          path: out
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: out-arm64-linux
-          path: out
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: out-x64-linux
-          path: out
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: out-yml-linux
-          path: out
-
-      - name: Generate the download static endpoint
-        env:
-          NOTES: ${{ needs.prepare-files.outputs.notes }}
-          PUB_DATE: ${{ github.event.repository.updated_at }}
-          WEBSITE_DIR: ${{ env.IS_STAGING == 'true' && 'dl.zoo.dev/releases/design-studio/staging' || 'dl.zoo.dev/releases/design-studio' }}
-          URL_CODED_NAME: ${{ env.IS_STAGING == 'true' && 'Zoo%20Design%20Studio%20%28Staging%29' || 'Zoo%20Design%20Studio' }}
-        run: |
-          RELEASE_DIR=https://${WEBSITE_DIR}
-          jq --null-input \
-            --arg version "${VERSION}" \
-            --arg pub_date "${PUB_DATE}" \
-            --arg notes "${NOTES}" \
-            --arg mac_universal_url "$RELEASE_DIR/${{ env.URL_CODED_NAME }}-${VERSION_NO_V}-universal-mac.dmg" \
-            --arg windows_universal_url "$RELEASE_DIR/${{ env.URL_CODED_NAME }}-${VERSION_NO_V}-universal-win.exe" \
-            --arg linux_arm64_url "$RELEASE_DIR/${{ env.URL_CODED_NAME }}-${VERSION_NO_V}-arm64-linux.AppImage" \
-            --arg linux_x64_url "$RELEASE_DIR/${{ env.URL_CODED_NAME }}-${VERSION_NO_V}-x86_64-linux.AppImage" \
-            '{
-              "version": $version,
-              "pub_date": $pub_date,
-              "notes": $notes,
-              "platforms": {
-                "dmg-universal": {
-                  "url": $mac_universal_url
-                },
-                "exe-universal": {
-                  "url": $windows_universal_url
-                },
-                "appimage-arm64": {
-                  "url": $linux_arm64_url
-                },
-                "appimage-x64": {
-                  "url": $linux_x64_url
-                }
-              }
-            }' > out/last_download.json
-            cat out/last_download.json
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: out-download-json
-          path: out/last_download.json
-
-      - name: List artifacts
-        run: "ls -R out"
-
-      - name: Authenticate to Google Cloud
-        if: ${{ env.IS_STAGING == 'true' }}
-        uses: 'google-github-actions/auth@v3.0.0'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CLOUD_DL_SA }}'
-
-      - name: Set up Google Cloud SDK
-        if: ${{ env.IS_STAGING == 'true' }}
-        uses: google-github-actions/setup-gcloud@v3.0.1
-        with:
-          project_id: ${{ env.GOOGLE_CLOUD_PROJECT_ID }}
-
-      - name: Upload staging files to public bucket
-        if: ${{ env.IS_STAGING == 'true' }}
-        uses: google-github-actions/upload-cloud-storage@v3.0.0
-        with:
-          path: out
-          glob: '*'
-          parent: false
-          destination: 'dl.kittycad.io/releases/design-studio/staging'
-
-      - name: Invalidate bucket cache on latest*.yml and last_download.json files
-        if: ${{ env.IS_STAGING == 'true' }}
-        run: npm run files:invalidate-bucket:staging
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npm run tronb:package:prod
