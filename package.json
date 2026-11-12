@@ -1,16 +1,16 @@
 {
-  "name": "zoo-modeling-app",
+  "name": "fugacity",
   "version": "0.0.0",
   "private": true,
-  "productName": "Zoo Design Studio",
+  "productName": "Fugacity",
   "author": {
-    "name": "Zoo Corporation",
-    "email": "info@zoo.dev",
-    "url": "https://zoo.dev"
+    "name": "Chikanma Chika-Onuegbu",
+    "email": "chikanmaonuegbu@gmail.com",
+    "url": "https://www.fugacity.app"
   },
-  "description": "Zoo Design Studio",
+  "description": "Fugacity",
   "main": ".vite/build/main.js",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "overrides": {
     "@electron/rebuild": {
       ".": "4.0.3",
