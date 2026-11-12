@@ -1,4 +1,4 @@
-appId: dev.zoo.modeling-app
+appId: com.fugacity.app 
 directories:
   output: out
   buildResources: assets
@@ -19,10 +19,10 @@ mac:
         - universal
   notarize: true
   fileAssociations:
-    - ext: kcl
-      name: kcl
-      mimeType: text/vnd.zoo.kcl
-      description: Zoo KCL File
+    - ext: fgc 
+      name: fgc 
+      mimeType: application/vnd.fugacity.project
+      description: Fugacity File 
       role: Editor
       rank: Owner
 win:
@@ -34,12 +34,12 @@ win:
         - arm64
   icon: "assets/icon.ico"
   fileAssociations:
-    - ext: kcl
-      name: kcl
-      mimeType: text/vnd.zoo.kcl
-      description: Zoo KCL File
+    - ext: fgc 
+      name: fgc 
+      mimeType: application/vnd.fugacity.project
+      description: Fugacity File 
       role: Editor
-nsis:
+psis:
   oneClick: false
   perMachine: true
   allowElevation: true
@@ -54,17 +54,19 @@ linux:
         - x64
         - arm64
   fileAssociations:
-    - ext: kcl
-      name: kcl
-      mimeType: text/vnd.zoo.kcl
-      description: Zoo KCL File
+    - ext: fgc 
+      name: fgc 
+      mimeType: application/vnd.fugacity.project
+      description: Fugacity File 
       role: Editor
 publish:
-  - provider: generic
-    url: https://dl.zoo.dev/releases/design-studio
+  - provider: github
+    owner: Chikanma681
+    repo: fugacity
+    releaseType: draft
     channel: latest
 releaseInfo:
   releaseNotesFile: release-notes.md
 protocols:
-  - name: Zoo Studio
-    schemes: ['zoo-studio']
+  - name: Fugacity 
+    schemes: ['fugacity']
