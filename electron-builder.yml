@@ -17,7 +17,7 @@ mac:
     - target: zip
       arch:
         - universal
-  notarize: true
+  notarize: false
   fileAssociations:
     - ext: fgc 
       name: fgc 
@@ -39,7 +39,7 @@ win:
       mimeType: application/vnd.fugacity.project
       description: Fugacity File 
       role: Editor
-psis:
+nsis:
   oneClick: false
   perMachine: true
   allowElevation: true
