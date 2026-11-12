@@ -1,12 +1,7 @@
 name: App Tests
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: 0 * * * * # hourly
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}

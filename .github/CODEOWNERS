@@ -1,6 +1,0 @@
-* @KittyCAD/frontend
-/docs/ @KittyCAD/kcl
-/src/ @KittyCAD/frontend
-/rust/ @KittyCAD/kcl
-/public/kcl-samples/ @KittyCAD/kcl
-/e2e/playwright/benchmark/ @KittyCAD/mech

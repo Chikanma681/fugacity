@@ -1,13 +1,6 @@
 name: E2E Tests
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-  schedule:
-    - cron: 0 * * * * # hourly
-  workflow_call:
   workflow_dispatch:
 
 concurrency:
