@@ -24,6 +24,8 @@ export const PATHS = {
   SETTINGS_PROJECT: `${SETTINGS}?tab=project` as const,
   SETTINGS_KEYBINDINGS: `${SETTINGS}?tab=keybindings` as const,
   SIGN_IN: '/signin',
+  // WorkOS AuthKit "Initiate login URI"
+  LOGIN: '/login',
   ONBOARDING: '/onboarding',
   TELEMETRY: '/telemetry',
 } as const

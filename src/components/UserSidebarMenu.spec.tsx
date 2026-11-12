@@ -8,7 +8,16 @@ import {
 } from 'react-router-dom'
 
 import UserSidebarMenu from '@src/components/UserSidebarMenu'
-import { expect, describe, test } from 'vitest'
+import { expect, describe, test, vi } from 'vitest'
+
+vi.mock('@workos-inc/authkit-react', () => ({
+  useAuth: () => ({
+    isLoading: false,
+    user: null,
+    signIn: vi.fn(),
+    signOut: vi.fn(),
+  }),
+}))
 
 describe('UserSidebarMenu tests', () => {
   test("Renders user's name and email if available", async () => {

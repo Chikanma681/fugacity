@@ -1,6 +1,8 @@
 import { type Locator, type Page, test } from '@playwright/test'
 import { SIDEBAR_BUTTON_SUFFIX } from '@src/lib/constants'
-import type { ToolbarModeName } from '@src/lib/toolbar'
+
+/** Value of the toolbar's `data-current-mode` attribute */
+type ToolbarModeName = string
 
 import {
   checkIfPaneIsOpen,

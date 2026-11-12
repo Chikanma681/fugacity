@@ -398,9 +398,7 @@ function VariableTooltipContents({
         <span>{variableName ?? ''}</span>
       </p>
       <p className="font-mono text-xs">
-        <span>
-          {getOpcodeEditorerationCalculatedDisplay(valueDetail.calculated)}
-        </span>
+        <span>{getOperationCalculatedDisplay(valueDetail.calculated)}</span>
         <span> = </span>
         <span>{valueDetail.display}</span>
       </p>

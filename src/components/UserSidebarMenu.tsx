@@ -1,5 +1,6 @@
 import { Popover, Transition } from '@headlessui/react'
 import type { UserResponse } from '@kittycad/lib'
+import { useAuth } from '@workos-inc/authkit-react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -22,6 +23,7 @@ let didListEnvironments = false
 
 const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
   const { auth } = useApp()
+  const workos = useAuth()
   const platform = usePlatform()
   const location = useLocation()
   const filePath = useAbsoluteFilePath()
@@ -117,6 +119,25 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
         },
         'break',
         {
+          id: 'workos-auth',
+          Element: 'button',
+          'data-testid': 'user-sidebar-workos-auth',
+          children: (
+            <span>
+              {workos.user ? 'Sign out of WorkOS' : 'Sign in with WorkOS'}
+            </span>
+          ),
+          onClick: () => {
+            if (workos.user) {
+              workos.signOut()
+            } else {
+              workos.signIn().catch(reportRejection)
+            }
+          },
+          // AuthKit's browser redirect flow only applies to the web app
+          className: isDesktop() || workos.isLoading ? 'hidden' : '',
+        },
+        {
           id: 'sign-out',
           Element: 'button',
           'data-testid': 'user-sidebar-sign-out',
@@ -143,7 +164,16 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
           (typeof props !== 'string' && !props.className?.includes('hidden'))
       ) as (ActionButtonProps | 'break')[],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-    [platform, location, filePath, navigate, auth.send, hasMultipleEnvironments]
+    [
+      platform,
+      location,
+      filePath,
+      navigate,
+      auth.send,
+      hasMultipleEnvironments,
+      workos.user,
+      workos.isLoading,
+    ]
   )
 
   // This image host goes down sometimes. We will instead rewrite the

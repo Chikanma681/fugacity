@@ -41,6 +41,14 @@ import getCurrentProjectFile from '@src/lib/getCurrentProjectFile'
 import { FlowsheetStore } from '@src/lib/store/flowsheetStore'
 import { open as openSqlite } from '@src/lib/store/sqlite'
 import { reportRejection } from '@src/lib/trap'
+import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
+import {
+  buildAndSetMenuForFallback,
+  buildAndSetMenuForModelingPage,
+  buildAndSetMenuForProjectPage,
+  disableMenu,
+  enableMenu,
+} from '@src/menu'
 let mainWindow: BrowserWindow | null = null
 let isInstallingUpdate = false
 const thermoAPIRoot = app.isPackaged ? process.resourcesPath : process.cwd()

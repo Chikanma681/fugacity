@@ -47,6 +47,7 @@
     "@replit/codemirror-interact": "^6.3.1",
     "@ts-stack/markdown": "^1.5.0",
     "@tweenjs/tween.js": "^23.1.1",
+    "@workos-inc/authkit-react": "^0.16.3",
     "@xstate/react": "^4.1.1",
     "ai": "^7.0.159",
     "better-queue": "^3.8.12",

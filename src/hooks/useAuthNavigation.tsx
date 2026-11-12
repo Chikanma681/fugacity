@@ -10,6 +10,7 @@ import {
 import { isDesktop } from '@src/lib/isDesktop'
 import { isMobile } from '@src/lib/isMobile'
 import { PATHS } from '@src/lib/paths'
+import { WORKOS_CALLBACK_PATH } from '@src/lib/workos'
 import { useApp } from '@src/lib/boot'
 
 /**
@@ -30,6 +31,15 @@ export function useAuthNavigation() {
 
   // Subscribe to the auth state of the app and navigate accordingly.
   useEffect(() => {
+    // WorkOS AuthKit's sign-in and redirect routes must stay public.
+    if (
+      location.pathname === PATHS.LOGIN ||
+      (WORKOS_CALLBACK_PATH !== PATHS.INDEX &&
+        location.pathname === WORKOS_CALLBACK_PATH)
+    ) {
+      return
+    }
+
     if (isAuthBypassed) {
       if (location.pathname.includes(PATHS.SIGN_IN)) {
         void navigate(PATHS.INDEX)
