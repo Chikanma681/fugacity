@@ -102,10 +102,10 @@ const Home = () => {
     billing.send({ type: BillingTransition.Update, apiToken })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
   }, [])
-   // TODO: WE NEED TO ADD THE BILLINGDIALOG N ZOOCREDITSMENU THINGY WE NEED TO FIGURE OUT THE AUTH BETWEEN THE ZOOKEEPER AND AGENTIC PART
+  // TODO: WE NEED TO ADD THE BILLINGDIALOG N ZOOCREDITSMENU THINGY WE NEED TO FIGURE OUT THE AUTH BETWEEN THE ZOOKEEPER AND AGENTIC PART
   // TODO: WE SHOULD HAVE A MENU FOR FUGACITY FOR EACH USER THINGS LIKE THAT
 
-  const location = useLocation() 
+  const location = useLocation()
   const settingsValues = settings.useSettings()
   const onboardingStatus = settingsValues.app.onboardingStatus.current
 
