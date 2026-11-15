@@ -23,7 +23,9 @@ export function AuthSync() {
     }
     workos
       .getAccessToken()
-      .then((token) => auth.send({ type: 'Signed in', user, token: token ?? '' }))
+      .then((token) =>
+        auth.send({ type: 'Signed in', user, token: token ?? '' })
+      )
       .catch(reportRejection)
   }, [workos.isLoading, workos.user?.id])
 

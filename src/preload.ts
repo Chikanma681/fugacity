@@ -11,7 +11,7 @@ import type { DatabaseAPI } from '@src/lib/store/database'
 import type { WebContentSendPayload } from '@src/menu/channels'
 import { exposeAuthKit } from '@workos/authkit-electron/preload'
 
-exposeAuthKit();
+exposeAuthKit()
 const typeSafeIpcRendererOn = (
   channel: Channel,
   listener: (event: IpcRendererEvent, ...args: any[]) => void

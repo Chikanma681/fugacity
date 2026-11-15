@@ -73,4 +73,3 @@ export function getReleaseUrl(version: string = APP_VERSION) {
 
   return `https://github.com/KittyCAD/modeling-app/releases/tag/v${version}`
 }
-
