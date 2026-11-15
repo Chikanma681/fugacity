@@ -102,8 +102,10 @@ const Home = () => {
     billing.send({ type: BillingTransition.Update, apiToken })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
   }, [])
+   // TODO: WE NEED TO ADD THE BILLINGDIALOG N ZOOCREDITSMENU THINGY WE NEED TO FIGURE OUT THE AUTH BETWEEN THE ZOOKEEPER AND AGENTIC PART
+  // TODO: WE SHOULD HAVE A MENU FOR FUGACITY FOR EACH USER THINGS LIKE THAT
 
-  const location = useLocation()
+  const location = useLocation() 
   const settingsValues = settings.useSettings()
   const onboardingStatus = settingsValues.app.onboardingStatus.current
 
@@ -334,36 +336,36 @@ const Home = () => {
             </li>
           </ul>
           <ul className="flex flex-col">
-            {!hasUnlimitedCredits && (
-              <li className="contents">
-                <div className="my-2">
-                  <BillingDialog
-                    upgradeHref={withSiteBaseURL('/design-studio-pricing')}
-                    upgradeClick={openExternalBrowserIfDesktop()}
-                    error={billingContext.error}
-                    balance={billingContext.balance}
-                    allowance={billingContext.allowance}
-                  />
-                </div>
-              </li>
-            )}
-            <li className="contents">
-              <ActionButton
-                Element="externalLink"
-                to={withSiteBaseURL('/account')}
-                onClick={openExternalBrowserIfDesktop(
-                  withSiteBaseURL('/account')
-                )}
-                className={sidebarButtonClasses}
-                iconStart={{
-                  icon: 'person',
-                  bgClassName: '!bg-transparent rounded-sm',
-                }}
-                data-testid="home-account"
-              >
-                View your account
-              </ActionButton>
-            </li>
+            {/* {!hasUnlimitedCredits && ( */}
+            {/*   <li className="contents"> */}
+            {/*     <div className="my-2"> */}
+            {/*       <BillingDialog */}
+            {/*         upgradeHref={withSiteBaseURL('/design-studio-pricing')} */}
+            {/*         upgradeClick={openExternalBrowserIfDesktop()} */}
+            {/*         error={billingContext.error} */}
+            {/*         balance={billingContext.balance} */}
+            {/*         allowance={billingContext.allowance} */}
+            {/*       /> */}
+            {/*     </div> */}
+            {/*   </li> */}
+            {/* )} */}
+            {/* <li className="contents"> */}
+            {/*   <ActionButton */}
+            {/*     Element="externalLink" */}
+            {/*     to={withSiteBaseURL('/account')} */}
+            {/*     onClick={openExternalBrowserIfDesktop( */}
+            {/*       withSiteBaseURL('/account') */}
+            {/*     )} */}
+            {/*     className={sidebarButtonClasses} */}
+            {/*     iconStart={{ */}
+            {/*       icon: 'person', */}
+            {/*       bgClassName: '!bg-transparent rounded-sm', */}
+            {/*     }} */}
+            {/*     data-testid="home-account" */}
+            {/*   > */}
+            {/*     View your account */}
+            {/*   </ActionButton> */}
+            {/* </li> */}
           </ul>
         </aside>
         <ProjectGrid
