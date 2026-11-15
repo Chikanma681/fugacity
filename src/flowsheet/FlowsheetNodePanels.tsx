@@ -14,7 +14,7 @@ import {
   getUnitDefinition,
 } from '@src/flowsheet/registry'
 import type { FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
-import { fromSI, panelUnits, toSI } from '@src/flowsheet/units'
+import { type PanelUnit, fromSI, panelUnits, toSI } from '@src/flowsheet/units'
 import { isArray } from '@src/lib/utils'
 
 const sourceLabels: Record<PanelOptionSource['source'], string> = {
@@ -233,6 +233,23 @@ function getPanelSections(
 const inputClassName =
   'p-1 bg-transparent border rounded-sm border-chalkboard-30 w-full text-base font-normal focus:border-primary focus:outline-primary'
 
+function formatReadonlyValue(
+  value: PanelValue | undefined,
+  displayValues?: { true: string; false: string },
+  unit?: PanelUnit
+) {
+  if (value === undefined) {
+    return 'Not available'
+  }
+  if (typeof value === 'boolean' && displayValues) {
+    return value ? displayValues.true : displayValues.false
+  }
+  if (typeof value === 'number' && unit) {
+    return fromSI(value, unit)
+  }
+  return String(value)
+}
+
 function PanelControl({
   row,
   id,
@@ -299,18 +316,10 @@ function PanelControl({
 
   const value = values[row.property]
   if (row.type === 'readonly') {
-    const text =
-      value === undefined
-        ? 'Not available'
-        : row.displayValues && typeof value === 'boolean'
-          ? row.displayValues[value ? 'true' : 'false']
-          : String(value)
     return (
       <div className="flex items-center gap-2">
         <span>
-          {typeof value === 'number' && selectedUnit
-            ? fromSI(value, selectedUnit)
-            : text}
+          {formatReadonlyValue(value, row.displayValues, selectedUnit)}
         </span>
         {unitSelector}
       </div>
