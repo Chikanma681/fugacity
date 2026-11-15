@@ -165,7 +165,7 @@ export function createSettings() {
         },
       }),
       showPortLegend: new Setting<boolean>({
-        defaultValue: true,
+        defaultValue: false,
         hideOnLevel: 'user',
         description: 'Whether to show the port legend on the flowsheet canvas',
         validate: (v) => typeof v === 'boolean',
