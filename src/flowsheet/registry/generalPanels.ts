@@ -2,12 +2,7 @@ import type { PanelRow } from './types'
 
 export const objectDetailRows: PanelRow[] = [
   { type: 'readonly', label: 'Type', property: 'GetDisplayName()' },
-  {
-    type: 'readonly',
-    label: 'Status',
-    property: 'GraphicObject.Active',
-    displayValues: { true: 'Active', false: 'Inactive' },
-  },
+  { type: 'readonly', label: 'Status', property: 'CalculationStatus' },
   { type: 'string', label: 'Name', property: 'GraphicObject.Tag' },
 ]
 

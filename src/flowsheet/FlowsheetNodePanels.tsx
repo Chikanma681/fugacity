@@ -1,4 +1,5 @@
 import { RadioGroup } from '@headlessui/react'
+import { useSignals } from '@preact/signals-react/runtime'
 import { useId, useRef, useState } from 'react'
 
 import { ActionButton } from '@src/components/ActionButton'
@@ -13,6 +14,7 @@ import {
   type PanelValue,
   getUnitDefinition,
 } from '@src/flowsheet/registry'
+import { type SimulationRun, simulationRun } from '@src/flowsheet/simulationRun'
 import type { FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
 import { type PanelUnit, fromSI, panelUnits, toSI } from '@src/flowsheet/units'
 import { isArray } from '@src/lib/utils'
@@ -103,6 +105,20 @@ function getInitialValues(rows: PanelRow[], node: FlowNode): PanelValues {
     'GetDisplayName()': getUnitDefinition(node.unitType).label,
     'GraphicObject.Tag': node.tag,
   }
+}
+
+function getCalculationStatus(nodeId: string, run: SimulationRun) {
+  if (run.status === 'running') {
+    return 'Calculating…'
+  }
+  const result = run.status === 'finished' ? run.result.objects[nodeId] : null
+  if (!result) {
+    return 'Not calculated'
+  }
+  if (result.calculated) {
+    return 'Calculated'
+  }
+  return result.errorMessage ? `Error: ${result.errorMessage}` : 'Not calculated'
 }
 
 function matchesCondition(condition: PanelCondition, values: PanelValues) {
@@ -594,6 +610,7 @@ export function FlowsheetNodePanels({
   canSave?: boolean
   selectedCompoundIds?: string[]
 }) {
+  useSignals()
   const definition = getUnitDefinition(node.unitType)
   const panels = resolvePanelRows(definition.panels, selectedCompoundIds)
   const radioPanels =
@@ -608,6 +625,10 @@ export function FlowsheetNodePanels({
     () => ({ ...node.parameters?.displayUnits })
   )
   const [error, setError] = useState<string | null>(null)
+  const panelValues = {
+    ...values,
+    CalculationStatus: getCalculationStatus(node.id, simulationRun.value),
+  }
   const sections = (
     activePanel
       ? getPanelSections(activePanel.rows, 'group')
@@ -728,7 +749,7 @@ export function FlowsheetNodePanels({
                     <PanelField
                       key={getRowKey(row)}
                       row={row}
-                      values={values}
+                      values={panelValues}
                       onChange={onChange}
                       displayUnits={displayUnits}
                       onUnitChange={onUnitChange}
