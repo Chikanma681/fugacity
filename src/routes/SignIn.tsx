@@ -1,6 +1,4 @@
 import type { CSSProperties } from 'react'
-import { useCallback } from 'react'
-import { Link } from 'react-router-dom'
 
 import { ActionButton } from '@src/components/ActionButton'
 import { CustomIcon } from '@src/components/CustomIcon'
@@ -8,19 +6,24 @@ import { Logo } from '@src/components/Logo'
 import { useWorkOSAuth } from '@src/lib/auth'
 import { APP_NAME } from '@src/lib/constants'
 import { isDesktop } from '@src/lib/isDesktop'
-import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
-import { Themes, getSystemTheme } from '@src/lib/theme'
 import { reportRejection } from '@src/lib/trap'
-import { withSiteBaseURL } from '@src/lib/withBaseURL'
 import { APP_VERSION } from '@src/routes/utils'
-import { useApp } from '@src/lib/boot'
 
 const subtleBorder =
   'border border-solid border-chalkboard-30 dark:border-chalkboard-80'
 const cardArea = `${subtleBorder} rounded-lg px-6 py-3 text-chalkboard-70 dark:text-chalkboard-30`
+const actionButtonClassName =
+  '!bg-primary !text-chalkboard-10 !border-transarent'
+
+const simulationCapabilities = [
+  'Steady-state flowsheets',
+  'Material and energy balances',
+  'PT, PH and PS flash calculations',
+  'Equations of state and activity models',
+  'ChemSep, DWSIM and ChEDL compound databases',
+]
 
 const SignIn = () => {
-  const { settings } = useApp()
   const workos = useWorkOSAuth()
   // Only create the native file menus on desktop
   if (window.electron) {
@@ -31,24 +34,6 @@ const SignIn = () => {
       .catch(reportRejection)
     window.electron.disableMenu('Help.Show all commands').catch(reportRejection)
   }
-  const {
-    app: { theme },
-  } = settings.useSettings()
-  const kclSampleUrl = withSiteBaseURL('/docs/kcl-samples/car-wheel-assembly')
-
-  const getThemeText = useCallback(
-    (shouldContrast = true) =>
-      theme.current === Themes.Light ||
-      (theme.current === Themes.System && getSystemTheme() === Themes.Light)
-        ? shouldContrast
-          ? '-dark'
-          : ''
-        : shouldContrast
-          ? ''
-          : '-dark',
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
-    [theme.current]
-  )
 
   return (
     <main
@@ -81,18 +66,17 @@ const SignIn = () => {
               )}
             </div>
             <p className="my-4 text-lg xl:text-xl">
-              Thank you for using our CAD application. It is built on a novel
-              geometry engine and crafted to help you create robust parametric
-              designs. It represents your models as code, making it easy to
-              collaborate with ML tools like Zookeeper to design parts and
-              libraries fast.
+              {APP_NAME} is an agentic process simulator for chemical engineers.
+              Build flowsheets, pick compounds and property packages, and run
+              rigorous thermodynamic calculations powered by DWSIM. Describe
+              what you want to simulate and let the agent help you set up
+              streams, unit operations and specifications.
             </p>
             {!isDesktop() && (
               <div className="flex md:hidden flex-col gap-2">
                 <p className="text-base text-primary">
-                  This app is really best used on a desktop. We're working on
-                  simple touch controls for mobile, but in the meantime please
-                  visit using a larger device.
+                  Flowsheeting is best done on a larger screen. Please visit on
+                  a desktop or laptop for the full experience. We are working on releasing a version of Fugacity for the web.
                 </p>
               </div>
             )}
@@ -106,138 +90,71 @@ const SignIn = () => {
               }
               data-testid="sign-in-button"
             >
-              Sign in to get started
+              Sign in to start simulating
               <CustomIcon name="arrowShortRight" className="w-6 h-6" />
             </button>
           </div>
-          <Link
-            className={`group relative xl:h-full xl:row-span-full md:col-start--1 xl:col-start-4 rounded-lg overflow-hidden grid place-items-center ${subtleBorder}`}
-            to={kclSampleUrl}
-            onClick={openExternalBrowserIfDesktop(kclSampleUrl)}
-            target="_blank"
-            rel="noreferrer noopener"
+          <div
+            className={`${cardArea} xl:h-full xl:row-span-full md:col-start--1 xl:col-start-4 flex flex-col justify-center`}
           >
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="h-full object-cover object-center"
-            >
-              <source
-                src={`${isDesktop() ? '.' : ''}/wheel-loop${getThemeText(
-                  false
-                )}.mp4`}
-                type="video/mp4"
-              />
-            </video>
-            <div
-              className={
-                'absolute bottom-0 left-0 right-0 transition translate-y-4 opacity-0 ' +
-                'group-hover:translate-y-0 group-hover:opacity-100 ' +
-                'm-0 mt-8 flex gap-4 items-center px-3 py-1 ' +
-                '!border-transparent !text-lg !text-chalkboard-10 !bg-primary hover:hue-rotate-15'
-              }
-              data-testid="view-sample-button"
-            >
-              View this sample
-              <CustomIcon name="arrowShortRight" className="w-6 h-6" />
-            </div>
-          </Link>
+            <h2 className="text-xl xl:text-2xl">What you can simulate</h2>
+            <ul className="text-sm my-4 flex flex-col gap-3 list-disc pl-4">
+              {simulationCapabilities.map((capability) => (
+                <li key={capability}>{capability}</li>
+              ))}
+            </ul>
+          </div>
           <div className="self-end h-min md:col-span-3 xl:row-span-2 flex flex-col md:grid grid-cols-2 gap-5">
             <div className={cardArea}>
               <h2 className="text-xl xl:text-2xl">Built in the open</h2>
               <p className="text-xs my-4">
-                Open-source and open discussions. Check our public code base and
-                join our Discord.
+                {APP_NAME} is open source and licensed under the GPL. Read the
+                code, report issues and help shape the simulator.
               </p>
               <div className="flex gap-4 flex-wrap items-center">
                 <ActionButton
                   Element="externalLink"
-                  to="https://github.com/KittyCAD/modeling-app"
+                  to="https://github.com/Chikanma681/fugacity"
                   iconStart={{ icon: 'code', bgClassName: '!bg-transparent' }}
-                  className="!bg-primary !text-chalkboard-10 !border-transarent"
+                  className={actionButtonClassName}
                 >
                   <span className="py-2 lg:py-0">Read our source code</span>
-                </ActionButton>
-                <ActionButton
-                  Element="externalLink"
-                  to="https://discord.gg/JQEpHR7Nt2"
-                  iconStart={{
-                    icon: 'keyboard',
-                    bgClassName: '!bg-transparent',
-                  }}
-                  className="!bg-primary !text-chalkboard-10 !border-transarent"
-                >
-                  <span className="py-2 lg:py-0">Join our community</span>
                 </ActionButton>
               </div>
             </div>
             <div className={cardArea}>
-              <h2 className="text-xl xl:text-2xl">Ready for the future</h2>
+              <h2 className="text-xl xl:text-2xl">
+                Thermodynamics you can trust
+              </h2>
               <p className="text-xs my-4">
-                Modern software ideas being brought together to create a
-                familiar modeling experience with new superpowers.
+                Property packages, compound data and flash algorithms come
+                straight from DWSIM, a proven open-source chemical process
+                simulator.
               </p>
               <div className="flex gap-4 flex-wrap items-center">
                 <ActionButton
                   Element="externalLink"
-                  to={withSiteBaseURL('/docs/kcl-samples/pillow-block-bearing')}
+                  to="https://github.com/DanWBR/dwsim"
                   iconStart={{
                     icon: 'settings',
                     bgClassName: '!bg-transparent',
                   }}
-                  className="!bg-primary !text-chalkboard-10 !border-transarent"
+                  className={actionButtonClassName}
                 >
-                  <span className="py-2 lg:py-0">
-                    Parametric design with KCL
-                  </span>
-                </ActionButton>
-                <ActionButton
-                  Element="externalLink"
-                  to={withSiteBaseURL('/docs/zoo-design-studio/text-to-cad')}
-                  iconStart={{
-                    icon: 'sparkles',
-                    bgClassName: '!bg-transparent',
-                  }}
-                  className="!bg-primary !text-chalkboard-10 !border-transarent"
-                >
-                  <span className="py-2 lg:py-0">ML-unlocked CAD</span>
+                  <span className="py-2 lg:py-0">Explore DWSIM</span>
                 </ActionButton>
               </div>
             </div>
             <div className={cardArea + ' col-span-2'}>
               <h2 className="text-xl xl:text-2xl">
-                Built on the first infrastructure for hardware design
+                An agent that speaks chemical engineering
               </h2>
               <p className="text-xs my-4">
-                You can make your own niche hardware design tools with our
-                design and machine learning interfaces. We're building Modeling
-                App in the same way.
+                Ask for a distillation train, a reactor loop or a heat exchanger
+                network in plain language. The agent drafts the flowsheet,
+                chooses sensible property packages and explains its assumptions,
+                while you stay in control of every specification.
               </p>
-              <div className="flex gap-4 flex-wrap items-center">
-                <ActionButton
-                  Element="externalLink"
-                  to={withSiteBaseURL('/design-api')}
-                  iconStart={{ icon: 'sketch', bgClassName: '!bg-transparent' }}
-                  className="!bg-primary !text-chalkboard-10 !border-transarent"
-                >
-                  <span className="py-2 lg:py-0">KittyCAD Design API</span>
-                </ActionButton>
-                <ActionButton
-                  Element="externalLink"
-                  to={withSiteBaseURL('/machine-learning-api')}
-                  iconStart={{
-                    icon: 'elephant',
-                    bgClassName: '!bg-transparent',
-                  }}
-                  className="!bg-primary !text-chalkboard-10 !border-transarent"
-                >
-                  <span className="py-2 lg:py-0">
-                    ML-ephant Machine Learning API
-                  </span>
-                </ActionButton>
-              </div>
             </div>
           </div>
         </div>
