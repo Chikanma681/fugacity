@@ -80,20 +80,20 @@ function ResultsTable({
   headers,
   children,
 }: {
-  headers: string[]
+  headers: { label: string; numeric?: boolean }[]
   children: ReactNode
 }) {
   return (
     <div className="overflow-auto">
       <table className="w-full text-xs border-collapse">
         <thead>
-          <tr className="text-left text-chalkboard-70 dark:text-chalkboard-40">
+          <tr className="text-chalkboard-70 dark:text-chalkboard-40">
             {headers.map((header) => (
               <th
-                key={header}
-                className="px-2 py-1 font-semibold whitespace-nowrap border-b border-chalkboard-20 dark:border-chalkboard-80"
+                key={header.label}
+                className={`px-2 py-1 font-semibold whitespace-nowrap border-b border-chalkboard-20 dark:border-chalkboard-80 ${header.numeric ? 'text-right' : 'text-left'}`}
               >
-                {header}
+                {header.label}
               </th>
             ))}
           </tr>
@@ -115,7 +115,11 @@ function MaterialStreamResults({
   const compoundIds = Object.keys(streams[0].stream.moleFractions)
   return (
     <ResultsTable
-      headers={['Property', ...streams.map((object) => object.tag), 'Units']}
+      headers={[
+        { label: 'Property' },
+        ...streams.map((object) => ({ label: object.tag, numeric: true })),
+        { label: 'Units' },
+      ]}
     >
       {getStreamRows(compoundIds).map((row) => (
         <tr key={row.label}>
@@ -139,7 +143,14 @@ function ObjectStatusResults({
   objects,
 }: { objects: FlowsheetObjectResult[] }) {
   return (
-    <ResultsTable headers={['Object', 'Status', 'Heat Flow (kW)', 'Message']}>
+    <ResultsTable
+      headers={[
+        { label: 'Object' },
+        { label: 'Status' },
+        { label: 'Heat Flow (kW)', numeric: true },
+        { label: 'Message' },
+      ]}
+    >
       {objects.map((object) => (
         <tr key={object.tag}>
           <td className={cellClassName}>{object.tag}</td>
