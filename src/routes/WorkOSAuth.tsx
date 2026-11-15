@@ -1,8 +1,8 @@
-import { useAuth } from '@workos-inc/authkit-react'
 import { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 
 import Loading from '@src/components/Loading'
+import { useWorkOSAuth } from '@src/lib/auth'
 import { PATHS } from '@src/lib/paths'
 import { reportRejection } from '@src/lib/trap'
 
@@ -11,7 +11,7 @@ import { reportRejection } from '@src/lib/trap'
  * e.g. when arriving from a password-reset email or invitation.
  */
 export function WorkOSLogin() {
-  const { isLoading, signIn } = useAuth()
+  const { isLoading, signIn } = useWorkOSAuth()
 
   useEffect(() => {
     if (!isLoading) {
@@ -27,11 +27,11 @@ export function WorkOSLogin() {
 }
 
 /**
- * Redirect destination registered with WorkOS. AuthKitProvider (mounted in
+ * Redirect destination registered with WorkOS. WorkOSProvider (mounted in
  * src/index.tsx) exchanges the code; once it finishes we send the user home.
  */
 export function WorkOSCallback() {
-  const { isLoading } = useAuth()
+  const { isLoading } = useWorkOSAuth()
 
   if (isLoading) {
     return (

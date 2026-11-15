@@ -45,7 +45,7 @@ import { buildFSHistoryExtension } from '@src/editor/plugins/fs'
 import { type Signal, signal, effect } from '@preact/signals-core'
 import { reportRejection } from '@src/lib/trap'
 import type { Project } from '@src/lib/project'
-import type { UserResponse } from '@kittycad/lib/dist/types/src'
+import type { AppUser } from '@src/lib/auth'
 import type { ModuleType } from '@src/lib/wasm_lib_wrapper'
 import type { SystemIOActor } from '@src/machines/systemIO/utils'
 
@@ -65,7 +65,7 @@ export type AppAuthSystem = {
   send: ActorRefFrom<typeof authMachine>['send']
   useAuthState: () => SnapshotFrom<typeof authMachine>
   useToken: () => string
-  useUser: () => UserResponse | undefined
+  useUser: () => AppUser | undefined
 }
 
 export type AppCommandSystem = {

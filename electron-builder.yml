@@ -66,5 +66,7 @@ publish:
 releaseInfo:
   releaseNotesFile: release-notes.md
 protocols:
-  - name: Zoo Studio
-    schemes: ['zoo-studio']
+  - name: Fugacity
+    schemes: ['fugacity']
+  - name: Fugacity Auth
+    schemes: ['workos-auth']

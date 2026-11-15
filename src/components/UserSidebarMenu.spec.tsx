@@ -1,4 +1,3 @@
-import type { UserResponse } from '@kittycad/lib'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import {
   Route,
@@ -8,36 +7,16 @@ import {
 } from 'react-router-dom'
 
 import UserSidebarMenu from '@src/components/UserSidebarMenu'
+import type { AppUser } from '@src/lib/auth'
 import { expect, describe, test, vi } from 'vitest'
-
-vi.mock('@workos-inc/authkit-react', () => ({
-  useAuth: () => ({
-    isLoading: false,
-    user: null,
-    signIn: vi.fn(),
-    signOut: vi.fn(),
-  }),
-}))
 
 describe('UserSidebarMenu tests', () => {
   test("Renders user's name and email if available", async () => {
-    const userWellFormed: UserResponse = {
+    const userWellFormed: AppUser = {
       id: '8675309',
       name: 'Test User',
       email: 'kittycad.sidebar.test@example.com',
-      image: 'https://placekitten.com/200/200',
-      is_onboarded: false,
-      created_at: 'yesteryear',
-      updated_at: 'today',
-      company: 'Test Company',
-      discord: 'Test User#1234',
-      github: 'testuser',
-      phone: '555-555-5555',
-      first_name: 'Test',
-      last_name: 'User',
-      can_train_on_data: false,
-      is_service_account: false,
-      deletion_scheduled: false,
+      imageUrl: 'https://placekitten.com/200/200',
     }
 
     render(
@@ -61,23 +40,11 @@ describe('UserSidebarMenu tests', () => {
   })
 
   test("Renders just the user's email if no name is available", async () => {
-    const userNoName: UserResponse = {
+    const userNoName: AppUser = {
       id: '8675309',
-      email: 'kittycad.sidebar.test@example.com',
-      image: 'https://placekitten.com/200/200',
-      created_at: 'yesteryear',
-      is_onboarded: false,
-      updated_at: 'today',
-      company: 'Test Company',
-      discord: 'Test User#1234',
-      github: 'testuser',
-      phone: '555-555-5555',
-      first_name: '',
-      last_name: '',
       name: '',
-      can_train_on_data: false,
-      is_service_account: false,
-      deletion_scheduled: false,
+      email: 'kittycad.sidebar.test@example.com',
+      imageUrl: 'https://placekitten.com/200/200',
     }
 
     render(
@@ -96,23 +63,10 @@ describe('UserSidebarMenu tests', () => {
   })
 
   test('Renders a menu button if no user avatar is available', async () => {
-    const userNoAvatar: UserResponse = {
+    const userNoAvatar: AppUser = {
       id: '8675309',
       name: 'Test User',
       email: 'kittycad.sidebar.test@example.com',
-      created_at: 'yesteryear',
-      updated_at: 'today',
-      is_onboarded: false,
-      company: 'Test Company',
-      discord: 'Test User#1234',
-      github: 'testuser',
-      phone: '555-555-5555',
-      first_name: 'Test',
-      last_name: 'User',
-      image: '',
-      can_train_on_data: false,
-      is_service_account: false,
-      deletion_scheduled: false,
     }
 
     render(

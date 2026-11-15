@@ -1,34 +1,27 @@
 import type { CSSProperties } from 'react'
-import { useCallback, useEffect, useState } from 'react'
-import toast from 'react-hot-toast'
+import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 
-import type { IElectronAPI } from '@root/interface'
 import { ActionButton } from '@src/components/ActionButton'
 import { CustomIcon } from '@src/components/CustomIcon'
 import { Logo } from '@src/components/Logo'
-import { updateEnvironment } from '@src/env'
-import env from '@src/env'
+import { useWorkOSAuth } from '@src/lib/auth'
 import { APP_NAME } from '@src/lib/constants'
-import { readEnvironmentFile, writeEnvironmentFile } from '@src/lib/desktop'
 import { isDesktop } from '@src/lib/isDesktop'
 import { openExternalBrowserIfDesktop } from '@src/lib/openWindow'
 import { Themes, getSystemTheme } from '@src/lib/theme'
 import { reportRejection } from '@src/lib/trap'
-import { returnSelfOrGetHostNameFromURL, toSync } from '@src/lib/utils'
-import { withAPIBaseURL, withSiteBaseURL } from '@src/lib/withBaseURL'
-import { AdvancedSignInOptions } from '@src/routes/AdvancedSignInOptions'
-import { APP_VERSION, generateSignInUrl } from '@src/routes/utils'
+import { withSiteBaseURL } from '@src/lib/withBaseURL'
+import { APP_VERSION } from '@src/routes/utils'
 import { useApp } from '@src/lib/boot'
 
 const subtleBorder =
   'border border-solid border-chalkboard-30 dark:border-chalkboard-80'
 const cardArea = `${subtleBorder} rounded-lg px-6 py-3 text-chalkboard-70 dark:text-chalkboard-30`
 
-let didReadFromDiskCacheForEnvironment = false
-
 const SignIn = () => {
-  const { auth, settings } = useApp()
+  const { settings } = useApp()
+  const workos = useWorkOSAuth()
   // Only create the native file menus on desktop
   if (window.electron) {
     window.electron.createFallbackMenu().catch(reportRejection)
@@ -38,60 +31,9 @@ const SignIn = () => {
       .catch(reportRejection)
     window.electron.disableMenu('Help.Show all commands').catch(reportRejection)
   }
-  const [userCode, setUserCode] = useState('')
-
-  // Last saved environment
-  // TODO: Reduce this logic
-  const lastSelectedEnvironmentName = env().VITE_ZOO_BASE_DOMAIN || ''
-  const [selectedEnvironment, setSelectedEnvironment] = useState(
-    lastSelectedEnvironmentName
-  )
-
-  // See if the user added a real URL if they did, auto take the hostname!
-  const setSelectedEnvironmentFormatter = (requestedEnvironment: string) => {
-    const requestedEnvironmentFormatted =
-      returnSelfOrGetHostNameFromURL(requestedEnvironment)
-    setSelectedEnvironment(requestedEnvironmentFormatted)
-  }
-
-  const commitEnvironmentChange = (requestedEnvironment: string) => {
-    const electron = window.electron
-    if (!electron) return
-    const requestedEnvironmentFormatted =
-      returnSelfOrGetHostNameFromURL(requestedEnvironment)
-    void (async () => {
-      const persistedEnvironment = await readEnvironmentFile().catch(() => '')
-      if (requestedEnvironmentFormatted === persistedEnvironment) {
-        return
-      }
-      await writeEnvironmentFile(requestedEnvironmentFormatted).catch(
-        reportRejection
-      )
-      window.location.reload()
-    })()
-  }
-
-  useEffect(() => {
-    if (!didReadFromDiskCacheForEnvironment) {
-      didReadFromDiskCacheForEnvironment = true
-      readEnvironmentFile()
-        .then((environment) => {
-          if (environment) {
-            setSelectedEnvironmentFormatter(environment)
-            return environment
-          }
-        })
-        .then(() => {
-          // Environment loaded from disk
-        })
-        .catch(reportRejection)
-    }
-  }, [])
-
   const {
     app: { theme },
   } = settings.useSettings()
-  const signInUrl = generateSignInUrl()
   const kclSampleUrl = withSiteBaseURL('/docs/kcl-samples/car-wheel-assembly')
 
   const getThemeText = useCallback(
@@ -107,37 +49,6 @@ const SignIn = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- TODO: blanket-ignored fix me!
     [theme.current]
   )
-
-  const signInDesktop = async (electron: IElectronAPI) => {
-    const requestedEnvironment = selectedEnvironment.trim()
-    updateEnvironment(requestedEnvironment)
-
-    // We want to invoke our command to login via device auth.
-    const userCodeToDisplay = await electron
-      .startDeviceFlow(withAPIBaseURL(location.search))
-      .catch(reportError)
-    if (!userCodeToDisplay) {
-      console.error('No user code received while trying to log in')
-      toast.error('Error while trying to log in')
-      return
-    }
-    setUserCode(userCodeToDisplay)
-
-    // Now that we have the user code, we can kick off the final login step.
-    const token = await electron.loginWithDeviceFlow().catch(reportError)
-    if (!token) {
-      console.error('No token received while trying to log in')
-      toast.error('Error while trying to log in')
-      return
-    }
-
-    auth.send({ type: 'Log in', token })
-  }
-
-  const cancelSignIn = async () => {
-    auth.send({ type: 'Log out' })
-    setUserCode('')
-  }
 
   return (
     <main
@@ -176,94 +87,28 @@ const SignIn = () => {
               collaborate with ML tools like Zookeeper to design parts and
               libraries fast.
             </p>
-            {window.electron ? (
-              <div className="flex flex-col gap-2">
-                {!userCode ? (
-                  <>
-                    <button
-                      onClick={() => {
-                        const electron = window.electron
-                        if (electron) {
-                          ;(async () => {
-                            await signInDesktop(electron)
-                          })().catch(reportRejection)
-                        }
-                      }}
-                      className={
-                        'm-0 mt-8 w-fit flex gap-4 items-center px-3 py-1 ' +
-                        '!border-transparent !text-lg !text-chalkboard-10 !bg-primary hover:hue-rotate-15'
-                      }
-                      data-testid="sign-in-button"
-                    >
-                      Sign in to get started
-                      <CustomIcon name="arrowShortRight" className="w-6 h-6" />
-                    </button>
-                    {isDesktop() && (
-                      <AdvancedSignInOptions
-                        selectedEnvironment={selectedEnvironment}
-                        setSelectedEnvironment={setSelectedEnvironmentFormatter}
-                        onEnvironmentCommit={commitEnvironmentChange}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xs">
-                      You should see the following code in your browser
-                    </p>
-                    <p
-                      className="text-lg font-bold inline-flex gap-1"
-                      data-testid="sign-in-user-code"
-                    >
-                      {userCode.split('').map((char, i) => (
-                        <span
-                          key={i}
-                          className={
-                            'text-xl font-bold p-1 ' +
-                            (char === '-' ? '' : 'border-2 border-solid')
-                          }
-                        >
-                          {char}
-                        </span>
-                      ))}
-                    </p>
-                    <button
-                      onClick={toSync(cancelSignIn, reportRejection)}
-                      className={
-                        'm-0 mt-8 w-fit flex gap-4 items-center px-3 py-1 ' +
-                        '!border-transparent !text-lg !text-chalkboard-10 !bg-primary hover:hue-rotate-15'
-                      }
-                      data-testid="cancel-sign-in-button"
-                    >
-                      <CustomIcon name="arrowShortLeft" className="w-6 h-6" />
-                      Cancel
-                    </button>
-                  </>
-                )}
+            {!isDesktop() && (
+              <div className="flex md:hidden flex-col gap-2">
+                <p className="text-base text-primary">
+                  This app is really best used on a desktop. We're working on
+                  simple touch controls for mobile, but in the meantime please
+                  visit using a larger device.
+                </p>
               </div>
-            ) : (
-              <>
-                <div className="flex md:hidden flex-col gap-2">
-                  <p className="text-base text-primary">
-                    This app is really best used on a desktop. We're working on
-                    simple touch controls for mobile, but in the meantime please
-                    visit using a larger device.
-                  </p>
-                </div>
-                <Link
-                  onClick={openExternalBrowserIfDesktop(signInUrl)}
-                  to={signInUrl}
-                  className={
-                    'w-fit m-0 mt-8 hidden md:flex gap-4 items-center px-3 py-1 ' +
-                    '!border-transparent !text-lg !text-chalkboard-10 !bg-primary hover:hue-rotate-15'
-                  }
-                  data-testid="sign-in-button"
-                >
-                  Sign in to get started
-                  <CustomIcon name="arrowShortRight" className="w-6 h-6" />
-                </Link>
-              </>
             )}
+            <button
+              type="button"
+              onClick={() => workos.signIn().catch(reportRejection)}
+              disabled={workos.isLoading}
+              className={
+                'm-0 mt-8 w-fit flex gap-4 items-center px-3 py-1 ' +
+                '!border-transparent !text-lg !text-chalkboard-10 !bg-primary hover:hue-rotate-15'
+              }
+              data-testid="sign-in-button"
+            >
+              Sign in to get started
+              <CustomIcon name="arrowShortRight" className="w-6 h-6" />
+            </button>
           </div>
           <Link
             className={`group relative xl:h-full xl:row-span-full md:col-start--1 xl:col-start-4 rounded-lg overflow-hidden grid place-items-center ${subtleBorder}`}

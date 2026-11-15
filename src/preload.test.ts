@@ -29,6 +29,10 @@ vi.mock('electron', () => ({
   },
 }))
 
+vi.mock('@workos/authkit-electron/preload', () => ({
+  exposeAuthKit: vi.fn(),
+}))
+
 vi.mock('chokidar', () => ({
   default: {
     watch: vi.fn(() => ({

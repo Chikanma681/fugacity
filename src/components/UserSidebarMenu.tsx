@@ -1,7 +1,5 @@
 import { Popover, Transition } from '@headlessui/react'
-import type { UserResponse } from '@kittycad/lib'
-import { useAuth } from '@workos-inc/authkit-react'
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import type { ActionButtonProps } from '@src/components/ActionButton'
@@ -9,44 +7,24 @@ import { ActionButton } from '@src/components/ActionButton'
 import { CustomIcon } from '@src/components/CustomIcon'
 import { FeedbackDialog } from '@src/components/FeedbackDialog'
 import Tooltip from '@src/components/Tooltip'
-import env from '@src/env'
 import { useAbsoluteFilePath } from '@src/hooks/useAbsoluteFilePath'
 import usePlatform from '@src/hooks/usePlatform'
-import { listAllEnvironmentsWithTokens } from '@src/lib/desktop'
+import type { AppUser } from '@src/lib/auth'
 import { isDesktop } from '@src/lib/isDesktop'
 import { PATHS } from '@src/lib/paths'
 import { useApp } from '@src/lib/boot'
 import { reportRejection } from '@src/lib/trap'
 import { withSiteBaseURL } from '@src/lib/withBaseURL'
 
-let didListEnvironments = false
-
-const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
+const UserSidebarMenu = ({ user }: { user?: AppUser }) => {
   const { auth } = useApp()
-  const workos = useAuth()
   const platform = usePlatform()
   const location = useLocation()
   const filePath = useAbsoluteFilePath()
-  const displayedName = getDisplayName(user)
+  const displayedName = user?.name || user?.email || null
   const [imageLoadFailed, setImageLoadFailed] = useState(false)
   const navigate = useNavigate()
-  const fullEnvironmentName = env().VITE_ZOO_BASE_DOMAIN
-  const [hasMultipleEnvironments, setHasMultipleEnvironments] = useState(false)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
-
-  useEffect(() => {
-    if (!didListEnvironments) {
-      didListEnvironments = true
-      listAllEnvironmentsWithTokens()
-        .then((environmentsWithTokens) => {
-          setHasMultipleEnvironments(environmentsWithTokens.length > 1)
-        })
-        .catch(reportRejection)
-    }
-  }, [])
-
-  // Do not show the environment items on web
-  const hideEnvironmentItems = !isDesktop()
 
   // We filter this memoized list so that no orphan "break" elements are rendered.
   const userMenuItems = useMemo<(ActionButtonProps | 'break')[]>(
@@ -119,44 +97,12 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
         },
         'break',
         {
-          id: 'workos-auth',
-          Element: 'button',
-          'data-testid': 'user-sidebar-workos-auth',
-          children: (
-            <span>
-              {workos.user ? 'Sign out of WorkOS' : 'Sign in with WorkOS'}
-            </span>
-          ),
-          onClick: () => {
-            if (workos.user) {
-              workos.signOut()
-            } else {
-              workos.signIn().catch(reportRejection)
-            }
-          },
-          // AuthKit's browser redirect flow only applies to the web app
-          className: isDesktop() || workos.isLoading ? 'hidden' : '',
-        },
-        {
           id: 'sign-out',
           Element: 'button',
           'data-testid': 'user-sidebar-sign-out',
-          children: (
-            <span>
-              Sign out{hideEnvironmentItems ? '' : ` of ${fullEnvironmentName}`}
-            </span>
-          ),
+          children: <span>Sign out</span>,
           onClick: () => auth.send({ type: 'Log out' }),
           className: '', // Just making TS's filter type coercion happy 😠
-        },
-        {
-          id: 'sign-out-all',
-          Element: 'button',
-          'data-testid': 'user-sidebar-sign-out',
-          children: <span>Sign out of all environments</span>,
-          onClick: () => auth.send({ type: 'Log out all' }),
-          className:
-            hideEnvironmentItems || !hasMultipleEnvironments ? 'hidden' : '',
         },
       ].filter(
         (props) =>
@@ -170,32 +116,8 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
       filePath,
       navigate,
       auth.send,
-      hasMultipleEnvironments,
-      workos.user,
-      workos.isLoading,
     ]
   )
-
-  // This image host goes down sometimes. We will instead rewrite the
-  // resource to be a local one.
-  if (user?.image === 'https://placekitten.com/200/200') {
-    user.image = '/cat.jpg'
-  }
-
-  // Fallback logic for displaying user's "name":
-  // 1. user.name
-  // 2. user.first_name + ' ' + user.last_name
-  // 3. user.first_name
-  // 4. user.email
-  function getDisplayName(user?: UserResponse) {
-    if (!user) return null
-    if (user.name) return user.name
-    if (user.first_name) {
-      if (user.last_name) return user.first_name + ' ' + user.last_name
-      return user.first_name
-    }
-    return user.email
-  }
 
   return (
     <>
@@ -206,9 +128,9 @@ const UserSidebarMenu = ({ user }: { user?: UserResponse }) => {
         >
           <div className="flex items-center">
             <div className="avatar">
-              {user?.image && !imageLoadFailed ? (
+              {user?.imageUrl && !imageLoadFailed ? (
                 <img
-                  src={user?.image || ''}
+                  src={user.imageUrl}
                   alt={user?.name || ''}
                   className="h-6 w-6"
                   referrerPolicy="no-referrer"

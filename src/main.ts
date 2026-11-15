@@ -6,6 +6,7 @@ import path from 'path'
 // template that ElectronJS provides.
 // @ts-ignore: TS1343
 import * as packageJSON from '@root/package.json'
+import { createAuthKit } from '@workos/authkit-electron'
 import dotenv from 'dotenv'
 import type { WebContents } from 'electron'
 import {
@@ -22,7 +23,6 @@ import {
   systemPreferences,
 } from 'electron'
 import { autoUpdater as appUpdater } from 'electron-updater'
-import { Issuer } from 'openid-client'
 
 import fs from 'fs'
 import {
@@ -32,10 +32,7 @@ import {
 } from '@src/commandLineArgs'
 import type { FlowsheetState } from '@src/flowsheet/types'
 import { initialiseWasmNode } from '@src/lang/wasmUtilsNode'
-import {
-  OAUTH2_DEVICE_CLIENT_ID,
-  ZOO_STUDIO_PROTOCOL,
-} from '@src/lib/constants'
+import { ZOO_STUDIO_PROTOCOL } from '@src/lib/constants'
 import { registerFileProtocolCsp } from '@src/lib/csp'
 import getCurrentProjectFile from '@src/lib/getCurrentProjectFile'
 import { FlowsheetStore } from '@src/lib/store/flowsheetStore'
@@ -82,6 +79,17 @@ process.env.VITE_GIBBS_API_URL ??= viteEnv.VITE_GIBBS_API_URL
 process.env.VITE_ZOO_BASE_DOMAIN ??= viteEnv.VITE_ZOO_BASE_DOMAIN
 process.env.VITE_FUGACITY_FEEDBACK_WEBHOOK_URL ??=
   viteEnv.VITE_FUGACITY_FEEDBACK_WEBHOOK_URL
+process.env.VITE_WORKOS_CLIENT_ID ??= viteEnv.VITE_WORKOS_CLIENT_ID
+
+const WORKOS_REDIRECT_URI = 'workos-auth://www.fugacity.app'
+const isWorkOSCallback = (url?: string) =>
+  url?.startsWith(WORKOS_REDIRECT_URI) ?? false
+
+// Safe at module top level: no OS-keychain work happens until the first sign-in.
+const authkit = createAuthKit({
+  clientId: process.env.VITE_WORKOS_CLIENT_ID!,
+  redirectUri: WORKOS_REDIRECT_URI,
+})
 
 // Likely convenient to keep for debugging
 console.log('Environment vars', process.env)
@@ -383,6 +391,11 @@ function registerStartupListeners() {
     )
     const pathOrUrl = getPathOrUrlFromArgs(parseCLIArgs(commandLine))
     console.log('Retrieved path or deep link from second-instance', pathOrUrl)
+    if (commandLine.some(isWorkOSCallback)) {
+      mainWindow?.show()
+      mainWindow?.focus()
+      return
+    }
     createWindow(pathOrUrl)
   })
 
@@ -415,6 +428,9 @@ function registerStartupListeners() {
     url: string
   ) {
     event.preventDefault()
+    if (isWorkOSCallback(url)) {
+      return
+    }
 
     // If we have a mainWindow, lets open another window.
     if (mainWindow) {
@@ -656,6 +672,7 @@ app.on('will-quit', () => {
     closeDatabaseConnections(ownerId)
   }
   databaseConnections.clear()
+  authkit.cleanup()
 })
 
 // Quit when all windows are closed, even on macOS. There, it's common
@@ -677,6 +694,8 @@ app.on('ready', (event, data) => {
   if (mainWindow) return
 
   registerFileProtocolCsp()
+  // Must run before the first window so a cold-start callback URL is handled.
+  authkit.registerProtocol()
 
   // Create the mainWindow
   mainWindow = createWindow()
@@ -840,53 +859,6 @@ ipcMain.handle('thermo.calculatePTFlash', (_event, data) =>
 ipcMain.handle('thermo.solveFlowsheet', (_event, data) =>
   invokeThermoCommand('SolveFlowsheet', data)
 )
-
-ipcMain.handle('startDeviceFlow', async (_, host: string) => {
-  // Do an OAuth 2.0 Device Authorization Grant dance to get a token.
-  // We quiet ts because we are not using this in the standard way.
-  // @ts-ignore
-  const issuer = new Issuer({
-    device_authorization_endpoint: `${host}/oauth2/device/auth`,
-    token_endpoint: `${host}/oauth2/device/token`,
-  })
-  const client = new issuer.Client({
-    // We can hardcode the client ID.
-    // This value is safe to be embedded in version control.
-    // This is the client ID of the KittyCAD app.
-    client_id: OAUTH2_DEVICE_CLIENT_ID,
-    token_endpoint_auth_method: 'none',
-  })
-
-  const handle = await client.deviceAuthorization()
-
-  // Register this handle to be used later.
-  ipcMain.handleOnce('loginWithDeviceFlow', async () => {
-    if (!handle) {
-      return Promise.reject(
-        new Error(
-          'No handle available. Did you call startDeviceFlow before calling this?'
-        )
-      )
-    }
-    shell.openExternal(handle.verification_uri_complete).catch(reportRejection)
-
-    // Wait for the user to login.
-    try {
-      console.log('Polling for token')
-      const tokenSet = await handle.poll()
-      console.log('Received token set')
-      console.log(tokenSet)
-      return tokenSet.access_token
-    } catch (e) {
-      console.log(e)
-    }
-
-    return Promise.reject(new Error('No access token received'))
-  })
-
-  // Return the user code so the app can display it.
-  return handle.user_code
-})
 
 // Given the route create the new context menu
 // internal menu state will be reset since it creates a new one from

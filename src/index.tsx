@@ -1,4 +1,3 @@
-import { AuthKitProvider } from '@workos-inc/authkit-react'
 import { AppStreamProvider } from '@src/AppState'
 import ReactDOM from 'react-dom/client'
 import toast, { Toaster } from 'react-hot-toast'
@@ -15,7 +14,8 @@ import type { App } from '@src/lib/app'
 import reportWebVitals from '@src/reportWebVitals'
 import monkeyPatchForBrowserTranslation from '@src/lib/monkeyPatchBrowserTranslate'
 import { app, AppContext } from '@src/lib/boot'
-import { WORKOS_CLIENT_ID, WORKOS_REDIRECT_URI } from '@src/lib/workos'
+import { WorkOSProvider } from '@src/lib/auth'
+import { AuthSync } from '@src/components/AuthSync'
 
 // Here's the entry-point for the whole app 🚀
 launchApp(app)
@@ -100,11 +100,9 @@ function mountAppToReact(app: App) {
   )
 
   root.render(
-    <AuthKitProvider
-      clientId={WORKOS_CLIENT_ID}
-      redirectUri={WORKOS_REDIRECT_URI}
-    >
+    <WorkOSProvider>
       <AppContext.Provider value={app}>
+        <AuthSync />
         <HotkeysProvider>
           <AppStreamProvider>
             <Router />
@@ -132,7 +130,7 @@ function mountAppToReact(app: App) {
           </AppStreamProvider>
         </HotkeysProvider>
       </AppContext.Provider>
-    </AuthKitProvider>
+    </WorkOSProvider>
   )
 
   // If you want to start measuring performance in your app, pass a function
