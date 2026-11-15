@@ -1,80 +1,25 @@
+import { Menu } from '@headlessui/react'
 import { useSignals } from '@preact/signals-react/runtime'
 import type { ReactNode } from 'react'
 
+import { CustomIcon } from '@src/components/CustomIcon'
 import { LayoutPanel, LayoutPanelHeader } from '@src/components/layout/Panel'
+import styles from '@src/components/layout/areas/KclEditorMenu.module.css'
+import {
+  type StreamObjectResult,
+  formatValue,
+  getStreamRows,
+  splitResultObjects,
+} from '@src/flowsheet/results'
+import { exportResults } from '@src/flowsheet/resultsExport'
 import { simulationRun } from '@src/flowsheet/simulationRun'
-import { fromSI, panelUnits } from '@src/flowsheet/units'
+import { useApp } from '@src/lib/boot'
 import type { AreaTypeComponentProps } from '@src/lib/layout'
+import { getFlowsheetFilePath } from '@src/lib/store/database'
 import type {
   FlowsheetObjectResult,
   SolveFlowsheetResult,
-  StreamResult,
 } from '@src/lib/thermo'
-
-function formatValue(
-  value: number | undefined,
-  unit?: string,
-  symbol?: string
-) {
-  if (value === undefined || !Number.isFinite(value)) {
-    return '—'
-  }
-  const panelUnit = unit
-    ? panelUnits[unit]?.find(([candidate]) => candidate === symbol)
-    : undefined
-  const displayed = panelUnit ? fromSI(value, panelUnit) : value
-  return displayed.toLocaleString(undefined, { maximumSignificantDigits: 6 })
-}
-
-type StreamRow = {
-  label: string
-  value: (stream: StreamResult) => number | undefined
-  unit?: string
-  symbol?: string
-}
-
-function getStreamRows(compoundIds: string[]): StreamRow[] {
-  return [
-    {
-      label: 'Temperature',
-      value: (stream) => stream.temperatureK,
-      unit: 'temperature',
-      symbol: '°C',
-    },
-    {
-      label: 'Pressure',
-      value: (stream) => stream.pressurePa,
-      unit: 'pressure',
-      symbol: 'bar',
-    },
-    {
-      label: 'Mass Flow',
-      value: (stream) => stream.massFlowKgPerS,
-      unit: 'massflow',
-      symbol: 'kg/h',
-    },
-    {
-      label: 'Molar Flow',
-      value: (stream) => stream.molarFlowMolPerS,
-      unit: 'molarflow',
-      symbol: 'kmol/h',
-    },
-    {
-      label: 'Vapor Fraction',
-      value: (stream) => stream.vaporFraction,
-    },
-    {
-      label: 'Specific Enthalpy',
-      value: (stream) => stream.massEnthalpyJPerKg,
-      unit: 'enthalpy',
-      symbol: 'kJ/kg',
-    },
-    ...compoundIds.map((compoundId) => ({
-      label: `Mole Fraction / ${compoundId}`,
-      value: (stream: StreamResult) => stream.moleFractions[compoundId],
-    })),
-  ]
-}
 
 function ResultsTable({
   headers,
@@ -110,7 +55,7 @@ const cellClassName =
 function MaterialStreamResults({
   streams,
 }: {
-  streams: (FlowsheetObjectResult & { stream: StreamResult })[]
+  streams: StreamObjectResult[]
 }) {
   const compoundIds = Object.keys(streams[0].stream.moleFractions)
   return (
@@ -173,6 +118,55 @@ function ObjectStatusResults({
   )
 }
 
+const exportFormats = [
+  { format: 'xlsx', label: 'Excel (.xlsx)' },
+  { format: 'pdf', label: 'PDF (.pdf)' },
+] as const
+
+function useProjectFileName() {
+  const { project } = useApp()
+  const filePath = getFlowsheetFilePath(project?.executingFileEntry.value?.path)
+  return (
+    filePath
+      ?.split(/[\\/]/)
+      .at(-1)
+      ?.replace(/\.fgc$/i, '') || 'simulation-results'
+  )
+}
+
+function ExportMenu({
+  result,
+  finishedAt,
+}: {
+  result: SolveFlowsheetResult
+  finishedAt: Date
+}) {
+  const fileName = useProjectFileName()
+  return (
+    <Menu as="div" className="relative ml-auto">
+      <Menu.Button className="flex items-center gap-1 px-2 py-0.5 text-xs border border-chalkboard-30 dark:border-chalkboard-80 rounded-sm bg-transparent hover:border-primary ui-open:border-primary">
+        Export
+        <CustomIcon name="caretDown" className="w-4 h-4" />
+      </Menu.Button>
+      <Menu.Items className="absolute right-0 z-20 mt-1 w-36 flex flex-col p-1 bg-chalkboard-10 dark:bg-chalkboard-100 rounded-sm shadow-lg border border-solid border-chalkboard-20/50 dark:border-chalkboard-80/50">
+        {exportFormats.map(({ format, label }) => (
+          <Menu.Item key={format}>
+            <button
+              type="button"
+              className={styles.button}
+              onClick={() =>
+                void exportResults(format, result, finishedAt, fileName)
+              }
+            >
+              {label}
+            </button>
+          </Menu.Item>
+        ))}
+      </Menu.Items>
+    </Menu>
+  )
+}
+
 function SimulationResults({
   result,
   finishedAt,
@@ -180,25 +174,23 @@ function SimulationResults({
   result: SolveFlowsheetResult
   finishedAt: Date
 }) {
-  const objects = Object.values(result.objects)
-  const streams = objects.filter(
-    (object): object is FlowsheetObjectResult & { stream: StreamResult } =>
-      object.stream !== undefined
-  )
-  const others = objects.filter((object) => object.stream === undefined)
+  const { streams, others } = splitResultObjects(result)
   return (
     <div className="flex flex-col gap-4 p-2 text-sm">
-      <div
-        className={
-          result.solved
-            ? 'text-succeed-80 dark:text-succeed-40'
-            : 'text-destroy-80'
-        }
-      >
-        {result.solved ? 'Flowsheet solved' : 'Flowsheet did not solve'}
-        <span className="ml-2 text-xs text-chalkboard-60 dark:text-chalkboard-40">
-          {finishedAt.toLocaleTimeString()}
-        </span>
+      <div className="flex items-center gap-2">
+        <div
+          className={
+            result.solved
+              ? 'text-succeed-80 dark:text-succeed-40'
+              : 'text-destroy-80'
+          }
+        >
+          {result.solved ? 'Flowsheet solved' : 'Flowsheet did not solve'}
+          <span className="ml-2 text-xs text-chalkboard-60 dark:text-chalkboard-40">
+            {finishedAt.toLocaleTimeString()}
+          </span>
+        </div>
+        <ExportMenu result={result} finishedAt={finishedAt} />
       </div>
       {result.errors.length > 0 && (
         <ul className="m-0 pl-4 list-disc text-xs text-destroy-80">
