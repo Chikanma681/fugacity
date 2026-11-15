@@ -83,9 +83,9 @@ function isPortConnected(
 }
 
 const portLegendItems = [
-  { color: inletColor, label: 'Material inlet' },
-  { color: outletColor, label: 'Material outlet' },
-  { color: energyColor, label: 'Energy stream' },
+  { color: inletColor, label: 'Material Inlet' },
+  { color: outletColor, label: 'Material Outlet' },
+  { color: energyColor, label: 'Energy Stream' },
 ]
 
 function PortLegend() {
