@@ -3,9 +3,9 @@ import type { FlowNode, Port } from '@src/flowsheet/types'
 const lineColor = '#1F3D4D'
 const fillColor = '#D0D7DA'
 const energyFillColor = '#FEF0DC'
-const energyColor = '#FFD761'
-const inletColor = '#61B8FF'
-const outletColor = '#FFB761'
+export const energyColor = '#FFD761'
+export const inletColor = '#61B8FF'
+export const outletColor = '#FFB761'
 
 function portColor(port: Port) {
   if (port.type === 'energy') {

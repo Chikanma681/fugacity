@@ -5,7 +5,12 @@ import { ContextMenu, ContextMenuItem } from '@src/components/ContextMenu'
 import { FlowsheetNodeDialog } from '@src/flowsheet/FlowsheetNodeDialog'
 import { getEdgePorts } from '@src/flowsheet/agent/document'
 import { createFlowObject } from '@src/flowsheet/factory'
-import { FlowNodeGraphic } from '@src/flowsheet/renderers'
+import {
+  FlowNodeGraphic,
+  energyColor,
+  inletColor,
+  outletColor,
+} from '@src/flowsheet/renderers'
 import {
   STREAM_DRAG_TYPE,
   type StreamKind,
@@ -75,6 +80,31 @@ function isPortConnected(
       (edge.to === nodeId && ports.toPort === portId)
     )
   })
+}
+
+const portLegendItems = [
+  { color: inletColor, label: 'Material inlet' },
+  { color: outletColor, label: 'Material outlet' },
+  { color: energyColor, label: 'Energy stream' },
+]
+
+function PortLegend() {
+  return (
+    <div
+      data-testid="flowsheet-port-legend"
+      className="pointer-events-none absolute bottom-4 right-4 flex flex-col gap-1 rounded border border-chalkboard-30 bg-chalkboard-10/90 p-2 text-xs dark:border-chalkboard-80 dark:bg-chalkboard-100/90"
+    >
+      {portLegendItems.map((item) => (
+        <div key={item.label} className="flex items-center gap-2">
+          <span
+            className="inline-block h-3 w-3 rounded-full border border-[#1F3D4D]"
+            style={{ backgroundColor: item.color }}
+          />
+          {item.label}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export function Flowsheet2DScene() {
@@ -494,6 +524,7 @@ export function Flowsheet2DScene() {
             ))}
           </g>
         </svg>
+        <PortLegend />
         {databaseError && (
           <div
             role="alert"
