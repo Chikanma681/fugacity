@@ -118,7 +118,9 @@ function getCalculationStatus(nodeId: string, run: SimulationRun) {
   if (result.calculated) {
     return 'Calculated'
   }
-  return result.errorMessage ? `Error: ${result.errorMessage}` : 'Not calculated'
+  return result.errorMessage
+    ? `Error: ${result.errorMessage}`
+    : 'Not calculated'
 }
 
 function matchesCondition(condition: PanelCondition, values: PanelValues) {
