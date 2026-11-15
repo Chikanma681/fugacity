@@ -76,7 +76,8 @@ const SignIn = () => {
               <div className="flex md:hidden flex-col gap-2">
                 <p className="text-base text-primary">
                   Flowsheeting is best done on a larger screen. Please visit on
-                  a desktop or laptop for the full experience. We are working on releasing a version of Fugacity for the web.
+                  a desktop or laptop for the full experience. We are working on
+                  releasing a version of Fugacity for the web.
                 </p>
               </div>
             )}
