@@ -27,6 +27,8 @@ import Home from '@src/routes/Home'
 import { OnboardingRootRoute, onboardingRoutes } from '@src/routes/Onboarding'
 import { Settings } from '@src/routes/Settings'
 import SignIn from '@src/routes/SignIn'
+import { WorkOSCallback, WorkOSLogin } from '@src/routes/WorkOSAuth'
+import { WORKOS_CALLBACK_PATH } from '@src/lib/workos'
 import { Telemetry } from '@src/routes/Telemetry'
 import { TestLayout } from '@src/lib/layout/TestLayout'
 import { IS_STAGING_OR_DEBUG } from '@src/routes/utils'
@@ -140,6 +142,20 @@ export const Router = () => {
               errorElement: <ErrorPage />,
               element: <SignIn />,
             },
+            {
+              path: PATHS.LOGIN,
+              errorElement: <ErrorPage />,
+              element: <WorkOSLogin />,
+            },
+            ...(WORKOS_CALLBACK_PATH !== PATHS.INDEX
+              ? [
+                  {
+                    path: WORKOS_CALLBACK_PATH,
+                    errorElement: <ErrorPage />,
+                    element: <WorkOSCallback />,
+                  },
+                ]
+              : []),
             ...(IS_STAGING_OR_DEBUG
               ? [
                   {

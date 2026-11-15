@@ -14,6 +14,8 @@ import type { App } from '@src/lib/app'
 import reportWebVitals from '@src/reportWebVitals'
 import monkeyPatchForBrowserTranslation from '@src/lib/monkeyPatchBrowserTranslate'
 import { app, AppContext } from '@src/lib/boot'
+import { WorkOSProvider } from '@src/lib/auth'
+import { AuthSync } from '@src/components/AuthSync'
 
 // Here's the entry-point for the whole app 🚀
 launchApp(app)
@@ -98,34 +100,37 @@ function mountAppToReact(app: App) {
   )
 
   root.render(
-    <AppContext.Provider value={app}>
-      <HotkeysProvider>
-        <AppStreamProvider>
-          <Router />
-          <Toaster
-            position="bottom-center"
-            toastOptions={{
-              style: {
-                borderRadius: '3px',
-                maxInlineSize: 'min(480px, 100%)',
-              },
-              className:
-                'bg-chalkboard-10 dark:bg-chalkboard-90 text-chalkboard-110 dark:text-chalkboard-10 rounded-sm border-chalkboard-20/50 dark:border-chalkboard-80/50',
-              success: {
-                iconTheme: {
-                  primary: 'oklch(89% 0.16 143.4deg)',
-                  secondary: 'oklch(48.62% 0.1654 142.5deg)',
+    <WorkOSProvider>
+      <AppContext.Provider value={app}>
+        <AuthSync />
+        <HotkeysProvider>
+          <AppStreamProvider>
+            <Router />
+            <Toaster
+              position="bottom-center"
+              toastOptions={{
+                style: {
+                  borderRadius: '3px',
+                  maxInlineSize: 'min(480px, 100%)',
                 },
-                // We shouldn't have a different duration in tests than prod, it might
-                // lead to issues.
-                duration: 1500,
-              },
-            }}
-          />
-          <ModalContainer />
-        </AppStreamProvider>
-      </HotkeysProvider>
-    </AppContext.Provider>
+                className:
+                  'bg-chalkboard-10 dark:bg-chalkboard-90 text-chalkboard-110 dark:text-chalkboard-10 rounded-sm border-chalkboard-20/50 dark:border-chalkboard-80/50',
+                success: {
+                  iconTheme: {
+                    primary: 'oklch(89% 0.16 143.4deg)',
+                    secondary: 'oklch(48.62% 0.1654 142.5deg)',
+                  },
+                  // We shouldn't have a different duration in tests than prod, it might
+                  // lead to issues.
+                  duration: 1500,
+                },
+              }}
+            />
+            <ModalContainer />
+          </AppStreamProvider>
+        </HotkeysProvider>
+      </AppContext.Provider>
+    </WorkOSProvider>
   )
 
   // If you want to start measuring performance in your app, pass a function

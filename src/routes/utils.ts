@@ -1,11 +1,6 @@
 import env, { viteEnv } from '@src/env'
-import {
-  IMMEDIATE_SIGN_IN_IF_NECESSARY_QUERY_PARAM,
-  IS_PLAYWRIGHT_KEY,
-} from '@src/lib/constants'
+import { IS_PLAYWRIGHT_KEY } from '@src/lib/constants'
 import { isDesktop } from '@src/lib/isDesktop'
-import { PATHS } from '@src/lib/paths'
-import { withSiteBaseURL } from '@src/lib/withBaseURL'
 
 const hasWindow = typeof window !== 'undefined'
 const isTestEnv =
@@ -77,21 +72,4 @@ export function getReleaseUrl(version: string = APP_VERSION) {
   }
 
   return `https://github.com/KittyCAD/modeling-app/releases/tag/v${version}`
-}
-
-export function generateSignInUrl() {
-  const queryParamsNext = window.location.search.replace(
-    IMMEDIATE_SIGN_IN_IF_NECESSARY_QUERY_PARAM,
-    ''
-  )
-  const finalURL =
-    typeof window !== 'undefined' &&
-    (window.location.origin + encodeURIComponent(queryParamsNext)).replace(
-      '?&',
-      '?'
-    )
-
-  return withSiteBaseURL(
-    `${PATHS.SIGN_IN}?callbackUrl=${encodeURIComponent(finalURL)}`
-  )
 }

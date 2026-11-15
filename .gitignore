@@ -91,4 +91,5 @@ venv
 .cursor
 .env.development
 .env
+.env.local
 .env.local.bak

@@ -249,15 +249,8 @@ function ProjectMenuPopover({
               >
                 {breadCrumb.projectName}
               </span>
-              <span className="hidden md:block">{breadCrumb.sep}</span>
             </>
           )}
-          <span
-            className="text-sm text-chalkboard-110 dark:text-chalkboard-20 whitespace-nowrap"
-            data-testid="app-header-file-name"
-          >
-            {breadCrumb.filename}
-          </span>
         </div>
         <CustomIcon
           name="caretDown"

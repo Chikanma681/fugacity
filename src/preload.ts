@@ -9,7 +9,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { Channel } from '@src/channels'
 import type { DatabaseAPI } from '@src/lib/store/database'
 import type { WebContentSendPayload } from '@src/menu/channels'
+import { exposeAuthKit } from '@workos/authkit-electron/preload'
 
+exposeAuthKit()
 const typeSafeIpcRendererOn = (
   channel: Channel,
   listener: (event: IpcRendererEvent, ...args: any[]) => void
@@ -30,10 +32,6 @@ const takeElectronWindowScreenshot = ({
 }) => ipcRenderer.invoke('take.screenshot', { width, height })
 const showInFolder = (path: string) =>
   ipcRenderer.invoke('shell.showItemInFolder', path)
-const startDeviceFlow = (host: string): Promise<string> =>
-  ipcRenderer.invoke('startDeviceFlow', host)
-const loginWithDeviceFlow = (): Promise<string> =>
-  ipcRenderer.invoke('loginWithDeviceFlow')
 const onUpdateDownloaded = (
   callback: (value: { version: string; releaseNotes: string }) => void
 ) =>
@@ -290,8 +288,6 @@ const menuOn = (callback: (payload: WebContentSendPayload) => void) => {
 }
 
 contextBridge.exposeInMainWorld('electron', {
-  startDeviceFlow,
-  loginWithDeviceFlow,
   // Passing fs directly is not recommended since it gives a lot of power
   // to the browser side / potential malicious code. We restrict what is
   // exported.

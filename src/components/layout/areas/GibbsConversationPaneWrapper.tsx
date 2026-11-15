@@ -89,7 +89,7 @@ export function GibbsConversationPaneWrapper(props: AreaTypeComponentProps) {
       <GibbsConversationPane
         gibbsChatActor={gibbsChatActor}
         projectId={settingsValues.meta.id.current}
-        userAvatar={user?.image}
+        userAvatar={user?.imageUrl}
         gibbsMode={settingsValues.app.gibbsMode.current}
         onGibbsModeChange={(mode) => {
           settings.actor.send({

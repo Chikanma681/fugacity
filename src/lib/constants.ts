@@ -268,9 +268,6 @@ export const IMMEDIATE_SIGN_IN_IF_NECESSARY_QUERY_PARAM =
  */
 export const ALLOW_MOBILE_QUERY_PARAM = 'allow-mobile'
 
-// Only used by the desktop app
-export const OAUTH2_DEVICE_CLIENT_ID = '2af127fb-e14e-400a-9c57-a9ed08d1a5b7'
-
 /**
  * Signed in environment data, when you sign in on desktop
  * you will get one of these written to disk.

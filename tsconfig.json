@@ -8,6 +8,15 @@
       "@kittycad/codemirror-lang-kcl": [
         "./packages/codemirror-lang-kcl/src/index.ts"
       ],
+      "@workos/authkit-electron": [
+        "./node_modules/@workos/authkit-electron/dist/index"
+      ],
+      "@workos/authkit-electron/preload": [
+        "./node_modules/@workos/authkit-electron/dist/preload/index"
+      ],
+      "@workos/authkit-electron/react": [
+        "./node_modules/@workos/authkit-electron/dist/react/index"
+      ],
       "@rust/*": ["./rust/*"],
       "@e2e/*": ["./e2e/*"],
       "@src/*": ["./src/*"],

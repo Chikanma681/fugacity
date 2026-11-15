@@ -68,5 +68,7 @@ publish:
 releaseInfo:
   releaseNotesFile: release-notes.md
 protocols:
-  - name: Fugacity 
+  - name: Fugacity
     schemes: ['fugacity']
+  - name: Fugacity Auth
+    schemes: ['workos-auth']
