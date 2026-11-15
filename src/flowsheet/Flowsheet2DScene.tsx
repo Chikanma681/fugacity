@@ -109,7 +109,8 @@ function PortLegend() {
 
 export function Flowsheet2DScene() {
   useSignals()
-  const { project } = useApp()
+  const { project, settings } = useApp()
+  const showPortLegend = settings.useSettings().app.showPortLegend.current
   const file = project?.executingFileEntry.value
   const filePath = getFlowsheetFilePath(file?.path)
   const fileName = filePath?.split(/[\\/]/).at(-1)
@@ -524,7 +525,7 @@ export function Flowsheet2DScene() {
             ))}
           </g>
         </svg>
-        <PortLegend />
+        {showPortLegend && <PortLegend />}
         {databaseError && (
           <div
             role="alert"

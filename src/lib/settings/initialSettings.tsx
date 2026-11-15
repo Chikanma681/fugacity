@@ -164,6 +164,15 @@ export function createSettings() {
           inputType: 'boolean',
         },
       }),
+      showPortLegend: new Setting<boolean>({
+        defaultValue: true,
+        hideOnLevel: 'user',
+        description: 'Whether to show the port legend on the flowsheet canvas',
+        validate: (v) => typeof v === 'boolean',
+        commandConfig: {
+          inputType: 'boolean',
+        },
+      }),
       /**
        * Gibbs reasoning mode
        */

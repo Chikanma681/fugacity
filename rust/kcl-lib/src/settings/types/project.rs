@@ -96,6 +96,9 @@ pub struct ProjectAppSettings {
     /// of the app to aid in development.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub show_debug_panel: Option<bool>,
+    /// Whether to show the port legend on the flowsheet canvas.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub show_port_legend: Option<bool>,
     /// Zookeeper reasoning mode. Uses the app default if not set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zookeeper_mode: Option<String>,
@@ -275,6 +278,7 @@ mod tests {
                     stream_idle_mode: false,
                     allow_orbit_in_sketch_mode: false,
                     show_debug_panel: Some(true),
+                    show_port_legend: None,
                     zookeeper_mode: None,
                     named_views: IndexMap::from([
                         (

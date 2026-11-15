@@ -143,6 +143,8 @@ export function projectConfigurationToSettingsPayload(
       ),
       showDebugPanel:
         configuration?.settings?.app?.show_debug_panel ?? undefined,
+      showPortLegend:
+        configuration?.settings?.app?.show_port_legend ?? undefined,
       gibbsMode: (() => {
         const v = configuration?.settings?.app?.zookeeper_mode
         return v === 'fast' || v === 'thoughtful' ? v : undefined
@@ -167,6 +169,7 @@ export function settingsPayloadToProjectConfiguration(
         onboarding_status: configuration?.app?.onboardingStatus,
         allow_orbit_in_sketch_mode: configuration?.app?.allowOrbitInSketchMode,
         show_debug_panel: configuration?.app?.showDebugPanel,
+        show_port_legend: configuration?.app?.showPortLegend,
         zookeeper_mode: configuration?.app?.gibbsMode,
         named_views: deepPartialNamedViewsToNamedViews(
           configuration?.app?.namedViews
