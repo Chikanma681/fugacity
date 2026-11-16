@@ -564,6 +564,7 @@ export function Flowsheet2DScene() {
         <FlowsheetNodeDialog
           key={`${filePath}-${selectedNode.id}`}
           node={selectedNode}
+          edges={edges}
           open={nodeDialogOpen}
           onClose={() => setNodeDialogOpen(false)}
           onSave={async (changes) => {

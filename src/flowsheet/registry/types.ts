@@ -46,6 +46,7 @@ export type PanelRow = {
   label: string
   visibleWhen?: PanelCondition
   enabledWhen?: PanelCondition
+  requiredWhen?: PanelCondition
 } & (
   | { type: 'label'; level?: 2; icon?: CustomIconName }
   | { type: 'description' }

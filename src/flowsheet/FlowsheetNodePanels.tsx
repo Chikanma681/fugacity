@@ -8,6 +8,15 @@ import { SettingsSection } from '@src/components/Settings/SettingsSection'
 import { SettingsTabButton } from '@src/components/Settings/SettingsTabButton'
 import { Toggle } from '@src/components/Toggle/Toggle'
 import {
+  type PanelValues,
+  getEditableRows,
+  getInitialValues,
+  getMissingRequiredLabels,
+  isRowRequired,
+  matchesCondition,
+  resolvePanelRows,
+} from '@src/flowsheet/panelValues'
+import {
   type PanelCondition,
   type PanelOptionSource,
   type PanelRow,
@@ -15,7 +24,7 @@ import {
   getUnitDefinition,
 } from '@src/flowsheet/registry'
 import { type SimulationRun, simulationRun } from '@src/flowsheet/simulationRun'
-import type { FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
+import type { FlowEdge, FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
 import { type PanelUnit, fromSI, panelUnits, toSI } from '@src/flowsheet/units'
 import { isArray } from '@src/lib/utils'
 
@@ -26,85 +35,6 @@ const sourceLabels: Record<PanelOptionSource['source'], string> = {
   externalSolvers: 'external solvers',
   stages: 'stages',
   columnSpecificationUnits: 'specification units',
-}
-
-type PanelValues = Record<string, PanelValue>
-
-type EditableRow = Extract<
-  PanelRow,
-  { type: 'string' | 'textbox' | 'numeric' | 'checkbox' | 'dropdown' }
->
-
-function resolvePanelRows(
-  rows: PanelRow[],
-  selectedCompoundIds: string[]
-): PanelRow[] {
-  return rows.map((row) => {
-    if (row.type === 'group') {
-      return { ...row, rows: resolvePanelRows(row.rows, selectedCompoundIds) }
-    }
-    if (row.type !== 'collection' || row.source !== 'selectedCompounds') {
-      return row
-    }
-    if (selectedCompoundIds.length === 0) {
-      return {
-        type: 'description',
-        label:
-          'Select compounds in the toolbar to enter stream mole fractions.',
-      }
-    }
-    return {
-      type: 'group',
-      label: row.label,
-      level: 2,
-      rows: selectedCompoundIds.flatMap((id) =>
-        row.rows.map((child) => ({
-          ...child,
-          label: child.label.replace('{Name}', id),
-          ...('property' in child && {
-            property: `${row.property}[${JSON.stringify(id)}].${child.property}`,
-          }),
-        }))
-      ),
-    }
-  })
-}
-
-function getEditableRows(rows: PanelRow[]): EditableRow[] {
-  return rows.flatMap((row): EditableRow[] => {
-    if (row.type === 'group') {
-      return getEditableRows(row.rows)
-    }
-    return row.type === 'string' ||
-      row.type === 'textbox' ||
-      row.type === 'numeric' ||
-      row.type === 'checkbox' ||
-      row.type === 'dropdown'
-      ? [row]
-      : []
-  })
-}
-
-function getInitialValues(rows: PanelRow[], node: FlowNode): PanelValues {
-  const values: PanelValues = { ...node.parameters?.inputs }
-  for (const row of getEditableRows(rows)) {
-    if (
-      values[row.property] === undefined &&
-      row.type === 'dropdown' &&
-      isArray(row.options) &&
-      row.fallbackIndex !== undefined
-    ) {
-      const option = row.options[row.fallbackIndex]
-      if (option) {
-        values[row.property] = option.value
-      }
-    }
-  }
-  return {
-    ...values,
-    'GetDisplayName()': getUnitDefinition(node.unitType).label,
-    'GraphicObject.Tag': node.tag,
-  }
 }
 
 function getCalculationStatus(nodeId: string, run: SimulationRun) {
@@ -123,28 +53,6 @@ function getCalculationStatus(nodeId: string, run: SimulationRun) {
     : 'Not calculated'
 }
 
-function matchesCondition(condition: PanelCondition, values: PanelValues) {
-  const value = values[condition.property]
-  if (value === undefined) {
-    return condition.operator !== 'notEmpty'
-  }
-
-  switch (condition.operator) {
-    case 'equals':
-      return value === condition.value
-    case 'in':
-      return isArray(condition.value) && condition.value.includes(value)
-    case 'exists':
-      return condition.value !== false
-    case 'empty':
-      return value === ''
-    case 'notEmpty':
-      return value !== ''
-    case 'existsIn':
-      return true
-  }
-}
-
 function getNodeChanges(
   node: FlowNode,
   rows: PanelRow[],
@@ -154,6 +62,10 @@ function getNodeChanges(
   const tag = String(values['GraphicObject.Tag'] ?? '').trim()
   if (!tag) {
     return 'The node name cannot be empty.'
+  }
+  const missing = getMissingRequiredLabels(rows, values)
+  if (missing.length > 0) {
+    return `Enter ${missing.join(', ')} before saving.`
   }
   const inputs = { ...node.parameters?.inputs }
   for (const row of getEditableRows(rows)) {
@@ -399,7 +311,9 @@ function PanelControl({
         id={id}
         className={`${inputClassName} min-w-0`}
         type={numeric ? 'number' : 'text'}
-        required={row.property === 'GraphicObject.Tag'}
+        required={
+          row.property === 'GraphicObject.Tag' || isRowRequired(row, values)
+        }
         value={displayValue}
         min={
           numeric && row.min !== undefined
@@ -604,6 +518,7 @@ export function FlowsheetNodePanels({
   saving = false,
   canSave = true,
   selectedCompoundIds = [],
+  edges = [],
 }: {
   node: FlowNode
   onSave?: (changes: FlowNodeChanges) => Promise<void>
@@ -611,6 +526,7 @@ export function FlowsheetNodePanels({
   saving?: boolean
   canSave?: boolean
   selectedCompoundIds?: string[]
+  edges?: FlowEdge[]
 }) {
   useSignals()
   const definition = getUnitDefinition(node.unitType)
@@ -622,7 +538,9 @@ export function FlowsheetNodePanels({
     radioPanels.find((panel) => panel.key === selectedPanel) ?? radioPanels[0]
   const scrollRef = useRef<HTMLDivElement>(null)
   const id = useId()
-  const [values, setValues] = useState(() => getInitialValues(panels, node))
+  const [values, setValues] = useState(() =>
+    getInitialValues(panels, node, edges)
+  )
   const [displayUnits, setDisplayUnits] = useState<Record<string, string>>(
     () => ({ ...node.parameters?.displayUnits })
   )

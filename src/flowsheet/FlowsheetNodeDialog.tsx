@@ -3,16 +3,18 @@ import { useEffect, useRef, useState } from 'react'
 import { SettingsDialog } from '@src/components/Settings/SettingsDialog'
 import { useSimulation } from '@src/components/SimulationProvider'
 import { FlowsheetNodePanels } from '@src/flowsheet/FlowsheetNodePanels'
-import type { FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
+import type { FlowEdge, FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
 
 export function FlowsheetNodeDialog({
   node,
+  edges,
   open,
   onClose,
   onSave,
   canSave,
 }: {
   node: FlowNode
+  edges: FlowEdge[]
   open: boolean
   onClose: () => void
   onSave: (changes: FlowNodeChanges) => Promise<void>
@@ -63,6 +65,7 @@ export function FlowsheetNodeDialog({
         key={`${node.id}-${open}`}
         node={node}
         selectedCompoundIds={simulationState.context.selectedCompoundIds}
+        edges={edges}
         onSave={save}
         onCancel={close}
         saving={saving}

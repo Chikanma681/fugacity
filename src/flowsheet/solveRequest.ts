@@ -1,3 +1,8 @@
+import {
+  getInitialValues,
+  getMissingRequiredLabels,
+  resolvePanelRows,
+} from '@src/flowsheet/panelValues'
 import { type PanelRow, getUnitDefinition } from '@src/flowsheet/registry'
 import type { FlowEdge, FlowNode, FlowsheetState } from '@src/flowsheet/types'
 import type {
@@ -113,10 +118,30 @@ function toSolveConnection(
   return { from: edge.from, fromPort, to: edge.to, toPort }
 }
 
+function getMissingInputErrors(state: FlowsheetState, compoundIds: string[]) {
+  return state.nodes.flatMap((node) => {
+    const rows = resolvePanelRows(
+      getUnitDefinition(node.unitType).panels,
+      compoundIds
+    )
+    const missing = getMissingRequiredLabels(
+      rows,
+      getInitialValues(rows, node, state.edges)
+    )
+    return missing.length > 0
+      ? [`${node.tag}: enter ${missing.join(', ')}.`]
+      : []
+  })
+}
+
 export function toSolveFlowsheetRequest(
   state: FlowsheetState,
   selection: ThermoSelection
 ): SolveFlowsheetRequest | Error {
+  const missingInputErrors = getMissingInputErrors(state, selection.compoundIds)
+  if (missingInputErrors.length > 0) {
+    return new Error(missingInputErrors.join('\n'))
+  }
   const nodes = new Map(state.nodes.map((node) => [node.id, node]))
   const connections: SolveFlowsheetConnection[] = []
   for (const edge of state.edges) {

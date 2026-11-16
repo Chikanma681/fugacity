@@ -2,7 +2,10 @@ import {
   objectDetailRows,
   propertyPackagePanel,
 } from '@src/flowsheet/registry/generalPanels'
-import type { UnitDefinition } from '@src/flowsheet/registry/types'
+import type {
+  PanelCondition,
+  UnitDefinition,
+} from '@src/flowsheet/registry/types'
 import type { Port } from '@src/flowsheet/types'
 
 export const materialPorts: Port[] = [
@@ -25,6 +28,12 @@ export const materialPorts: Port[] = [
     index: 0,
   },
 ]
+
+const requiredForFeedStream: PanelCondition = {
+  property: 'GraphicObject.InputConnectors[0].IsAttached',
+  operator: 'equals',
+  value: false,
+}
 
 export const materialUnitDefinition: UnitDefinition = {
   unitType: 'MaterialStream',
@@ -79,6 +88,7 @@ export const materialUnitDefinition: UnitDefinition = {
           type: 'textbox',
           label: 'Temperature',
           property: 'Phases[0].Properties.temperature',
+          requiredWhen: requiredForFeedStream,
           format: 'nf',
           unit: 'temperature',
           min: 0,
@@ -89,6 +99,7 @@ export const materialUnitDefinition: UnitDefinition = {
           type: 'textbox',
           label: 'Pressure',
           property: 'Phases[0].Properties.pressure',
+          requiredWhen: requiredForFeedStream,
           format: 'nf',
           unit: 'pressure',
           min: 0,
@@ -103,6 +114,7 @@ export const materialUnitDefinition: UnitDefinition = {
           type: 'textbox',
           label: 'Specific Enthalpy',
           property: 'Phases[0].Properties.enthalpy',
+          requiredWhen: requiredForFeedStream,
           format: 'nf',
           unit: 'enthalpy',
           enabledWhen: { property: 'SpecType', operator: 'equals', value: 1 },
@@ -111,6 +123,7 @@ export const materialUnitDefinition: UnitDefinition = {
           type: 'textbox',
           label: 'Specific Entropy',
           property: 'Phases[0].Properties.entropy',
+          requiredWhen: requiredForFeedStream,
           format: 'nf',
           unit: 'entropy',
           enabledWhen: { property: 'SpecType', operator: 'equals', value: 2 },
@@ -119,6 +132,7 @@ export const materialUnitDefinition: UnitDefinition = {
           type: 'textbox',
           label: 'Vapor Mole Frac (spec)',
           property: 'Phases[2].Properties.molarfraction',
+          requiredWhen: requiredForFeedStream,
           format: 'nf',
           min: 0,
           max: 1,
@@ -159,6 +173,7 @@ export const materialUnitDefinition: UnitDefinition = {
               type: 'textbox',
               label: '{Name}',
               property: 'MoleFraction',
+              requiredWhen: requiredForFeedStream,
               format: 'nff',
               min: 0,
               max: 1,
