@@ -192,7 +192,8 @@ export function getMoleFractionTotal(
   values: PanelValues,
   properties: string[]
 ) {
-  return properties.some((property) => isEmptyValue(values[property]))
+  return properties.length === 0 ||
+    properties.some((property) => isEmptyValue(values[property]))
     ? undefined
     : sumValues(values, properties)
 }
