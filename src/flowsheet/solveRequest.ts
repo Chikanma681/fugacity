@@ -1,6 +1,8 @@
 import {
   getInitialValues,
   getMissingRequiredLabels,
+  getMoleFractionProperties,
+  getMoleFractionTotalError,
   resolvePanelRows,
 } from '@src/flowsheet/panelValues'
 import { type PanelRow, getUnitDefinition } from '@src/flowsheet/registry'
@@ -124,13 +126,16 @@ function getMissingInputErrors(state: FlowsheetState, compoundIds: string[]) {
       getUnitDefinition(node.unitType).panels,
       compoundIds
     )
-    const missing = getMissingRequiredLabels(
-      rows,
-      getInitialValues(rows, node, state.edges)
+    const values = getInitialValues(rows, node, state.edges)
+    const missing = getMissingRequiredLabels(rows, values)
+    if (missing.length > 0) {
+      return [`${node.tag}: enter ${missing.join(', ')}.`]
+    }
+    const totalError = getMoleFractionTotalError(
+      values,
+      getMoleFractionProperties(node, compoundIds)
     )
-    return missing.length > 0
-      ? [`${node.tag}: enter ${missing.join(', ')}.`]
-      : []
+    return totalError ? [`${node.tag}: ${totalError}`] : []
   })
 }
 

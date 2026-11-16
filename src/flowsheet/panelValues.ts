@@ -125,6 +125,10 @@ export function matchesCondition(
   }
 }
 
+function isEmptyValue(value: PanelValue | undefined) {
+  return value === undefined || value === ''
+}
+
 export function isRowRequired(row: PanelRow, values: PanelValues) {
   return (
     row.requiredWhen !== undefined &&
@@ -139,9 +143,66 @@ export function getMissingRequiredLabels(
 ) {
   return getEditableRows(rows)
     .filter(
-      (row) =>
-        isRowRequired(row, values) &&
-        (values[row.property] === undefined || values[row.property] === '')
+      (row) => isRowRequired(row, values) && isEmptyValue(values[row.property])
     )
     .map((row) => row.label.trim())
+}
+
+export function getMoleFractionProperties(
+  node: FlowNode,
+  compoundIds: string[]
+) {
+  if (node.unitType !== 'MaterialStream') {
+    return []
+  }
+  return compoundIds.map(
+    (id) => `Phases[0].Compounds[${JSON.stringify(id)}].MoleFraction`
+  )
+}
+
+function sumValues(values: PanelValues, properties: string[]) {
+  return properties.reduce(
+    (total, property) => total + Number(values[property]),
+    0
+  )
+}
+
+export function balanceMoleFractions(
+  values: PanelValues,
+  properties: string[],
+  autofilled?: string
+): { values: PanelValues; autofilled?: string } {
+  const empty = properties.filter((property) => isEmptyValue(values[property]))
+  const target = autofilled ?? (empty.length === 1 ? empty[0] : undefined)
+  if (!target) {
+    return { values }
+  }
+  const others = properties.filter((property) => property !== target)
+  if (others.some((property) => isEmptyValue(values[property]))) {
+    return { values: { ...values, [target]: '' }, autofilled: target }
+  }
+  const remainder = Number((1 - sumValues(values, others)).toFixed(10))
+  return {
+    values: { ...values, [target]: remainder >= 0 ? remainder : '' },
+    autofilled: target,
+  }
+}
+
+export function getMoleFractionTotal(
+  values: PanelValues,
+  properties: string[]
+) {
+  return properties.some((property) => isEmptyValue(values[property]))
+    ? undefined
+    : sumValues(values, properties)
+}
+
+export function getMoleFractionTotalError(
+  values: PanelValues,
+  properties: string[]
+) {
+  const total = getMoleFractionTotal(values, properties)
+  return total !== undefined && Math.abs(total - 1) > 1e-6
+    ? `Mole fractions must add up to 1 (currently ${Number(total.toFixed(6))}).`
+    : null
 }

@@ -9,9 +9,13 @@ import { SettingsTabButton } from '@src/components/Settings/SettingsTabButton'
 import { Toggle } from '@src/components/Toggle/Toggle'
 import {
   type PanelValues,
+  balanceMoleFractions,
   getEditableRows,
   getInitialValues,
   getMissingRequiredLabels,
+  getMoleFractionProperties,
+  getMoleFractionTotal,
+  getMoleFractionTotalError,
   isRowRequired,
   matchesCondition,
   resolvePanelRows,
@@ -57,7 +61,8 @@ function getNodeChanges(
   node: FlowNode,
   rows: PanelRow[],
   values: PanelValues,
-  displayUnits: Record<string, string>
+  displayUnits: Record<string, string>,
+  moleFractionProperties: string[]
 ): FlowNodeChanges | string {
   const tag = String(values['GraphicObject.Tag'] ?? '').trim()
   if (!tag) {
@@ -66,6 +71,10 @@ function getNodeChanges(
   const missing = getMissingRequiredLabels(rows, values)
   if (missing.length > 0) {
     return `Enter ${missing.join(', ')} before saving.`
+  }
+  const totalError = getMoleFractionTotalError(values, moleFractionProperties)
+  if (totalError) {
+    return totalError
   }
   const inputs = { ...node.parameters?.inputs }
   for (const row of getEditableRows(rows)) {
@@ -545,9 +554,21 @@ export function FlowsheetNodePanels({
     () => ({ ...node.parameters?.displayUnits })
   )
   const [error, setError] = useState<string | null>(null)
+  const moleFractionProperties = getMoleFractionProperties(
+    node,
+    selectedCompoundIds
+  )
+  const [autofilledMoleFraction, setAutofilledMoleFraction] = useState<
+    string | undefined
+  >()
+  const moleFractionTotal = getMoleFractionTotal(values, moleFractionProperties)
   const panelValues = {
     ...values,
     CalculationStatus: getCalculationStatus(node.id, simulationRun.value),
+    MoleFractionTotal:
+      moleFractionTotal === undefined
+        ? 'Mole fraction total should be equal to 1'
+        : Number(moleFractionTotal.toFixed(6)),
   }
   const sections = (
     activePanel
@@ -558,7 +579,17 @@ export function FlowsheetNodePanels({
       !section.visibleWhen || matchesCondition(section.visibleWhen, values)
   )
   const onChange = (property: string, value: PanelValue) => {
-    setValues((previous) => ({ ...previous, [property]: value }))
+    if (!moleFractionProperties.includes(property)) {
+      setValues((previous) => ({ ...previous, [property]: value }))
+      return
+    }
+    const balanced = balanceMoleFractions(
+      { ...values, [property]: value },
+      moleFractionProperties,
+      property === autofilledMoleFraction ? undefined : autofilledMoleFraction
+    )
+    setValues(balanced.values)
+    setAutofilledMoleFraction(balanced.autofilled)
   }
   const onUnitChange = (property: string, unit: string) => {
     setDisplayUnits((previous) => ({ ...previous, [property]: unit }))
@@ -567,7 +598,13 @@ export function FlowsheetNodePanels({
     if (saving || !canSave || !onSave || !form.reportValidity()) {
       return
     }
-    const changes = getNodeChanges(node, panels, values, displayUnits)
+    const changes = getNodeChanges(
+      node,
+      panels,
+      values,
+      displayUnits,
+      moleFractionProperties
+    )
     if (typeof changes === 'string') {
       setError(changes)
       return

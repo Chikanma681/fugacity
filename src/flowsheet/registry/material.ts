@@ -180,6 +180,7 @@ export const materialUnitDefinition: UnitDefinition = {
             },
           ],
         },
+        { type: 'readonly', label: 'Total', property: 'MoleFractionTotal' },
       ],
     },
     { type: 'label', label: 'Results', icon: 'clipboardCheckmark' },
