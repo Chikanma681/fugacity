@@ -565,10 +565,12 @@ export function FlowsheetNodePanels({
   const panelValues = {
     ...values,
     CalculationStatus: getCalculationStatus(node.id, simulationRun.value),
-    MoleFractionTotal:
-      moleFractionTotal === undefined
-        ? 'Mole fraction total should be equal to 1'
-        : Number(moleFractionTotal.toFixed(6)),
+    ...(moleFractionProperties.length > 0 && {
+      MoleFractionTotal:
+        moleFractionTotal === undefined
+          ? 'Mole fraction total should be equal to 1'
+          : Number(moleFractionTotal.toFixed(6)),
+    }),
   }
   const sections = (
     activePanel
