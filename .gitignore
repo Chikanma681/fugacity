@@ -78,6 +78,8 @@ out/
 /workers/DWSIMWorkerMono/.venv/
 /workers/DWSIMWorkerMono/heater-output/
 /workers/DWSIMWorkerMono/separator-output/
+/workers/DWSIMWorker/bin/
+/workers/DWSIMWorker/obj/
 
 # python
 __pycache__/
