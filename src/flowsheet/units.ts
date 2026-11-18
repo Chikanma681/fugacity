@@ -55,6 +55,13 @@ export const panelUnits: Record<string, PanelUnit[]> = {
     ['kmol/s', 1000],
     ['kmol/h', 1000 / 3600],
   ],
+  volumetricflow: [
+    ['m³/s', 1],
+    ['m³/h', 1 / 3600],
+    ['L/s', 0.001],
+    ['L/min', 0.001 / 60],
+    ['ft³/h', 0.028316846592 / 3600],
+  ],
   distance: lengthUnits,
   diameter: lengthUnits,
   area: [

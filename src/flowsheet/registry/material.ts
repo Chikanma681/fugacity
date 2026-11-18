@@ -160,6 +160,57 @@ export const materialUnitDefinition: UnitDefinition = {
     },
     {
       type: 'group',
+      label: 'Flow Specification',
+      rows: [
+        {
+          type: 'dropdown',
+          label: 'Specified Flow',
+          property: 'DefinedFlow',
+          enumType: 'FlowSpec',
+          fallbackIndex: 0,
+          options: [
+            { label: 'Mass Flow', value: 0 },
+            { label: 'Molar Flow', value: 1 },
+            { label: 'Volumetric Flow', value: 2 },
+          ],
+        },
+        {
+          type: 'textbox',
+          label: 'Mass Flow',
+          property: 'Phases[0].Properties.massflow',
+          requiredWhen: requiredForFeedStream,
+          format: 'nf',
+          unit: 'massflow',
+          min: 0,
+          exclusiveMin: true,
+          enabledWhen: { property: 'DefinedFlow', operator: 'equals', value: 0 },
+        },
+        {
+          type: 'textbox',
+          label: 'Molar Flow',
+          property: 'Phases[0].Properties.molarflow',
+          requiredWhen: requiredForFeedStream,
+          format: 'nf',
+          unit: 'molarflow',
+          min: 0,
+          exclusiveMin: true,
+          enabledWhen: { property: 'DefinedFlow', operator: 'equals', value: 1 },
+        },
+        {
+          type: 'textbox',
+          label: 'Volumetric Flow',
+          property: 'Phases[0].Properties.volumetric_flow',
+          requiredWhen: requiredForFeedStream,
+          format: 'nf',
+          unit: 'volumetricflow',
+          min: 0,
+          exclusiveMin: true,
+          enabledWhen: { property: 'DefinedFlow', operator: 'equals', value: 2 },
+        },
+      ],
+    },
+    {
+      type: 'group',
       label: 'Compound Amounts',
       rows: [
         {
