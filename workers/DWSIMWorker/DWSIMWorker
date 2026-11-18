@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+DIR="$(cd "$(dirname "$0")" && pwd)"
+WORKER="$DIR/bin/Release/net10.0/DWSIMWorker.dll"
+SOURCES=("$DIR/DWSIMWorker.csproj" "$DIR/Program.cs" "$DIR/DwsimRuntime.cs" "$DIR/FlowsheetSimulation.cs")
+
+fail() {
+  echo "{\"jsonrpc\":\"2.0\",\"result\":null,\"error\":{\"code\":\"$1\",\"message\":\"$2\"},\"id\":0}"
+  exit 1
+}
+
+needs_build() {
+  [[ ! -f "$WORKER" ]] && return 0
+  for source in "${SOURCES[@]}"; do
+    [[ "$source" -nt "$WORKER" ]] && return 0
+  done
+  return 1
+}
+
+command -v dotnet >/dev/null 2>&1 ||
+  fail dotnet_unavailable "dotnet 10 is required to run the DWSIM worker."
+
+if needs_build; then
+  dotnet build "$DIR/DWSIMWorker.csproj" -c Release -nologo -v quiet >&2 ||
+    fail dwsim_worker_build_failed "Could not build the DWSIM 10 worker. Set DwsimSourceRoot to a DWSIM 10 checkout."
+fi
+exec dotnet "$WORKER"
