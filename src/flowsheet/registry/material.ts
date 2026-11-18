@@ -183,7 +183,11 @@ export const materialUnitDefinition: UnitDefinition = {
           unit: 'massflow',
           min: 0,
           exclusiveMin: true,
-          enabledWhen: { property: 'DefinedFlow', operator: 'equals', value: 0 },
+          enabledWhen: {
+            property: 'DefinedFlow',
+            operator: 'equals',
+            value: 0,
+          },
         },
         {
           type: 'textbox',
@@ -194,7 +198,11 @@ export const materialUnitDefinition: UnitDefinition = {
           unit: 'molarflow',
           min: 0,
           exclusiveMin: true,
-          enabledWhen: { property: 'DefinedFlow', operator: 'equals', value: 1 },
+          enabledWhen: {
+            property: 'DefinedFlow',
+            operator: 'equals',
+            value: 1,
+          },
         },
         {
           type: 'textbox',
@@ -205,7 +213,11 @@ export const materialUnitDefinition: UnitDefinition = {
           unit: 'volumetricflow',
           min: 0,
           exclusiveMin: true,
-          enabledWhen: { property: 'DefinedFlow', operator: 'equals', value: 2 },
+          enabledWhen: {
+            property: 'DefinedFlow',
+            operator: 'equals',
+            value: 2,
+          },
         },
       ],
     },
