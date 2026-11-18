@@ -570,8 +570,8 @@ const invokeThermoCommand = async (command: string, payload?: unknown) => {
   const defaultDWSIMWorker = path.join(
     thermoAPIRoot,
     'workers',
-    'DWSIMWorkerMono',
-    'DWSIMWorkerMono'
+    'DWSIMWorker',
+    'DWSIMWorker'
   )
   const dwsimWorker =
     process.env.FUGACITY_DWSIM_WORKER ||
