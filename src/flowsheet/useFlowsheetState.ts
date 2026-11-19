@@ -6,7 +6,10 @@ import {
   applyFlowsheetOperations,
 } from '@src/flowsheet/agent/operations'
 import { registerFlowsheetAgentTarget } from '@src/flowsheet/agent/tools'
-import { registerSimulationFlowsheet } from '@src/flowsheet/simulationRun'
+import {
+  markFlowsheetChanged,
+  registerSimulationFlowsheet,
+} from '@src/flowsheet/simulationRun'
 import type { FlowsheetState } from '@src/flowsheet/types'
 import { openDB } from '@src/lib/store/database'
 import {
@@ -28,6 +31,23 @@ type CanvasState = FlowsheetSessionState & {
 }
 type StateUpdate<T> = T | ((previous: T) => T)
 
+function isModelChange(previous: FlowsheetState, next: FlowsheetState) {
+  return (
+    next.edges !== previous.edges ||
+    next.nodes.length !== previous.nodes.length ||
+    next.nodes.some((node, index) => {
+      const old = previous.nodes[index]
+      return (
+        node !== old &&
+        (node.id !== old.id ||
+          node.tag !== old.tag ||
+          node.unitType !== old.unitType ||
+          node.parameters !== old.parameters)
+      )
+    })
+  )
+}
+
 export function useFlowsheetState(filePath: string | undefined) {
   const [state, setState] = useState<CanvasState>({
     filePath,
@@ -48,6 +68,7 @@ export function useFlowsheetState(filePath: string | undefined) {
         return
       }
       revisionRef.current += 1
+      markFlowsheetChanged()
       const canvasState = {
         ...next,
         filePath,
@@ -110,6 +131,9 @@ export function useFlowsheetState(filePath: string | undefined) {
         value.edges !== current.value.edges
       ) {
         revisionRef.current += 1
+      }
+      if (isModelChange(current.value, value)) {
+        markFlowsheetChanged()
       }
       const next = { ...current, value, error: null }
       stateRef.current = next
@@ -178,7 +202,9 @@ export function useFlowsheetState(filePath: string | undefined) {
       try {
         await updateState(result)
       } catch (error) {
-        return { error: error instanceof Error ? error.message : String(error) }
+        return {
+          error: error instanceof Error ? error.message : String(error),
+        }
       }
       return toFlowsheetDocument(stateRef.current.value, revisionRef.current)
     },

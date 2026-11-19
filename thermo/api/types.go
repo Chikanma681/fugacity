@@ -30,10 +30,10 @@ type MaterialStreamInput struct {
 type FlashRequest = MaterialStreamInput
 
 type FlashResult struct {
-	TemperatureK  float64            `json:"temperatureK"`
-	PressurePa    float64            `json:"pressurePa"`
-	VaporFraction float64            `json:"vaporFraction"`
-	Phases        []PhaseResult      `json:"phases"`
+	TemperatureK  float64       `json:"temperatureK"`
+	PressurePa    float64       `json:"pressurePa"`
+	VaporFraction float64       `json:"vaporFraction"`
+	Phases        []PhaseResult `json:"phases"`
 }
 
 type PhaseResult struct {
@@ -49,6 +49,7 @@ type FlowsheetObject struct {
 	X          float64        `json:"x"`
 	Y          float64        `json:"y"`
 	Properties map[string]any `json:"properties"`
+	Outputs    []string       `json:"outputs,omitempty"`
 }
 
 type FlowsheetConnection struct {
@@ -70,22 +71,23 @@ type StreamPhaseResult struct {
 }
 
 type StreamResult struct {
-	TemperatureK       float64                `json:"temperatureK"`
-	PressurePa         float64                `json:"pressurePa"`
-	MassFlowKgPerS     float64                `json:"massFlowKgPerS"`
-	MolarFlowMolPerS   float64                `json:"molarFlowMolPerS"`
-	MassEnthalpyJPerKg float64                `json:"massEnthalpyJPerKg"`
-	VaporFraction      float64                `json:"vaporFraction"`
-	MoleFractions      map[string]float64     `json:"moleFractions"`
+	TemperatureK       float64                      `json:"temperatureK"`
+	PressurePa         float64                      `json:"pressurePa"`
+	MassFlowKgPerS     float64                      `json:"massFlowKgPerS"`
+	MolarFlowMolPerS   float64                      `json:"molarFlowMolPerS"`
+	MassEnthalpyJPerKg float64                      `json:"massEnthalpyJPerKg"`
+	VaporFraction      float64                      `json:"vaporFraction"`
+	MoleFractions      map[string]float64           `json:"moleFractions"`
 	Phases             map[string]StreamPhaseResult `json:"phases"`
 }
 
 type FlowsheetObjectResult struct {
-	Tag          string        `json:"tag"`
-	Calculated   bool          `json:"calculated"`
-	ErrorMessage string        `json:"errorMessage"`
-	Stream       *StreamResult `json:"stream,omitempty"`
-	EnergyFlowW  *float64      `json:"energyFlowW,omitempty"`
+	Tag          string         `json:"tag"`
+	Calculated   bool           `json:"calculated"`
+	ErrorMessage string         `json:"errorMessage"`
+	Stream       *StreamResult  `json:"stream,omitempty"`
+	EnergyFlowW  *float64       `json:"energyFlowW,omitempty"`
+	Properties   map[string]any `json:"properties,omitempty"`
 }
 
 type SolveFlowsheetResult struct {

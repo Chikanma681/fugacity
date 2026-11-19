@@ -164,14 +164,19 @@ public static class FlowsheetSimulation
         );
     }
 
-    private static void SetPropertyPath(object target, string path, object value)
+    private static List<Match> ParsePropertyPath(string path)
     {
         var segments = PathSegment.Matches(path).Cast<Match>().ToList();
-        if (segments.Sum(segment => segment.Length) != path.Length || !segments.Last().Groups["name"].Success)
+        if (segments.Count == 0 || segments.Sum(segment => segment.Length) != path.Length || !segments.Last().Groups["name"].Success)
         {
             throw new WorkerException("invalid_property", "Invalid DWSIM property path '" + path + "'.");
         }
 
+        return segments;
+    }
+
+    private static object ResolveParent(object target, List<Match> segments)
+    {
         var current = target;
         foreach (var segment in segments.Take(segments.Count - 1))
         {
@@ -183,7 +188,55 @@ public static class FlowsheetSimulation
                 current = GetItem(current, segment.Groups["key"].Value);
         }
 
-        SetMember(current, segments.Last().Groups["name"].Value, value);
+        return current;
+    }
+
+    private static void SetPropertyPath(object target, string path, object value)
+    {
+        var segments = ParsePropertyPath(path);
+        SetMember(ResolveParent(target, segments), segments.Last().Groups["name"].Value, value);
+    }
+
+    private static object GetPropertyPath(object target, string path)
+    {
+        var segments = ParsePropertyPath(path);
+        return GetMember(ResolveParent(target, segments), segments.Last().Groups["name"].Value);
+    }
+
+    private static object ToOutputValue(object value)
+    {
+        if (value is Enum)
+            return Convert.ToInt32(value, CultureInfo.InvariantCulture);
+        if (value is bool || value is string)
+            return value;
+        if (value is double || value is float || value is int || value is long || value is decimal)
+        {
+            var number = Convert.ToDouble(value, CultureInfo.InvariantCulture);
+            return double.IsNaN(number) || double.IsInfinity(number) ? null : (object)number;
+        }
+
+        return null;
+    }
+
+    private static Dictionary<string, object> ReadOutputs(ISimulationObject simulationObject, IEnumerable<string> outputs)
+    {
+        var values = new Dictionary<string, object>();
+        foreach (var path in outputs)
+        {
+            object value;
+            try
+            {
+                value = ToOutputValue(GetPropertyPath(simulationObject, path));
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+            if (value != null)
+                values[path] = value;
+        }
+
+        return values;
     }
 
     private static void ApplyProperties(ISimulationObject simulationObject, FlowsheetObjectInput input)
@@ -257,7 +310,7 @@ public static class FlowsheetSimulation
         };
     }
 
-    private static Dictionary<string, object> ToObjectResult(ISimulationObject simulationObject)
+    private static Dictionary<string, object> ToObjectResult(ISimulationObject simulationObject, IEnumerable<string> outputs)
     {
         var result = new Dictionary<string, object>
         {
@@ -265,6 +318,8 @@ public static class FlowsheetSimulation
             { "calculated", simulationObject.Calculated },
             { "errorMessage", simulationObject.ErrorMessage ?? "" },
         };
+        if (simulationObject.Calculated)
+            result["properties"] = ReadOutputs(simulationObject, outputs);
         if (simulationObject is IMaterialStream stream && simulationObject.Calculated)
             result["stream"] = ToStreamResult(stream);
         if (simulationObject is IEnergyStream energy && simulationObject.Calculated)
@@ -346,9 +401,13 @@ public static class FlowsheetSimulation
             var flowsheet = Build(automation, request);
             DWSIM.GlobalSettings.Settings.SolverMode = 0;
             var errors = automation.CalculateFlowsheet4(flowsheet);
+            var outputs = request.Objects.ToDictionary(input => input.Id, input => input.Outputs);
             var objects = flowsheet.SimulationObjects.Values.ToDictionary(
                 simulationObject => simulationObject.Name,
-                simulationObject => (object)ToObjectResult(simulationObject)
+                simulationObject => (object)ToObjectResult(
+                    simulationObject,
+                    outputs.ContainsKey(simulationObject.Name) ? outputs[simulationObject.Name] : new string[0]
+                )
             );
 
             return new Dictionary<string, object>

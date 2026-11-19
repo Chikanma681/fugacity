@@ -1,4 +1,5 @@
 import {
+  type PanelValues,
   getInitialValues,
   getMissingRequiredLabels,
   getMoleFractionProperties,
@@ -8,6 +9,7 @@ import {
 import { type PanelRow, getUnitDefinition } from '@src/flowsheet/registry'
 import type { FlowEdge, FlowNode, FlowsheetState } from '@src/flowsheet/types'
 import type {
+  FlowsheetObjectResult,
   SolveFlowsheetConnection,
   SolveFlowsheetObject,
   SolveFlowsheetRequest,
@@ -66,6 +68,47 @@ function collectDwsimProperties(
   return properties
 }
 
+function collectReadonlyProperties(
+  rows: PanelRow[],
+  properties: Map<string, string | undefined>
+) {
+  for (const row of rows) {
+    if (row.type === 'group') {
+      collectReadonlyProperties(row.rows, properties)
+    } else if (row.type === 'tabs') {
+      for (const tab of row.tabs) {
+        collectReadonlyProperties(tab.rows, properties)
+      }
+    } else if (row.type === 'readonly') {
+      properties.set(row.property, row.unit)
+    }
+  }
+  return properties
+}
+
+function getOutputProperties(node: FlowNode, compoundIds: string[]) {
+  const panels = getUnitDefinition(node.unitType).panels
+  return collectReadonlyProperties(
+    panels,
+    collectDwsimProperties(panels, compoundIds)
+  )
+}
+
+export function getCalculatedValues(
+  node: FlowNode,
+  compoundIds: string[],
+  result: FlowsheetObjectResult | undefined
+): PanelValues {
+  const outputs = getOutputProperties(node, compoundIds)
+  const values: PanelValues = {}
+  for (const [property, value] of Object.entries(result?.properties ?? {})) {
+    const scale = dwsimScale[outputs.get(property) ?? '']
+    values[property] =
+      scale && typeof value === 'number' ? value / scale : value
+  }
+  return values
+}
+
 function toSolveObject(
   node: FlowNode,
   compoundIds: string[]
@@ -92,6 +135,7 @@ function toSolveObject(
     x: node.x,
     y: node.y,
     properties,
+    outputs: [...getOutputProperties(node, compoundIds).keys()],
   }
 }
 

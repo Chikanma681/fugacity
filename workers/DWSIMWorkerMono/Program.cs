@@ -228,6 +228,9 @@ public static class Program
                 ? parameters["properties"] as Dictionary<string, object>
                     ?? new Dictionary<string, object>()
                 : new Dictionary<string, object>(),
+            Outputs = parameters.ContainsKey("outputs")
+                ? RequiredStringArray(parameters, "outputs")
+                : new string[0],
         };
     }
 
@@ -283,6 +286,7 @@ public sealed class FlowsheetObjectInput
     public double X;
     public double Y;
     public Dictionary<string, object> Properties;
+    public string[] Outputs;
 }
 
 public sealed class FlowsheetConnectionInput

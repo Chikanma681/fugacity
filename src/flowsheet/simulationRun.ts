@@ -12,10 +12,25 @@ import {
 export type SimulationRun =
   | { status: 'idle' }
   | { status: 'running' }
-  | { status: 'finished'; result: SolveFlowsheetResult; finishedAt: Date }
+  | {
+      status: 'finished'
+      result: SolveFlowsheetResult
+      finishedAt: Date
+      revision: number
+    }
   | { status: 'failed'; error: string }
 
 export const simulationRun = signal<SimulationRun>({ status: 'idle' })
+
+const flowsheetRevision = signal(0)
+
+export function markFlowsheetChanged() {
+  flowsheetRevision.value += 1
+}
+
+export function isSimulationStale(run: SimulationRun) {
+  return run.status === 'finished' && run.revision !== flowsheetRevision.value
+}
 
 const SIMULATION_TOAST_ID = 'simulation-run'
 
@@ -36,8 +51,13 @@ function fail(error: unknown) {
   toast.error(message, { id: SIMULATION_TOAST_ID })
 }
 
-function finish(result: SolveFlowsheetResult) {
-  simulationRun.value = { status: 'finished', result, finishedAt: new Date() }
+function finish(result: SolveFlowsheetResult, revision: number) {
+  simulationRun.value = {
+    status: 'finished',
+    result,
+    finishedAt: new Date(),
+    revision,
+  }
   if (result.solved) {
     toast.success('Simulation finished.', { id: SIMULATION_TOAST_ID })
   } else {
@@ -61,10 +81,11 @@ export async function runSimulation(selection: ThermoSelection) {
   if (request instanceof Error) {
     return fail(request)
   }
+  const revision = flowsheetRevision.value
   simulationRun.value = { status: 'running' }
   toast.loading('Running simulation…', { id: SIMULATION_TOAST_ID })
   try {
-    finish(await solveFlowsheet(request))
+    finish(await solveFlowsheet(request), revision)
   } catch (error) {
     fail(error)
   }

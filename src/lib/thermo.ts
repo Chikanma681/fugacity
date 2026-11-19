@@ -44,6 +44,7 @@ export type SolveFlowsheetObject = {
   x: number
   y: number
   properties: Record<string, string | number | boolean>
+  outputs: string[]
 }
 
 export type SolveFlowsheetConnection = {
@@ -80,6 +81,7 @@ export type FlowsheetObjectResult = {
   errorMessage: string
   stream?: StreamResult
   energyFlowW?: number
+  properties?: Record<string, string | number | boolean>
 }
 
 export type SolveFlowsheetResult = {

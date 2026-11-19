@@ -16,9 +16,11 @@ import {
   getMoleFractionProperties,
   getMoleFractionTotal,
   getMoleFractionTotalError,
+  isRowCalculated,
   isRowRequired,
   matchesCondition,
   resolvePanelRows,
+  withCalculatedValues,
 } from '@src/flowsheet/panelValues'
 import {
   type PanelCondition,
@@ -27,7 +29,12 @@ import {
   type PanelValue,
   getUnitDefinition,
 } from '@src/flowsheet/registry'
-import { type SimulationRun, simulationRun } from '@src/flowsheet/simulationRun'
+import {
+  type SimulationRun,
+  isSimulationStale,
+  simulationRun,
+} from '@src/flowsheet/simulationRun'
+import { getCalculatedValues } from '@src/flowsheet/solveRequest'
 import type { FlowEdge, FlowNode, FlowNodeChanges } from '@src/flowsheet/types'
 import { type PanelUnit, fromSI, panelUnits, toSI } from '@src/flowsheet/units'
 import { isArray } from '@src/lib/utils'
@@ -50,7 +57,9 @@ function getCalculationStatus(nodeId: string, run: SimulationRun) {
     return 'Not calculated'
   }
   if (result.calculated) {
-    return 'Calculated'
+    return isSimulationStale(run)
+      ? 'Calculated (flowsheet changed since last run)'
+      : 'Calculated'
   }
   return result.errorMessage
     ? `Error: ${result.errorMessage}`
@@ -169,8 +178,13 @@ function getPanelSections(
   return sections.filter((section) => section.rows.length > 0)
 }
 
+type CalculatedDisplay = {
+  properties: Set<string>
+  stale: boolean
+}
+
 const inputClassName =
-  'p-1 bg-transparent border rounded-sm border-chalkboard-30 w-full text-base font-normal focus:border-primary focus:outline-primary'
+  'p-1 bg-transparent border rounded-sm border-chalkboard-30 w-full text-base font-normal focus:border-primary focus:outline-primary disabled:cursor-not-allowed disabled:bg-chalkboard-20 disabled:text-chalkboard-70 disabled:border-chalkboard-20 dark:disabled:bg-chalkboard-90 dark:disabled:text-chalkboard-40 dark:disabled:border-chalkboard-80'
 
 function formatReadonlyValue(
   value: PanelValue | undefined,
@@ -390,12 +404,14 @@ function PanelControl({
 function PanelField({
   row,
   values,
+  calculated,
   onChange,
   displayUnits,
   onUnitChange,
 }: {
   row: PanelRow
   values: PanelValues
+  calculated: CalculatedDisplay
   onChange: (property: string, value: PanelValue) => void
   displayUnits: Record<string, string>
   onUnitChange: (property: string, unit: string) => void
@@ -441,6 +457,7 @@ function PanelField({
             key={getRowKey(child)}
             row={child}
             values={values}
+            calculated={calculated}
             onChange={onChange}
             displayUnits={displayUnits}
             onUnitChange={onUnitChange}
@@ -479,6 +496,7 @@ function PanelField({
             key={getRowKey(child)}
             row={child}
             values={values}
+            calculated={calculated}
             onChange={onChange}
             displayUnits={displayUnits}
             onUnitChange={onUnitChange}
@@ -489,8 +507,11 @@ function PanelField({
   }
   const unit = 'fixedUnit' in row ? row.fixedUnit : undefined
   const enabled =
-    (!row.enabledWhen || matchesCondition(row.enabledWhen, values)) &&
+    (row.type === 'readonly' || !isRowCalculated(row, values)) &&
     (row.type !== 'dropdown' || isArray(row.options))
+  const showsResult =
+    'property' in row && calculated.properties.has(row.property)
+  const dimmed = showsResult ? calculated.stale : !enabled
   const interactive =
     enabled &&
     row.type !== 'readonly' &&
@@ -502,7 +523,7 @@ function PanelField({
       htmlFor={id}
       description={unit}
       headingClassName="text-lg font-normal tracking-wide"
-      className={`min-w-0 border-0 border-l-2 -ml-0.5 border-transparent ${interactive ? 'focus-within:border-primary' : ''} ${enabled ? '' : 'opacity-50'}`}
+      className={`min-w-0 border-0 border-l-2 -ml-0.5 border-transparent ${interactive ? 'focus-within:border-primary' : ''} ${dimmed ? 'opacity-50' : ''}`}
     >
       <fieldset className="min-w-0 text-base font-normal" disabled={!enabled}>
         <PanelControl
@@ -561,10 +582,27 @@ export function FlowsheetNodePanels({
   const [autofilledMoleFraction, setAutofilledMoleFraction] = useState<
     string | undefined
   >()
-  const moleFractionTotal = getMoleFractionTotal(values, moleFractionProperties)
+  const run = simulationRun.value
+  const calculated = withCalculatedValues(
+    panels,
+    values,
+    getCalculatedValues(
+      node,
+      selectedCompoundIds,
+      run.status === 'finished' ? run.result.objects[node.id] : undefined
+    )
+  )
+  const calculatedDisplay = {
+    properties: calculated.properties,
+    stale: isSimulationStale(run),
+  }
+  const moleFractionTotal = getMoleFractionTotal(
+    calculated.values,
+    moleFractionProperties
+  )
   const panelValues = {
-    ...values,
-    CalculationStatus: getCalculationStatus(node.id, simulationRun.value),
+    ...calculated.values,
+    CalculationStatus: getCalculationStatus(node.id, run),
     ...(moleFractionProperties.length > 0 && {
       MoleFractionTotal:
         moleFractionTotal === undefined
@@ -709,6 +747,7 @@ export function FlowsheetNodePanels({
                       key={getRowKey(row)}
                       row={row}
                       values={panelValues}
+                      calculated={calculatedDisplay}
                       onChange={onChange}
                       displayUnits={displayUnits}
                       onUnitChange={onUnitChange}

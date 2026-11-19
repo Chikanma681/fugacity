@@ -137,6 +137,50 @@ export function isRowRequired(row: PanelRow, values: PanelValues) {
   )
 }
 
+export function isRowCalculated(row: PanelRow, values: PanelValues) {
+  if (row.type === 'readonly') {
+    return values[row.property] === undefined
+  }
+  return (
+    (row.requiredWhen !== undefined &&
+      !matchesCondition(row.requiredWhen, values)) ||
+    (row.enabledWhen !== undefined &&
+      !matchesCondition(row.enabledWhen, values))
+  )
+}
+
+function getValueRows(rows: PanelRow[]): PanelRow[] {
+  return rows.flatMap((row) => {
+    if (row.type === 'group') {
+      return getValueRows(row.rows)
+    }
+    if (row.type === 'tabs') {
+      return row.tabs.flatMap((tab) => getValueRows(tab.rows))
+    }
+    return row.type === 'readonly' ? [row] : getEditableRows([row])
+  })
+}
+
+export function withCalculatedValues(
+  rows: PanelRow[],
+  values: PanelValues,
+  calculated: PanelValues
+) {
+  const next = { ...values }
+  const properties = new Set<string>()
+  for (const row of getValueRows(rows)) {
+    if (
+      'property' in row &&
+      row.property in calculated &&
+      isRowCalculated(row, values)
+    ) {
+      next[row.property] = calculated[row.property]
+      properties.add(row.property)
+    }
+  }
+  return { values: next, properties }
+}
+
 export function getMissingRequiredLabels(
   rows: PanelRow[],
   values: PanelValues

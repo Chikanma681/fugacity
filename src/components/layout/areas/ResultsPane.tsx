@@ -12,7 +12,7 @@ import {
   splitResultObjects,
 } from '@src/flowsheet/results'
 import { exportResults } from '@src/flowsheet/resultsExport'
-import { simulationRun } from '@src/flowsheet/simulationRun'
+import { isSimulationStale, simulationRun } from '@src/flowsheet/simulationRun'
 import { useApp } from '@src/lib/boot'
 import type { AreaTypeComponentProps } from '@src/lib/layout'
 import { getFlowsheetFilePath } from '@src/lib/store/database'
@@ -52,11 +52,7 @@ function ResultsTable({
 const cellClassName =
   'px-2 py-1 whitespace-nowrap border-b border-chalkboard-10 dark:border-chalkboard-90'
 
-function MaterialStreamResults({
-  streams,
-}: {
-  streams: StreamObjectResult[]
-}) {
+function MaterialStreamResults({ streams }: { streams: StreamObjectResult[] }) {
   const compoundIds = Object.keys(streams[0].stream.moleFractions)
   return (
     <ResultsTable
@@ -86,7 +82,9 @@ function MaterialStreamResults({
 
 function ObjectStatusResults({
   objects,
-}: { objects: FlowsheetObjectResult[] }) {
+}: {
+  objects: FlowsheetObjectResult[]
+}) {
   return (
     <ResultsTable
       headers={[
@@ -170,49 +168,59 @@ function ExportMenu({
 function SimulationResults({
   result,
   finishedAt,
+  stale,
 }: {
   result: SolveFlowsheetResult
   finishedAt: Date
+  stale: boolean
 }) {
   const { streams, others } = splitResultObjects(result)
   return (
     <div className="flex flex-col gap-4 p-2 text-sm">
-      <div className="flex items-center gap-2">
-        <div
-          className={
-            result.solved
-              ? 'text-succeed-80 dark:text-succeed-40'
-              : 'text-destroy-80'
-          }
-        >
-          {result.solved ? 'Flowsheet solved' : 'Flowsheet did not solve'}
-          <span className="ml-2 text-xs text-chalkboard-60 dark:text-chalkboard-40">
-            {finishedAt.toLocaleTimeString()}
-          </span>
+      {stale && (
+        <p className="m-0 text-xs text-chalkboard-60 dark:text-chalkboard-40">
+          The flowsheet changed since this run. Run the simulation again to
+          update these results.
+        </p>
+      )}
+      <div className={`flex flex-col gap-4 ${stale ? 'opacity-50' : ''}`}>
+        <div className="flex items-center gap-2">
+          <div
+            className={
+              result.solved
+                ? 'text-succeed-80 dark:text-succeed-40'
+                : 'text-destroy-80'
+            }
+          >
+            {result.solved ? 'Flowsheet solved' : 'Flowsheet did not solve'}
+            <span className="ml-2 text-xs text-chalkboard-60 dark:text-chalkboard-40">
+              {finishedAt.toLocaleTimeString()}
+            </span>
+          </div>
+          <ExportMenu result={result} finishedAt={finishedAt} />
         </div>
-        <ExportMenu result={result} finishedAt={finishedAt} />
+        {result.errors.length > 0 && (
+          <ul className="m-0 pl-4 list-disc text-xs text-destroy-80">
+            {result.errors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        )}
+        {streams.length > 0 && (
+          <section className="flex flex-col gap-1">
+            <h3 className="m-0 text-xs font-semibold">Material Streams</h3>
+            <MaterialStreamResults streams={streams} />
+          </section>
+        )}
+        {others.length > 0 && (
+          <section className="flex flex-col gap-1">
+            <h3 className="m-0 text-xs font-semibold">
+              Unit Operations and Energy Streams
+            </h3>
+            <ObjectStatusResults objects={others} />
+          </section>
+        )}
       </div>
-      {result.errors.length > 0 && (
-        <ul className="m-0 pl-4 list-disc text-xs text-destroy-80">
-          {result.errors.map((error) => (
-            <li key={error}>{error}</li>
-          ))}
-        </ul>
-      )}
-      {streams.length > 0 && (
-        <section className="flex flex-col gap-1">
-          <h3 className="m-0 text-xs font-semibold">Material Streams</h3>
-          <MaterialStreamResults streams={streams} />
-        </section>
-      )}
-      {others.length > 0 && (
-        <section className="flex flex-col gap-1">
-          <h3 className="m-0 text-xs font-semibold">
-            Unit Operations and Energy Streams
-          </h3>
-          <ObjectStatusResults objects={others} />
-        </section>
-      )}
     </div>
   )
 }
@@ -237,7 +245,11 @@ function SimulationRunContent() {
       return <div className="p-4 text-sm text-destroy-80">{run.error}</div>
     case 'finished':
       return (
-        <SimulationResults result={run.result} finishedAt={run.finishedAt} />
+        <SimulationResults
+          result={run.result}
+          finishedAt={run.finishedAt}
+          stale={isSimulationStale(run)}
+        />
       )
   }
 }
