@@ -246,7 +246,7 @@ export const materialUnitDefinition: UnitDefinition = {
         { type: 'readonly', label: 'Total', property: 'MoleFractionTotal' },
       ],
     },
-    { type: 'label', label: 'Results', icon: 'clipboardCheckmark' },
+    // { type: 'label', label: 'Results', icon: 'clipboardCheckmark' },
     {
       type: 'group',
       label: 'Compounds',
