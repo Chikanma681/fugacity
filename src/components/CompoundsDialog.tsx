@@ -1,8 +1,9 @@
-import { Dialog, Transition } from '@headlessui/react'
+import { Dialog, RadioGroup, Transition } from '@headlessui/react'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 
 import { ActionButton } from '@src/components/ActionButton'
 import { CustomIcon } from '@src/components/CustomIcon'
+import { SettingsTabButton } from '@src/components/Settings/SettingsTabButton'
 
 export type CompoundOption = {
   id: string
@@ -20,6 +21,80 @@ type CompoundsDialogProps = {
   onSave: (compoundIds: string[]) => void
 }
 
+type CompoundTab = 'all' | 'selected'
+
+function getMatchRank(compound: CompoundOption, query: string) {
+  const name = compound.name.toLowerCase()
+  const formula = compound.formula.toLowerCase()
+  return [
+    name.startsWith(query),
+    formula.startsWith(query),
+    name.includes(query),
+    `${formula} ${compound.category.toLowerCase()}`.includes(query),
+  ].indexOf(true)
+}
+
+function searchCompounds(compounds: CompoundOption[], query: string) {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (!normalizedQuery) {
+    return compounds
+  }
+  const rank = (compound: CompoundOption) =>
+    getMatchRank(compound, normalizedQuery)
+  return compounds
+    .filter((compound) => rank(compound) >= 0)
+    .sort((a, b) => rank(a) - rank(b) || a.name.length - b.name.length)
+}
+
+function CompoundRow({
+  compound,
+  checked,
+  onToggle,
+}: {
+  compound: CompoundOption
+  checked: boolean
+  onToggle: () => void
+}) {
+  return (
+    <li>
+      <label className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-chalkboard-5 dark:hover:bg-chalkboard-90/60">
+        <input
+          type="checkbox"
+          aria-label={`Select ${compound.name}`}
+          checked={checked}
+          onChange={onToggle}
+          className="mt-1"
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-medium">{compound.name}</span>
+            <span className="text-xs uppercase tracking-wide text-chalkboard-70 dark:text-chalkboard-40">
+              {compound.formula}
+            </span>
+          </div>
+          <p className="text-sm text-chalkboard-70 dark:text-chalkboard-40">
+            {compound.category}
+          </p>
+        </div>
+      </label>
+    </li>
+  )
+}
+
+function getEmptyMessage(
+  tab: CompoundTab,
+  query: string,
+  error: string | null
+) {
+  if (error) {
+    return 'DWSIM compounds are unavailable.'
+  }
+  if (query.trim()) {
+    return 'No compounds match the current search.'
+  }
+  return tab === 'selected' ? 'No compounds selected.' : 'No compounds found.'
+}
+
 export function CompoundsDialog({
   isOpen,
   selectedCompoundIds,
@@ -31,6 +106,7 @@ export function CompoundsDialog({
   const [draftCompoundIds, setDraftCompoundIds] =
     useState<string[]>(selectedCompoundIds)
   const [query, setQuery] = useState('')
+  const [tab, setTab] = useState<CompoundTab>('all')
 
   useEffect(() => {
     if (!isOpen) {
@@ -39,21 +115,36 @@ export function CompoundsDialog({
 
     setDraftCompoundIds(selectedCompoundIds)
     setQuery('')
+    setTab('all')
   }, [isOpen, selectedCompoundIds])
 
-  const filteredCompounds = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    if (!normalizedQuery) {
-      return compounds
-    }
+  const selectedCompounds = useMemo(() => {
+    const compoundsById = new Map(
+      compounds.map((compound) => [compound.id, compound])
+    )
+    return draftCompoundIds.map(
+      (id) =>
+        compoundsById.get(id) ?? { id, name: id, formula: '', category: '' }
+    )
+  }, [compounds, draftCompoundIds])
 
-    return compounds.filter((compound) => {
-      const haystack = `${compound.name} ${compound.formula} ${compound.category}`
-      return haystack.toLowerCase().includes(normalizedQuery)
-    })
-  }, [compounds, query])
+  const visibleCompounds = useMemo(
+    () => searchCompounds(tab === 'all' ? compounds : selectedCompounds, query),
+    [compounds, selectedCompounds, tab, query]
+  )
 
-  const selectedCount = draftCompoundIds.length
+  const toggleCompound = (compoundId: string) => {
+    setDraftCompoundIds((current) =>
+      current.includes(compoundId)
+        ? current.filter((id) => id !== compoundId)
+        : [...current, compoundId]
+    )
+  }
+
+  const tabs: { value: CompoundTab; label: string }[] = [
+    { value: 'all', label: 'All compounds' },
+    { value: 'selected', label: `Selected (${draftCompoundIds.length})` },
+  ]
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -110,65 +201,51 @@ export function CompoundsDialog({
                   {error}
                 </div>
               )}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <label className="flex-1">
-                  <span className="sr-only">Search compounds</span>
-                  <input
-                    type="text"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search by name, formula, or category"
-                    className="w-full rounded border border-chalkboard-30 dark:border-chalkboard-70 bg-chalkboard-5 dark:bg-chalkboard-90 px-3 py-2 text-sm outline-none focus:border-primary"
-                  />
-                </label>
-                <div className="text-sm text-chalkboard-70 dark:text-chalkboard-40">
-                  {selectedCount} selected
-                </div>
-              </div>
+              <RadioGroup
+                aria-label="Compound lists"
+                aria-orientation="horizontal"
+                value={tab}
+                onChange={setTab}
+                className="flex shrink-0 gap-5 overflow-x-auto border-0 border-b border-chalkboard-20 dark:border-chalkboard-90"
+              >
+                {tabs.map((item) => (
+                  <RadioGroup.Option
+                    key={item.value}
+                    value={item.value}
+                    className={({ checked }) =>
+                      `whitespace-nowrap rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${checked ? 'text-primary' : ''}`
+                    }
+                  >
+                    {({ checked }) => (
+                      <SettingsTabButton checked={checked} text={item.label} />
+                    )}
+                  </RadioGroup.Option>
+                ))}
+              </RadioGroup>
+              <label>
+                <span className="sr-only">Search compounds</span>
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search by name, formula, or category"
+                  className="w-full rounded border border-chalkboard-30 dark:border-chalkboard-70 bg-chalkboard-5 dark:bg-chalkboard-90 px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </label>
 
               <div className="overflow-y-auto border border-chalkboard-20 dark:border-chalkboard-80 rounded">
                 <ul className="divide-y divide-chalkboard-20 dark:divide-chalkboard-80">
-                  {filteredCompounds.map((compound) => {
-                    const checked = draftCompoundIds.includes(compound.id)
-
-                    return (
-                      <li key={compound.id}>
-                        <label className="flex cursor-pointer items-start gap-3 px-4 py-3 hover:bg-chalkboard-5 dark:hover:bg-chalkboard-90/60">
-                          <input
-                            type="checkbox"
-                            aria-label={`Select ${compound.name}`}
-                            checked={checked}
-                            onChange={() => {
-                              setDraftCompoundIds((current) =>
-                                checked
-                                  ? current.filter((id) => id !== compound.id)
-                                  : [...current, compound.id]
-                              )
-                            }}
-                            className="mt-1"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                              <span className="font-medium">
-                                {compound.name}
-                              </span>
-                              <span className="text-xs uppercase tracking-wide text-chalkboard-70 dark:text-chalkboard-40">
-                                {compound.formula}
-                              </span>
-                            </div>
-                            <p className="text-sm text-chalkboard-70 dark:text-chalkboard-40">
-                              {compound.category}
-                            </p>
-                          </div>
-                        </label>
-                      </li>
-                    )
-                  })}
-                  {filteredCompounds.length === 0 && (
+                  {visibleCompounds.map((compound) => (
+                    <CompoundRow
+                      key={compound.id}
+                      compound={compound}
+                      checked={draftCompoundIds.includes(compound.id)}
+                      onToggle={() => toggleCompound(compound.id)}
+                    />
+                  ))}
+                  {visibleCompounds.length === 0 && (
                     <li className="px-4 py-6 text-sm text-chalkboard-70 dark:text-chalkboard-40">
-                      {error
-                        ? 'DWSIM compounds are unavailable.'
-                        : 'No compounds match the current search.'}
+                      {getEmptyMessage(tab, query, error)}
                     </li>
                   )}
                 </ul>
