@@ -182,6 +182,24 @@ export function Flowsheet2DScene() {
     setContextNodeId(null)
   }
 
+  const isContextNodeConnected =
+    !!contextNodeId &&
+    edges.some(
+      (edge) => edge.from === contextNodeId || edge.to === contextNodeId
+    )
+
+  const handleDisconnectNode = () => {
+    if (!ready || !contextNodeId) {
+      return
+    }
+    void setEdges((prev) =>
+      prev.filter(
+        (edge) => edge.from !== contextNodeId && edge.to !== contextNodeId
+      )
+    )
+    setContextNodeId(null)
+  }
+
   useEffect(() => {
     const container = containerRef.current
     if (!container) {
@@ -556,6 +574,14 @@ export function Flowsheet2DScene() {
               onClick={handleDeleteNode}
             >
               Delete
+            </ContextMenuItem>,
+            <ContextMenuItem
+              key="disconnect"
+              data-testid="flowsheet-node-disconnect"
+              disabled={!isContextNodeConnected}
+              onClick={handleDisconnectNode}
+            >
+              Disconnect
             </ContextMenuItem>,
           ]}
         />
