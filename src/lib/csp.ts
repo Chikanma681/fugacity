@@ -17,8 +17,9 @@ const isStagingOrDebugBuild =
 
 const CSP_META_REGEX =
   /<meta\b[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi
-const CSP_SCRIPT_SRC =
-  "script-src 'self' 'wasm-unsafe-eval' https://plausible.corp.zoo.dev/js/script.tagged-events.js"
+// const CSP_SCRIPT_SRC =
+//   "script-src 'self' 'wasm-unsafe-eval' https://plausible.corp.zoo.dev/js/script.tagged-events.js"
+const CSP_SCRIPT_SRC = "script-src 'self' 'wasm-unsafe-eval'"
 
 const normalizeDomain = (value?: string) => {
   if (!value) return undefined
@@ -108,7 +109,7 @@ const toOrigin = (value?: string) => {
 const buildCsp = (domain?: string) => {
   const connectSources = uniqueSources([
     "'self'",
-    'https://plausible.corp.zoo.dev',
+    // 'https://plausible.corp.zoo.dev',
     'https://discord.com',
     domain ? `https://api.${domain}` : undefined,
     domain ? `wss://api.${domain}` : undefined,

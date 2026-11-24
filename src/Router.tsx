@@ -29,7 +29,7 @@ import { Settings } from '@src/routes/Settings'
 import SignIn from '@src/routes/SignIn'
 import { WorkOSCallback, WorkOSLogin } from '@src/routes/WorkOSAuth'
 import { WORKOS_CALLBACK_PATH } from '@src/lib/workos'
-import { Telemetry } from '@src/routes/Telemetry'
+// import { Telemetry } from '@src/routes/Telemetry'
 import { TestLayout } from '@src/lib/layout/TestLayout'
 import { IS_STAGING_OR_DEBUG } from '@src/routes/utils'
 import Loading from '@src/components/Loading'
@@ -98,15 +98,15 @@ export const Router = () => {
                     },
                   ],
                 },
-                {
-                  id: PATHS.FILE + 'TELEMETRY',
-                  children: [
-                    {
-                      path: makeUrlPathRelative(PATHS.TELEMETRY),
-                      element: <Telemetry />,
-                    },
-                  ],
-                },
+                // {
+                //   id: PATHS.FILE + 'TELEMETRY',
+                //   children: [
+                //     {
+                //       path: makeUrlPathRelative(PATHS.TELEMETRY),
+                //       element: <Telemetry />,
+                //     },
+                //   ],
+                // },
               ],
             },
             {
@@ -131,10 +131,10 @@ export const Router = () => {
                   path: makeUrlPathRelative(PATHS.SETTINGS),
                   element: <Settings />,
                 },
-                {
-                  path: makeUrlPathRelative(PATHS.TELEMETRY),
-                  element: <Telemetry />,
-                },
+                // {
+                //   path: makeUrlPathRelative(PATHS.TELEMETRY),
+                //   element: <Telemetry />,
+                // },
               ],
             },
             {

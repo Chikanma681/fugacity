@@ -30,7 +30,7 @@ import useHotkeyWrapper from '@src/lib/hotkeyWrapper'
 import { PATHS } from '@src/lib/paths'
 import { getSelectionTypeDisplayText } from '@src/lib/selections'
 import { useApp, useSingletons } from '@src/lib/boot'
-import { maybeWriteToDisk } from '@src/lib/telemetry'
+// import { maybeWriteToDisk } from '@src/lib/telemetry'
 import { reportRejection } from '@src/lib/trap'
 import { withSiteBaseURL } from '@src/lib/withBaseURL'
 import { xStateValueToString } from '@src/lib/xStateValueToString'
@@ -58,11 +58,11 @@ import { isMobile } from '@src/lib/isMobile'
 import { isDesktop } from '@src/lib/isDesktop'
 import { useFolders, useLastOperation } from '@src/machines/systemIO/hooks'
 
-if (window.electron) {
-  maybeWriteToDisk(window.electron)
-    .then(() => {})
-    .catch(reportRejection)
-}
+// if (window.electron) {
+//   maybeWriteToDisk(window.electron)
+//     .then(() => {})
+//     .catch(reportRejection)
+// }
 
 export function OpenedProject() {
   useSignals()

@@ -1074,30 +1074,30 @@ impl LanguageServer for Backend {
     async fn did_close(&self, params: DidCloseTextDocumentParams) {
         self.do_did_close(params).await;
 
-        // Inject telemetry if we can train on the user's code.
-        // Return early if we cannot.
-        if !self.can_send_telemetry {
-            return;
-        }
-
-        // In wasm this needs to be spawn_local since fucking reqwests doesn't implement Send for wasm.
-        #[cfg(target_arch = "wasm32")]
-        {
-            let be = self.clone();
-            wasm_bindgen_futures::spawn_local(async move {
-                if let Err(err) = be.send_telemetry().await {
-                    be.client
-                        .log_message(MessageType::WARNING, format!("failed to send telemetry: {}", err))
-                        .await;
-                }
-            });
-        }
-        #[cfg(not(target_arch = "wasm32"))]
-        if let Err(err) = self.send_telemetry().await {
-            self.client
-                .log_message(MessageType::WARNING, format!("failed to send telemetry: {err}"))
-                .await;
-        }
+        // // Inject telemetry if we can train on the user's code.
+        // // Return early if we cannot.
+        // if !self.can_send_telemetry {
+        //     return;
+        // }
+        //
+        // // In wasm this needs to be spawn_local since fucking reqwests doesn't implement Send for wasm.
+        // #[cfg(target_arch = "wasm32")]
+        // {
+        //     let be = self.clone();
+        //     wasm_bindgen_futures::spawn_local(async move {
+        //         if let Err(err) = be.send_telemetry().await {
+        //             be.client
+        //                 .log_message(MessageType::WARNING, format!("failed to send telemetry: {}", err))
+        //                 .await;
+        //         }
+        //     });
+        // }
+        // #[cfg(not(target_arch = "wasm32"))]
+        // if let Err(err) = self.send_telemetry().await {
+        //     self.client
+        //         .log_message(MessageType::WARNING, format!("failed to send telemetry: {err}"))
+        //         .await;
+        // }
     }
 
     async fn hover(&self, params: HoverParams) -> RpcResult<Option<LspHover>> {

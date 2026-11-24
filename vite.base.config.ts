@@ -140,14 +140,16 @@ export function indexHtmlCsp(enabled: boolean): Plugin {
     // Allow images from any source and inline images. We fetch user profile images from any origin.
     "img-src * blob: data: 'unsafe-inline'",
     // Allow WebSocket connections and fetches to our API.
-    `connect-src 'self' https://plausible.corp.zoo.dev https://discord.com https://api.zoo.dev wss://api.zoo.dev https://api.dev.zoo.dev wss://api.dev.zoo.dev https://api.zoogov.dev wss://api.zoogov.dev ${gibbsSources.join(' ')}`,
+    // Plausible telemetry: https://plausible.corp.zoo.dev
+    `connect-src 'self' https://discord.com https://api.zoo.dev wss://api.zoo.dev https://api.dev.zoo.dev wss://api.dev.zoo.dev https://api.zoogov.dev wss://api.zoogov.dev ${gibbsSources.join(' ')}`,
     // Disallow legacy stuff
     "object-src 'none'",
   ]
 
   // Allow scripts from the same origin and from Plausible Analytics. Allow WASM execution.
-  const cspScriptBase =
-    "script-src 'self' 'wasm-unsafe-eval' https://plausible.corp.zoo.dev/js/script.tagged-events.js"
+  // const cspScriptBase =
+  //   "script-src 'self' 'wasm-unsafe-eval' https://plausible.corp.zoo.dev/js/script.tagged-events.js"
+  const cspScriptBase = "script-src 'self' 'wasm-unsafe-eval'"
 
   // frame ancestors can only be blocked using HTTP headers (see vercel.json)
   const vercelCspBase = ["frame-ancestors 'none'"]

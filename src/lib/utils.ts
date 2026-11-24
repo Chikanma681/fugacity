@@ -11,19 +11,19 @@ export const uuidv4 = v4
  * Refresh the browser page after reporting to Plausible.
  */
 export async function refreshPage(method = 'UI button') {
-  if (window && 'plausible' in window) {
-    const p = window.plausible as (
-      event: string,
-      options?: { props: Record<string, string> }
-    ) => Promise<void>
-    // Send a refresh event to Plausible so we can track how often users get stuck
-    await p('Refresh', {
-      props: {
-        method,
-        // optionally add more data here
-      },
-    })
-  }
+  // if (window && 'plausible' in window) {
+  //   const p = window.plausible as (
+  //     event: string,
+  //     options?: { props: Record<string, string> }
+  //   ) => Promise<void>
+  //   // Send a refresh event to Plausible so we can track how often users get stuck
+  //   await p('Refresh', {
+  //     props: {
+  //       method,
+  //       // optionally add more data here
+  //     },
+  //   })
+  // }
 
   // Window may not be available in some environments
   window?.location.reload()
