@@ -9,6 +9,7 @@ files:
   - "!node_modules/@napi-rs/**"
 mac:
   category: public.app-category.developer-tools
+  icon: "assets/icon.icns"
   artifactName: "${productName}-${version}-universal-${os}.${ext}"
   target:
     - target: dmg
@@ -48,6 +49,7 @@ nsis:
   buildUniversalInstaller: true
 linux:
   artifactName: "${productName}-${version}-${arch}-${os}.${ext}"
+  icon: "assets/icon.png"
   target:
     - target: appImage
       arch:
