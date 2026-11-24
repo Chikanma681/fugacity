@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 
+import { accessToken } from '@src/lib/accessToken'
 import { useWorkOSAuth } from '@src/lib/auth'
 import { useApp } from '@src/lib/boot'
 import { reportRejection } from '@src/lib/trap'
@@ -18,9 +19,11 @@ export function AuthSync() {
     }
     const user = workos.user
     if (!user) {
+      accessToken.setSource(null)
       auth.send({ type: 'Signed out' })
       return
     }
+    accessToken.setSource(workos.getAccessToken)
     workos
       .getAccessToken()
       .then((token) =>
