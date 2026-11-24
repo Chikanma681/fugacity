@@ -7,6 +7,14 @@ files:
   - "!node_modules/win-ca/pem/**"
   - "!node_modules/*esbuild/**"
   - "!node_modules/@napi-rs/**"
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  resetAdHocDarwinSignature: true
 mac:
   category: public.app-category.developer-tools
   icon: "assets/icon.icns"
