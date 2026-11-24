@@ -8,7 +8,7 @@
     "email": "chikanmaonuegbu@gmail.com",
     "url": "https://www.fugacity.app"
   },
-  "description": "Fugacity",
+  "description": "Fugacity is the future of chemical engineering process simulation software: the same proven thermodynamics, in an interface that feels modern, clear and easy to use.",
   "main": ".vite/build/main.js",
   "license": "GPL-3.0",
   "overrides": {
