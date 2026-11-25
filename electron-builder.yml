@@ -55,20 +55,20 @@ nsis:
   installerIcon: "assets/icon.ico"
   include: "./scripts/installer.nsh"
   buildUniversalInstaller: true
-linux:
-  artifactName: "${productName}-${version}-${arch}-${os}.${ext}"
-  icon: "assets/icon.png"
-  target:
-    - target: appImage
-      arch:
-        - x64
-        - arm64
-  fileAssociations:
-    - ext: fgc 
-      name: fgc 
-      mimeType: application/vnd.fugacity.project
-      description: Fugacity File 
-      role: Editor
+# linux:
+#   artifactName: "${productName}-${version}-${arch}-${os}.${ext}"
+#   icon: "assets/icon.png"
+#   target:
+#     - target: appImage
+#       arch:
+#         - x64
+#         - arm64
+#   fileAssociations:
+#     - ext: fgc 
+#       name: fgc 
+#       mimeType: application/vnd.fugacity.project
+#       description: Fugacity File 
+#       role: Editor
 publish:
   - provider: github
     owner: Chikanma681
