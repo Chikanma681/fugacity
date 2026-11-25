@@ -18,14 +18,16 @@ electronFuses:
 mac:
   category: public.app-category.developer-tools
   icon: "assets/icon.icns"
-  artifactName: "${productName}-${version}-universal-${os}.${ext}"
+  artifactName: "${productName}-${version}-${arch}-${os}.${ext}"
   target:
     - target: dmg
       arch:
-        - universal
+        - arm64
+        - x64
     - target: zip
       arch:
-        - universal
+        - arm64
+        - x64
   notarize: false
   fileAssociations:
     - ext: fgc 
